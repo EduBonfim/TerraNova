@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Terra Nova",
+    "slug": "terra-nova",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/mascote.png",
+    "scheme": "terranova",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./src/assets/mascote.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F5F5F5"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#4CAF50",
+        "foregroundImage": "./src/assets/mascote.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./src/assets/mascote.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
