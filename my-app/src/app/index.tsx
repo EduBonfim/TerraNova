@@ -26,6 +26,16 @@ const theme = {
   }
 };
 
+const IOS_VISUAL = {
+  footerPaddingBottom: 20,
+};
+
+const ANDROID_VISUAL = {
+  footerPaddingBottom: 0,
+};
+
+const CURRENT_PLATFORM_UI = Platform.OS === 'ios' ? IOS_VISUAL : ANDROID_VISUAL;
+
 export default function WelcomeScreen() {
   const router = useRouter();
 
@@ -105,7 +115,7 @@ const styles = StyleSheet.create({
   featureItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   featureText: { fontSize: 15, color: theme.colors.gray_800, marginLeft: 12, fontWeight: '500' },
 
-  footer: { paddingBottom: Platform.OS === 'ios' ? 20 : 0 },
+  footer: { paddingBottom: CURRENT_PLATFORM_UI.footerPaddingBottom },
   primaryButton: { backgroundColor: theme.colors.primary, height: 56, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 12, elevation: 2 },
   primaryButtonText: { color: theme.colors.white, fontSize: 18, fontWeight: 'bold' },
   

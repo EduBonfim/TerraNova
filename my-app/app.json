@@ -20,6 +20,7 @@
         "backgroundColor": "#4CAF50",
         "foregroundImage": "./src/assets/mascote.png"
       },
+      "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false
     },
     "web": {

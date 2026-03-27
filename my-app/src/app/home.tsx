@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Text, Image, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { StyleSheet, View, Text, Image, ScrollView, TouchableOpacity, Platform, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,12 +19,31 @@ const theme = {
   }
 };
 
+const IOS_VISUAL = {
+  headerHeight: 76,
+  headerPaddingBottom: 16,
+  headerPaddingTop: 16,
+};
+
+const ANDROID_VISUAL = {
+  headerHeight: 76,
+  headerPaddingBottom: 16,
+  headerPaddingTop: 20,
+};
+
+const CURRENT_PLATFORM_UI = Platform.OS === 'ios' ? IOS_VISUAL : ANDROID_VISUAL;
+
 export default function HomeScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
         
         {/* --- CABEÇALHO DO USUÁRIO --- */}
         <View style={styles.header}>
@@ -130,7 +149,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={{ height: 80 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -138,21 +156,23 @@ export default function HomeScreen() {
 
 // ESTILOS ATUALIZADOS
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.background },
+  safeArea: { flex: 1, backgroundColor: theme.colors.primary },
   container: { flex: 1, backgroundColor: theme.colors.background },
+  contentContainer: { paddingBottom: 12 },
   
   // Header (Limpo e profissional)
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    minHeight: 76,
+    height: CURRENT_PLATFORM_UI.headerHeight,
     paddingHorizontal: 16,
-    paddingBottom: 16,
-    paddingTop: Platform.OS === 'android' ? 20 : 16,
+    paddingBottom: CURRENT_PLATFORM_UI.headerPaddingBottom,
+    paddingTop: CURRENT_PLATFORM_UI.headerPaddingTop,
     backgroundColor: theme.colors.primary,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.gray_200,
+    overflow: 'hidden',
   },
   userInfo: { flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 48, height: 48, borderRadius: 24, marginRight: 12 },

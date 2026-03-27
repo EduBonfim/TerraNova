@@ -28,6 +28,16 @@ const theme = {
   }
 };
 
+const IOS_VISUAL = {
+  keyboardBehavior: 'padding' as const,
+};
+
+const ANDROID_VISUAL = {
+  keyboardBehavior: 'height' as const,
+};
+
+const CURRENT_PLATFORM_UI = Platform.OS === 'ios' ? IOS_VISUAL : ANDROID_VISUAL;
+
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -43,7 +53,7 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView 
         style={styles.container} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={CURRENT_PLATFORM_UI.keyboardBehavior}
       >
         <View style={styles.content}>
           

@@ -28,6 +28,22 @@ const theme = {
   }
 };
 
+const IOS_VISUAL = {
+  keyboardBehavior: 'padding' as const,
+  headerHeight: 76,
+  headerPaddingBottom: 16,
+  headerPaddingTop: 16,
+};
+
+const ANDROID_VISUAL = {
+  keyboardBehavior: undefined,
+  headerHeight: 76,
+  headerPaddingBottom: 16,
+  headerPaddingTop: 20,
+};
+
+const CURRENT_PLATFORM_UI = Platform.OS === 'ios' ? IOS_VISUAL : ANDROID_VISUAL;
+
 export default function PostScreen() {
   const router = useRouter();
   
@@ -58,7 +74,7 @@ export default function PostScreen() {
 
       <KeyboardAvoidingView 
         style={styles.container} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={CURRENT_PLATFORM_UI.keyboardBehavior}
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
@@ -173,7 +189,7 @@ export default function PostScreen() {
 // 💅 ESTILOS
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: theme.colors.white },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 76, paddingHorizontal: 16, paddingBottom: 16, paddingTop: Platform.OS === 'android' ? 20 : 16, borderBottomWidth: 1, borderBottomColor: theme.colors.gray_200 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: CURRENT_PLATFORM_UI.headerHeight, paddingHorizontal: 16, paddingBottom: CURRENT_PLATFORM_UI.headerPaddingBottom, paddingTop: CURRENT_PLATFORM_UI.headerPaddingTop, borderBottomWidth: 1, borderBottomColor: theme.colors.gray_200, overflow: 'hidden' },
   backButton: { padding: 8 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: theme.colors.gray_800 },
   container: { flex: 1, backgroundColor: theme.colors.background },

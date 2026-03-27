@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, Image, TouchableOpacity, ScrollView, Platform, TextInput, Alert, Modal, Pressable } from 'react-native';
+import { StyleSheet, View, Text, Image, TouchableOpacity, ScrollView, Platform, TextInput, Alert, Modal, Pressable, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -21,6 +21,24 @@ const theme = {
     red_500: '#EF4444', 
   }
 };
+
+const IOS_VISUAL = {
+  headerHeight: 70,
+  headerPaddingBottom: 16,
+  headerPaddingTop: 16,
+  modalCloseTop: 58,
+  logoutBottomSpacer: 120,
+};
+
+const ANDROID_VISUAL = {
+  headerHeight: 70,
+  headerPaddingBottom: 12,
+  headerPaddingTop: 20,
+  modalCloseTop: 32,
+  logoutBottomSpacer: 100,
+};
+
+const CURRENT_PLATFORM_UI = Platform.OS === 'ios' ? IOS_VISUAL : ANDROID_VISUAL;
 
 export default function AccountScreen() {
   const [farmPhotos, setFarmPhotos] = useState<string[]>(getFarmPhotos('Pedro Paulo'));
@@ -48,7 +66,8 @@ export default function AccountScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Meu Perfil</Text>
       </View>
@@ -202,7 +221,7 @@ export default function AccountScreen() {
           <Text style={styles.logoutText}>Sair da Conta</Text>
         </TouchableOpacity>
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: CURRENT_PLATFORM_UI.logoutBottomSpacer }} />
       </ScrollView>
 
       <Modal visible={Boolean(previewPhoto)} transparent animationType="fade">
@@ -218,9 +237,9 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.background },
+  safeArea: { flex: 1, backgroundColor: theme.colors.primary },
   container: { flex: 1, backgroundColor: theme.colors.background },
-  header: { minHeight: 76, paddingHorizontal: 16, paddingBottom: 16, paddingTop: Platform.OS === 'android' ? 20 : 16, backgroundColor: theme.colors.primary, borderBottomWidth: 1, borderBottomColor: theme.colors.gray_200, alignItems: 'center', justifyContent: 'center' },
+  header: { height: CURRENT_PLATFORM_UI.headerHeight, paddingHorizontal: 16, paddingBottom: CURRENT_PLATFORM_UI.headerPaddingBottom, paddingTop: CURRENT_PLATFORM_UI.headerPaddingTop, backgroundColor: theme.colors.primary, borderBottomWidth: 1, borderBottomColor: theme.colors.gray_200, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: theme.colors.white },
   profileSection: { backgroundColor: theme.colors.white, alignItems: 'center', paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: theme.colors.gray_200 },
   avatarLarge: { width: 100, height: 100, borderRadius: 50, marginBottom: 12 },
@@ -256,6 +275,6 @@ const styles = StyleSheet.create({
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, marginTop: 10 },
   logoutText: { color: theme.colors.red_500, fontSize: 16, fontWeight: 'bold', marginLeft: 8 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' },
-  modalClose: { position: 'absolute', top: Platform.OS === 'android' ? 32 : 58, right: 18, zIndex: 2, padding: 6 },
+  modalClose: { position: 'absolute', top: CURRENT_PLATFORM_UI.modalCloseTop, right: 18, zIndex: 2, padding: 6 },
   fullImage: { width: '94%', height: '82%' },
 });

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, Platform, Image, Modal, Pressable } from 'react-native';
+import { StyleSheet, View, Text, FlatList, TouchableOpacity, Platform, Image, Modal, Pressable, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -19,6 +19,22 @@ const theme = {
     orange_500: '#F9A825',
   }
 };
+
+const IOS_VISUAL = {
+  headerHeight: 76,
+  headerPaddingBottom: 16,
+  headerPaddingTop: 16,
+  modalCloseTop: 58,
+};
+
+const ANDROID_VISUAL = {
+  headerHeight: 76,
+  headerPaddingBottom: 16,
+  headerPaddingTop: 20,
+  modalCloseTop: 32,
+};
+
+const CURRENT_PLATFORM_UI = Platform.OS === 'ios' ? IOS_VISUAL : ANDROID_VISUAL;
 
 // 📦 DADOS DO MARKETPLACE (Bioinsumos + Escoamento de Produção)
 const OPORTUNIDADES = [
@@ -77,7 +93,8 @@ export default function MarketplaceScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/home')}>
           <Ionicons name="arrow-back" size={22} color={theme.colors.white} />
@@ -92,6 +109,7 @@ export default function MarketplaceScreen() {
         data={OPORTUNIDADES}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        style={styles.list}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
       />
@@ -109,8 +127,9 @@ export default function MarketplaceScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  header: { minHeight: 76, paddingHorizontal: 16, paddingBottom: 16, paddingTop: Platform.OS === 'android' ? 20 : 16, backgroundColor: theme.colors.primary, borderBottomWidth: 1, borderBottomColor: theme.colors.gray_300, flexDirection: 'row', alignItems: 'center' },
+  container: { flex: 1, backgroundColor: theme.colors.primary },
+  list: { flex: 1, backgroundColor: theme.colors.background },
+  header: { height: CURRENT_PLATFORM_UI.headerHeight, paddingHorizontal: 16, paddingBottom: CURRENT_PLATFORM_UI.headerPaddingBottom, paddingTop: CURRENT_PLATFORM_UI.headerPaddingTop, backgroundColor: theme.colors.primary, borderBottomWidth: 1, borderBottomColor: theme.colors.gray_300, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
   backButton: { marginRight: 10, padding: 4 },
   headerTextContainer: { flex: 1 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: theme.colors.white },
@@ -131,6 +150,6 @@ const styles = StyleSheet.create({
   buyButton: { backgroundColor: theme.colors.primary, paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
   buyButtonText: { color: theme.colors.white, fontWeight: 'bold', fontSize: 14 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' },
-  modalClose: { position: 'absolute', top: Platform.OS === 'android' ? 32 : 58, right: 18, zIndex: 2, padding: 6 },
+  modalClose: { position: 'absolute', top: CURRENT_PLATFORM_UI.modalCloseTop, right: 18, zIndex: 2, padding: 6 },
   fullImage: { width: '94%', height: '82%' },
 });

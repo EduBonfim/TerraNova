@@ -6,6 +6,7 @@ import {
   TouchableOpacity, 
   ActivityIndicator, 
   Platform,
+  StatusBar,
   TextInput,
   ScrollView,
   KeyboardAvoidingView
@@ -29,6 +30,22 @@ const theme = {
     red_500: '#EF4444',
   }
 };
+
+const IOS_VISUAL = {
+  keyboardBehavior: 'padding' as const,
+  headerHeight: 76,
+  headerPaddingBottom: 16,
+  headerPaddingTop: 16,
+};
+
+const ANDROID_VISUAL = {
+  keyboardBehavior: undefined,
+  headerHeight: 76,
+  headerPaddingBottom: 16,
+  headerPaddingTop: 20,
+};
+
+const CURRENT_PLATFORM_UI = Platform.OS === 'ios' ? IOS_VISUAL : ANDROID_VISUAL;
 
 export default function ScanScreen() {
   const router = useRouter();
@@ -60,7 +77,8 @@ export default function ScanScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.replace('/home')} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.white} />
@@ -71,7 +89,7 @@ export default function ScanScreen() {
 
       <KeyboardAvoidingView 
         style={styles.container} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={CURRENT_PLATFORM_UI.keyboardBehavior}
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
@@ -236,8 +254,8 @@ export default function ScanScreen() {
 
 // 💅 ESTILOS
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 76, paddingHorizontal: 16, paddingBottom: 16, paddingTop: Platform.OS === 'android' ? 20 : 16, backgroundColor: theme.colors.primary, borderBottomWidth: 1, borderBottomColor: theme.colors.gray_200 },
+  safeArea: { flex: 1, backgroundColor: theme.colors.primary },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: CURRENT_PLATFORM_UI.headerHeight, paddingHorizontal: 16, paddingBottom: CURRENT_PLATFORM_UI.headerPaddingBottom, paddingTop: CURRENT_PLATFORM_UI.headerPaddingTop, backgroundColor: theme.colors.primary, borderBottomWidth: 1, borderBottomColor: theme.colors.gray_200, overflow: 'hidden' },
   backButton: { padding: 8 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: theme.colors.white },
   container: { flex: 1, backgroundColor: theme.colors.background },

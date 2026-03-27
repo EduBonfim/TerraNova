@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Platform, Linking } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Platform, Linking, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -17,6 +17,20 @@ const theme = {
     orange_500: '#F9A825',
   },
 };
+
+const IOS_VISUAL = {
+  headerHeight: 76,
+  headerPaddingBottom: 16,
+  headerPaddingTop: 16,
+};
+
+const ANDROID_VISUAL = {
+  headerHeight: 76,
+  headerPaddingBottom: 16,
+  headerPaddingTop: 20,
+};
+
+const CURRENT_PLATFORM_UI = Platform.OS === 'ios' ? IOS_VISUAL : ANDROID_VISUAL;
 
 export default function TransportRulesScreen() {
   const router = useRouter();
@@ -42,7 +56,8 @@ export default function TransportRulesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/account')}>
           <Ionicons name="arrow-back" size={22} color={theme.colors.white} />
@@ -194,18 +209,19 @@ export default function TransportRulesScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.background },
+  safeArea: { flex: 1, backgroundColor: theme.colors.primary },
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 76,
+    height: CURRENT_PLATFORM_UI.headerHeight,
     paddingHorizontal: 16,
-    paddingBottom: 16,
-    paddingTop: Platform.OS === 'android' ? 20 : 16,
+    paddingBottom: CURRENT_PLATFORM_UI.headerPaddingBottom,
+    paddingTop: CURRENT_PLATFORM_UI.headerPaddingTop,
     backgroundColor: theme.colors.primary,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.gray_200,
+    overflow: 'hidden',
   },
   backButton: { marginRight: 10, padding: 4 },
   headerTextContainer: { flex: 1 },

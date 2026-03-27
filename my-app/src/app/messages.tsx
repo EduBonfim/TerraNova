@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -8,6 +8,9 @@ import {
   FlatList, 
   KeyboardAvoidingView, 
   Platform,
+  StatusBar,
+  Keyboard,
+  Alert,
   Image,
   Modal,
   Pressable,
@@ -16,6 +19,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { addReview, getAverageRating, getFarmPhotos, getReviews } from '../services/communityStore';
 
 // 🎨 NOVA PALETA OFICIAL TERRA NOVA
@@ -31,6 +35,43 @@ const theme = {
     gray_800: '#1F2937',
   }
 };
+
+const IOS_VISUAL = {
+  keyboardBehavior: 'padding' as const,
+  headerHeight: 76,
+  headerPaddingBottom: 16,
+  headerPaddingTop: 16,
+  modalCloseTop: 58,
+  inputBottomOffsetBase: 0,
+  keyboardLiftExtra: 0,
+  reviewBottomExtra: 18,
+  chatListBottomPadding: 20,
+  inputContainerPadding: 12,
+  inputPaddingVertical: 12,
+  inputMaxHeight: 100,
+  sendButtonSize: 44,
+  sendButtonRadius: 22,
+  sendButtonMarginBottom: 2,
+};
+
+const ANDROID_VISUAL = {
+  keyboardBehavior: 'padding' as const,
+  headerHeight: 76,
+  headerPaddingBottom: 16,
+  headerPaddingTop: 10,
+  modalCloseTop: 32,
+  inputBottomOffsetBase: 0,
+  reviewBottomExtra: 18,
+  chatListBottomPadding: 20,
+  inputContainerPadding: 12,
+  inputPaddingVertical: 12,
+  inputMaxHeight: 100,
+  sendButtonSize: 44,
+  sendButtonRadius: 22,
+  sendButtonMarginBottom: 2,
+};
+
+const CURRENT_PLATFORM_UI = Platform.OS === 'ios' ? IOS_VISUAL : ANDROID_VISUAL;
 
 // 💬 DADOS FAKES DE MENSAGENS (Contexto Agroecológico)
 const MENSAGENS_INICIAIS = [
@@ -50,6 +91,7 @@ const MENSAGENS_INICIAIS = [
 
 export default function MessagesScreen() {
   const router = useRouter();
+  const tabBarHeight = useBottomTabBarHeight();
   const sellerName = 'Fazenda São João';
   const [mensagens, setMensagens] = useState(MENSAGENS_INICIAIS);
   const [novaMensagem, setNovaMensagem] = useState('');
@@ -58,10 +100,30 @@ export default function MessagesScreen() {
   const [stars, setStars] = useState(5);
   const [comment, setComment] = useState('');
   const [refresh, setRefresh] = useState(0);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   const sellerPhotos = getFarmPhotos(sellerName);
   const sellerReviews = getReviews(sellerName);
   const sellerRating = getAverageRating(sellerName);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener('keyboardDidShow', () => {
+      setIsKeyboardVisible(true);
+    });
+
+    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  const inputBottomOffset = isKeyboardVisible
+    ? 0
+    : Math.max(tabBarHeight - CURRENT_PLATFORM_UI.inputBottomOffsetBase, 0);
 
   const enviarMensagem = () => {
     if (novaMensagem.trim() === '') return;
@@ -107,6 +169,8 @@ export default function MessagesScreen() {
     setComment('');
     setStars(5);
     setRefresh((prev) => prev + 1);
+    Alert.alert('Sucesso', 'avaliacao publicada !', [{ text: 'OK' }]);
+    setDealClosed(false);
   };
 
   const handleBack = () => {
@@ -119,14 +183,15 @@ export default function MessagesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
       <KeyboardAvoidingView 
         style={styles.container} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={CURRENT_PLATFORM_UI.keyboardBehavior}
       >
         {/* --- CABEÇALHO --- */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/home')}>
             <Ionicons name="arrow-back" size={24} color={theme.colors.white} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerTitleContainer} onPress={() => router.push({ pathname: '/user-profile', params: { name: sellerName } })}>
@@ -151,10 +216,10 @@ export default function MessagesScreen() {
               data={mensagens} 
               keyExtractor={(item) => item.id} 
               renderItem={renderItem} 
-              contentContainerStyle={styles.chatContainer} 
+              contentContainerStyle={[styles.chatContainer, { paddingBottom: CURRENT_PLATFORM_UI.chatListBottomPadding }]} 
             />
 
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, { marginBottom: inputBottomOffset }]}> 
               <TextInput 
                 style={styles.input} 
                 placeholder="Digite a sua mensagem..." 
@@ -173,7 +238,10 @@ export default function MessagesScreen() {
             </View>
           </>
         ) : (
-          <ScrollView style={styles.container} contentContainerStyle={styles.reviewScreenContent}>
+          <ScrollView
+            style={styles.container}
+            contentContainerStyle={[styles.reviewScreenContent, { paddingBottom: tabBarHeight + CURRENT_PLATFORM_UI.reviewBottomExtra }]}
+          >
             <View style={styles.trustCard} key={refresh}>
               <Text style={styles.trustTitle}>Avaliação da negociação</Text>
               <Text style={styles.trustRating}>
@@ -234,18 +302,19 @@ export default function MessagesScreen() {
 
 // ESTILOS MANTIDOS INTACTOS
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.background },
+  safeArea: { flex: 1, backgroundColor: theme.colors.primary },
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    minHeight: 76,
+    height: CURRENT_PLATFORM_UI.headerHeight,
     paddingHorizontal: 16,
-    paddingBottom: 16,
-    paddingTop: Platform.OS === 'android' ? 20 : 16, 
+    paddingBottom: CURRENT_PLATFORM_UI.headerPaddingBottom,
+    paddingTop: CURRENT_PLATFORM_UI.headerPaddingTop, 
     backgroundColor: theme.colors.primary, 
     borderBottomWidth: 1, 
-    borderBottomColor: theme.colors.gray_200 
+    borderBottomColor: theme.colors.gray_200,
+    overflow: 'hidden',
   },
   backButton: { padding: 8, marginRight: 8 },
   headerTitleContainer: { flex: 1 },
@@ -285,7 +354,7 @@ const styles = StyleSheet.create({
   timeTextOther: { color: theme.colors.gray_500 },
   inputContainer: { 
     flexDirection: 'row', 
-    padding: 12, 
+    padding: CURRENT_PLATFORM_UI.inputContainerPadding, 
     backgroundColor: theme.colors.white, 
     borderTopWidth: 1, 
     borderTopColor: theme.colors.gray_200, 
@@ -296,24 +365,24 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background, 
     borderRadius: 20, 
     paddingHorizontal: 16, 
-    paddingTop: 12, 
-    paddingBottom: 12, 
-    maxHeight: 100, 
+    paddingTop: CURRENT_PLATFORM_UI.inputPaddingVertical, 
+    paddingBottom: CURRENT_PLATFORM_UI.inputPaddingVertical, 
+    maxHeight: CURRENT_PLATFORM_UI.inputMaxHeight, 
     fontSize: 15,
     color: theme.colors.gray_800
   },
   sendButton: { 
     backgroundColor: theme.colors.primary, 
-    width: 44, 
-    height: 44, 
-    borderRadius: 22, 
+    width: CURRENT_PLATFORM_UI.sendButtonSize, 
+    height: CURRENT_PLATFORM_UI.sendButtonSize, 
+    borderRadius: CURRENT_PLATFORM_UI.sendButtonRadius, 
     justifyContent: 'center', 
     alignItems: 'center', 
     marginLeft: 12, 
-    marginBottom: 2 
+    marginBottom: CURRENT_PLATFORM_UI.sendButtonMarginBottom 
   },
   sendButtonDisabled: { backgroundColor: theme.colors.gray_300 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' },
-  modalClose: { position: 'absolute', top: Platform.OS === 'android' ? 32 : 58, right: 18, zIndex: 2, padding: 6 },
+  modalClose: { position: 'absolute', top: CURRENT_PLATFORM_UI.modalCloseTop, right: 18, zIndex: 2, padding: 6 },
   fullImage: { width: '94%', height: '82%' },
 });

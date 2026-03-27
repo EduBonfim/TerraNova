@@ -1,20 +1,52 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Platform } from 'react-native';
+
+const IOS_TAB_BAR = {
+  height: 70,
+  paddingTop: 6,
+  paddingBottom: 6,
+};
+
+const ANDROID_TAB_BAR = {
+  height: 60,
+  paddingTop: 8,
+  paddingBottom: 8,
+};
+
+const CURRENT_TAB_BAR = Platform.OS === 'ios' ? IOS_TAB_BAR : ANDROID_TAB_BAR;
+
+const IOS_TOP_SCREEN = {
+  paddingTop: 0,
+};
+
+const ANDROID_TOP_SCREEN = {
+  paddingTop: 0,
+};
+
+const CURRENT_TOP_SCREEN = Platform.OS === 'ios' ? IOS_TOP_SCREEN : ANDROID_TOP_SCREEN;
 
 export default function AppLayout() {
   return (
     <Tabs 
       screenOptions={{
         headerShown: false, 
+        tabBarHideOnKeyboard: Platform.OS === 'android',
+        sceneStyle: {
+          paddingTop: CURRENT_TOP_SCREEN.paddingTop,
+        },
         tabBarActiveTintColor: '#F9A825', 
         tabBarInactiveTintColor: '#dfdfdf', 
         tabBarStyle: {
           backgroundColor: '#6B8E23',
-          borderTopWidth: 1,
-          borderTopColor: '#E5E7EB',
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          borderTopWidth: 0,
+          height: CURRENT_TAB_BAR.height,
+          paddingBottom: CURRENT_TAB_BAR.paddingBottom,
+          paddingTop: CURRENT_TAB_BAR.paddingTop,
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
         },
         tabBarLabelStyle: {
           fontSize: 12,
