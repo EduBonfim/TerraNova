@@ -1,6 +1,6 @@
-import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { Platform } from 'react-native';
+import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { Platform } from "react-native";
 
 const IOS_TAB_BAR = {
   height: 70,
@@ -14,7 +14,7 @@ const ANDROID_TAB_BAR = {
   paddingBottom: 8,
 };
 
-const CURRENT_TAB_BAR = Platform.OS === 'ios' ? IOS_TAB_BAR : ANDROID_TAB_BAR;
+const CURRENT_TAB_BAR = Platform.OS === "ios" ? IOS_TAB_BAR : ANDROID_TAB_BAR;
 
 const IOS_TOP_SCREEN = {
   paddingTop: 0,
@@ -24,137 +24,148 @@ const ANDROID_TOP_SCREEN = {
   paddingTop: 0,
 };
 
-const CURRENT_TOP_SCREEN = Platform.OS === 'ios' ? IOS_TOP_SCREEN : ANDROID_TOP_SCREEN;
+const CURRENT_TOP_SCREEN =
+  Platform.OS === "ios" ? IOS_TOP_SCREEN : ANDROID_TOP_SCREEN;
 
 export default function AppLayout() {
   return (
-    <Tabs 
+    <Tabs
       screenOptions={{
-        headerShown: false, 
-        tabBarHideOnKeyboard: Platform.OS === 'android',
+        headerShown: false,
+        tabBarHideOnKeyboard: Platform.OS === "android",
         sceneStyle: {
           paddingTop: CURRENT_TOP_SCREEN.paddingTop,
         },
-        tabBarActiveTintColor: '#F9A825', 
-        tabBarInactiveTintColor: '#dfdfdf', 
+        tabBarActiveTintColor: "#F9A825",
+        tabBarInactiveTintColor: "#dfdfdf",
         tabBarStyle: {
-          backgroundColor: '#6B8E23',
+          backgroundColor: "#6B8E23",
           borderTopWidth: 0,
           height: CURRENT_TAB_BAR.height,
           paddingBottom: CURRENT_TAB_BAR.paddingBottom,
           paddingTop: CURRENT_TAB_BAR.paddingTop,
-          position: 'absolute',
+          position: "absolute",
           left: 0,
           right: 0,
           bottom: 0,
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: 'bold',
-        }
+          fontWeight: "bold",
+        },
       }}
     >
-      {/* 👇 0. TELA DE BOAS-VINDAS (Agora é o index, a 1ª tela do app. Fica oculta do menu) 👇 */}
-      <Tabs.Screen 
-        name="index" 
-        options={{ 
-          href: null, 
-          tabBarStyle: { display: 'none' } 
-        }} 
+      {/*0. TELA DE BOAS-VINDAS */}
+      <Tabs.Screen
+        name="index"
+        options={{
+          href: null,
+          tabBarStyle: { display: "none" },
+        }}
       />
 
-      {/* 👇 1. ABA INICIAL / PAINEL (Agora se chama 'home') 👇 */}
-      <Tabs.Screen 
-        name="home" 
-        options={{ 
-          title: 'Início',
-          tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />
-        }} 
+      {/*1. ABA INICIAL / PAINEL */}
+      <Tabs.Screen
+        name="home"
+        options={{
+          title: "Início",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" size={size} color={color} />
+          ),
+        }}
       />
 
       {/* 2. Aba do Mapa */}
-      <Tabs.Screen 
-        name="map" 
-        options={{ 
-          title: 'Mapa',
-          tabBarIcon: ({ color, size }) => <Ionicons name="map" size={size} color={color} />
-        }} 
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: "Mapa",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="map" size={size} color={color} />
+          ),
+        }}
       />
 
       {/* 3. Aba do Marketplace */}
-      <Tabs.Screen 
-        name="profile" 
-        options={{ 
-          title: 'Mercado',
-          tabBarIcon: ({ color, size }) => <Ionicons name="storefront" size={size} color={color} />
-        }} 
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Mercado",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="storefront" size={size} color={color} />
+          ),
+        }}
       />
 
       {/* 4. Aba da Trilha Orgânica */}
-      <Tabs.Screen 
-        name="organic" 
-        options={{ 
+      <Tabs.Screen
+        name="organic"
+        options={{
           href: null,
-          tabBarStyle: { display: 'none' }
-        }} 
+          tabBarStyle: { display: "none" },
+        }}
       />
 
       {/* 5. Aba de Mensagens (Chat) */}
-      <Tabs.Screen 
-        name="messages" 
-        options={{ 
-          title: 'Chat',
-          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubbles" size={size} color={color} />
-        }} 
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: "Chat",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubbles" size={size} color={color} />
+          ),
+        }}
       />
 
       {/* 6. Aba de Perfil */}
-      <Tabs.Screen 
-        name="account" 
-        options={{ 
-          title: 'Perfil',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />
-        }} 
+      <Tabs.Screen
+        name="account"
+        options={{
+          title: "Perfil",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person" size={size} color={color} />
+          ),
+        }}
       />
 
       {/* --- TELAS OCULTAS DO MENU --- */}
-      <Tabs.Screen 
-        name="scan" 
-        options={{ 
-          href: null, 
-          tabBarStyle: { display: 'none' } 
-        }} 
+      <Tabs.Screen
+        name="scan"
+        options={{
+          href: null,
+          tabBarStyle: { display: "none" },
+        }}
       />
 
-      <Tabs.Screen 
-        name="post" 
-        options={{ 
-          href: null, 
-          tabBarStyle: { display: 'none' } 
-        }} 
+      <Tabs.Screen
+        name="post"
+        options={{
+          href: null,
+          tabBarStyle: { display: "none" },
+        }}
       />
 
-      <Tabs.Screen 
-        name="login" 
-        options={{ 
-          href: null, 
-          tabBarStyle: { display: 'none' } 
-        }} 
+      <Tabs.Screen
+        name="login"
+        options={{
+          href: null,
+          tabBarStyle: { display: "none" },
+        }}
       />
 
-      <Tabs.Screen 
-        name="register" 
-        options={{ 
-          href: null, 
-          tabBarStyle: { display: 'none' } 
-        }} 
+      <Tabs.Screen
+        name="register"
+        options={{
+          href: null,
+          tabBarStyle: { display: "none" },
+        }}
       />
 
       <Tabs.Screen
         name="transport"
         options={{
           href: null,
-          tabBarStyle: { display: 'none' }
+          tabBarStyle: { display: "none" },
         }}
       />
 
@@ -162,7 +173,7 @@ export default function AppLayout() {
         name="user-profile"
         options={{
           href: null,
-          tabBarStyle: { display: 'none' }
+          tabBarStyle: { display: "none" },
         }}
       />
 
@@ -170,10 +181,17 @@ export default function AppLayout() {
         name="certificates"
         options={{
           href: null,
-          tabBarStyle: { display: 'none' }
+          tabBarStyle: { display: "none" },
         }}
       />
-      
+
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          href: null,
+          tabBarStyle: { display: "none" },
+        }}
+      />
     </Tabs>
   );
 }

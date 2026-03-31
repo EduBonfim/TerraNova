@@ -24,6 +24,7 @@ export type Review = {
 type CommunityProfile = {
   displayName: string;
   bio: string;
+  avatarUri?: string;
   farmPhotos: string[];
   reviews: Review[];
   listings: Array<{ id: string; title: string; type: 'venda' | 'doacao'; price?: string }>;
@@ -35,6 +36,7 @@ const profiles: Record<string, CommunityProfile> = {
   'Pedro Paulo': {
     displayName: 'Pedro Paulo',
     bio: 'Agricultor familiar com foco em manejo orgânico e compostagem.',
+    avatarUri: undefined,
     farmPhotos: [
       'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80',
@@ -83,6 +85,7 @@ const profiles: Record<string, CommunityProfile> = {
   'Fazenda Sao Joao': {
     displayName: 'Fazenda São João',
     bio: 'Produtor de bioinsumos e parceiro local para logística rural.',
+    avatarUri: undefined,
     farmPhotos: [
       'https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1492496913980-501348b61469?auto=format&fit=crop&w=1200&q=80',
@@ -126,6 +129,7 @@ export const getProfile = (name: string): CommunityProfile => {
     profiles[key] = {
       displayName: name,
       bio: 'Produtor cadastrado na comunidade Terra Nova.',
+      avatarUri: undefined,
       farmPhotos: [],
       reviews: [],
       listings: [],
@@ -137,6 +141,13 @@ export const getProfile = (name: string): CommunityProfile => {
 };
 
 export const getFarmPhotos = (name: string) => [...getProfile(name).farmPhotos];
+
+export const getProfileAvatar = (name: string) => getProfile(name).avatarUri ?? null;
+
+export const setProfileAvatar = (name: string, uri: string) => {
+  const profile = getProfile(name);
+  profile.avatarUri = uri;
+};
 
 export const addFarmPhoto = (name: string, uri: string): { ok: boolean; reason?: string } => {
   const profile = getProfile(name);
