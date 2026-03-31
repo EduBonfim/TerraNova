@@ -18,6 +18,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { AppHeader } from "../components/AppHeader";
 import { SurfaceCard } from "../components/SurfaceCard";
 import { getAverageRating, getProfileSummary, getReviews } from "../services/communityStore";
+import { MARKETPLACE_OPPORTUNITIES } from "../services/marketplaceStore";
 
 // 🎨 NOVA PALETA OFICIAL TERRA Nova
 const theme = {
@@ -45,46 +46,6 @@ const ANDROID_VISUAL = {
 const MODAL_CLOSE_TOP =
   Platform.OS === "ios" ? IOS_VISUAL.modalCloseTop : ANDROID_VISUAL.modalCloseTop;
 
-// 📦 DADOS DO MARKETPLACE (Bioinsumos + Escoamento de Produção)
-const OPORTUNIDADES = [
-  {
-    id: "1",
-    produto: "Cama de Frango - Tonelada",
-    vendedor: "Fazenda São João",
-    preco: "R$ 150,00",
-    estoque: "12 toneladas disponíveis",
-    icone: "leaf",
-    foto: "https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=1200&q=80",
-  },
-  {
-    id: "2",
-    produto: "Esterco Bovino Curtido - Ton",
-    vendedor: "Sítio Esperança",
-    preco: "R$ 90,00",
-    estoque: "2 toneladas Curtido",
-    icone: "leaf-outline",
-    foto: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1200&q=80",
-  },
-  {
-    id: "3",
-    produto: "Composto Orgânico Premium - 50kg",
-    vendedor: "Central Compostagem Comunitária",
-    preco: "R$ 45,00",
-    estoque: "Retirada imediata",
-    icone: "flask",
-    foto: "https://images.unsplash.com/photo-1492496913980-501348b61469?auto=format&fit=crop&w=1200&q=80",
-  },
-  {
-    id: "4",
-    produto: "Tomate Cereja Orgânico - 15kg",
-    vendedor: "Sítio Esperança",
-    preco: "R$ 110,00",
-    estoque: "Selo Orgânico MAPA",
-    icone: "basket",
-    foto: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=1200&q=80",
-  },
-];
-
 export default function MarketplaceScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
@@ -108,7 +69,7 @@ export default function MarketplaceScreen() {
 
   const ratingBySeller = useMemo(() => {
     const result: Record<string, { avg: number; total: number }> = {};
-    OPORTUNIDADES.forEach((item) => {
+    MARKETPLACE_OPPORTUNITIES.forEach((item) => {
       const avg = getAverageRating(item.vendedor);
       const total = getReviews(item.vendedor).length;
       result[item.vendedor] = { avg, total };
@@ -118,7 +79,7 @@ export default function MarketplaceScreen() {
 
   const trustBySeller = useMemo(() => {
     const result: Record<string, { cep: boolean; pin: boolean }> = {};
-    OPORTUNIDADES.forEach((item) => {
+    MARKETPLACE_OPPORTUNITIES.forEach((item) => {
       const summary = getProfileSummary(item.vendedor);
       result[item.vendedor] = {
         cep: summary.isCepValidated,
@@ -215,7 +176,7 @@ export default function MarketplaceScreen() {
       />
 
       <FlatList
-        data={OPORTUNIDADES}
+        data={MARKETPLACE_OPPORTUNITIES}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         style={styles.list}

@@ -5,10 +5,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   KeyboardAvoidingView,
   Platform,
   Image,
   Alert,
+  Keyboard,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -40,9 +42,14 @@ const ANDROID_VISUAL = {
 
 const CURRENT_PLATFORM_UI = Platform.OS === "ios" ? IOS_VISUAL : ANDROID_VISUAL;
 
+const sanitizeLoginInput = (value: string) => value.replace(/[^A-Za-z0-9@._-]/g, "");
+
+const sanitizePasswordInput = (value: string) =>
+  value.replace(/[^A-Za-z0-9!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/g, "");
+
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [login, setLogin] = useState("");
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -62,7 +69,7 @@ export default function LoginScreen() {
       return;
     }
 
-    const user = email.trim();
+    const user = login.trim();
     const password = senha.trim();
 
     if (!user || !password) {
@@ -81,11 +88,12 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={CURRENT_PLATFORM_UI.keyboardBehavior}
-      >
-        <View style={styles.content}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <KeyboardAvoidingView
+          style={styles.container}
+          behavior={CURRENT_PLATFORM_UI.keyboardBehavior}
+        >
+          <View style={styles.content}>
           {/* --- LOGO E BOAS-VINDAS --- */}
           <View style={styles.header}>
             <View style={styles.logoCircle}>
@@ -101,7 +109,7 @@ export default function LoginScreen() {
           {/* --- FORMULÁRIO DE LOGIN --- */}
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>E-mail ou CPF</Text>
+              <Text style={styles.label}>Login</Text>
               <View style={styles.inputContainer}>
                 <Ionicons
                   name="person-outline"
@@ -111,10 +119,12 @@ export default function LoginScreen() {
                 />
                 <TextInput
                   style={styles.input}
-                  placeholder="Digite seu acesso"
-                  value={email}
-                  onChangeText={setEmail}
+                  placeholder="Digite seu login (email ou CPF)"
+                  placeholderTextColor={theme.colors.gray_800}
+                  value={login}
+                  onChangeText={(value) => setLogin(sanitizeLoginInput(value))}
                   keyboardType="email-address"
+                  autoCorrect={false}
                   autoCapitalize="none"
                 />
               </View>
@@ -132,9 +142,13 @@ export default function LoginScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Sua senha secreta"
+                  placeholderTextColor={theme.colors.gray_800}
                   value={senha}
-                  onChangeText={setSenha}
+                  onChangeText={(value) => setSenha(sanitizePasswordInput(value))}
                   secureTextEntry={!mostrarSenha}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="default"
                 />
                 <TouchableOpacity
                   onPress={() => setMostrarSenha(!mostrarSenha)}
@@ -173,8 +187,9 @@ export default function LoginScreen() {
               <Text style={styles.registerLink}>Criar minha conta</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+          </View>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }

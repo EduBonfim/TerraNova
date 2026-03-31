@@ -5,6 +5,15 @@ export type AppUser = {
   password: string;
   fullName?: string;
   farmName?: string;
+  address?: {
+    cep: string;
+    street: string;
+    number: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    complement?: string;
+  };
 };
 
 const AUTH_USERS_STORAGE_KEY = "@terra_nova/auth_users";
@@ -19,7 +28,11 @@ let usersState: AppUser[] = [...DEFAULT_USERS];
 let isInitialized = false;
 
 const persistUsers = async () => {
-  await AsyncStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(usersState));
+  try {
+    await AsyncStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(usersState));
+  } catch {
+    // Keep app usable in environments where native storage is unavailable.
+  }
 };
 
 export const initAuthStore = async () => {
@@ -69,6 +82,15 @@ export const registerUser = async (payload: {
   password: string;
   fullName?: string;
   farmName?: string;
+  address?: {
+    cep: string;
+    street: string;
+    number: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    complement?: string;
+  };
 }): Promise<{ ok: boolean; reason?: "exists" | "invalid" }> => {
   await initAuthStore();
 
@@ -94,6 +116,17 @@ export const registerUser = async (payload: {
       password,
       fullName: payload.fullName?.trim() || undefined,
       farmName: payload.farmName?.trim() || undefined,
+      address: payload.address
+        ? {
+            cep: payload.address.cep.trim(),
+            street: payload.address.street.trim(),
+            number: payload.address.number.trim(),
+            neighborhood: payload.address.neighborhood.trim(),
+            city: payload.address.city.trim(),
+            state: payload.address.state.trim().toUpperCase(),
+            complement: payload.address.complement?.trim() || undefined,
+          }
+        : undefined,
     },
   ];
 
