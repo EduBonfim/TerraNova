@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -12,18 +12,24 @@ import {
   Modal,
   Pressable,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
+import MapView, { Marker, type MapPressEvent } from "react-native-maps";
 import { AppHeader } from "../components/AppHeader";
 import {
   addFarmPhoto,
   getFarmPhotos,
   getProfileAvatar,
+  getProfileSummary,
+  initCommunityStore,
   removeFarmPhoto,
   setProfileAvatar,
+  updateProfileSummary,
 } from "../services/communityStore";
 
 const theme = {
@@ -54,6 +60,33 @@ const ANDROID_VISUAL = {
 const CURRENT_PLATFORM_UI = Platform.OS === "ios" ? IOS_VISUAL : ANDROID_VISUAL;
 const PROFILE_BIO_MAX = 220;
 
+type GateCoordinate = {
+  latitude: number;
+  longitude: number;
+};
+
+const DEFAULT_PIN_REGION = {
+  latitude: -17.7915,
+  longitude: -50.9,
+  latitudeDelta: 0.04,
+  longitudeDelta: 0.04,
+};
+
+const normalizeCep = (value: string) => value.replace(/\D/g, "").slice(0, 8);
+
+const formatCep = (value: string) => {
+  const digits = normalizeCep(value);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+};
+
+const formatValidationTimestamp = (value?: string | null) => {
+  if (!value) return "Nao validado";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Nao validado";
+  return date.toLocaleString("pt-BR");
+};
+
 type MyAd = {
   id: string;
   icon: "leaf" | "basket";
@@ -70,23 +103,45 @@ const parseAdSubtitle = (subtitle: string) => {
 
 export default function AccountScreen() {
   const profileName = "Pedro Paulo";
-  const [displayName, setDisplayName] = useState("Pedro Paulo");
-  const [farmName, setFarmName] = useState("Sítio Esperança");
-  const [producerRole, setProducerRole] = useState("Agricultor Familiar");
-  const [profileBio, setProfileBio] = useState(
-    "Produtor de economia circular com foco em solo saudável e compostagem.",
+  const summary = getProfileSummary(profileName);
+  const [displayName, setDisplayName] = useState(summary.displayName);
+  const [farmName, setFarmName] = useState(summary.farmName);
+  const [producerRole, setProducerRole] = useState(summary.producerRole);
+  const [farmAddress, setFarmAddress] = useState(summary.farmAddress);
+  const [farmCep, setFarmCep] = useState(summary.farmCep);
+  const [gateCoords, setGateCoords] = useState<GateCoordinate | null>(
+    summary.gateLatitude != null && summary.gateLongitude != null
+      ? { latitude: summary.gateLatitude, longitude: summary.gateLongitude }
+      : null,
   );
+  const [isCepValidated, setIsCepValidated] = useState(summary.isCepValidated);
+  const [isGatePinConfirmed, setIsGatePinConfirmed] = useState(summary.isGatePinConfirmed);
+  const [locationValidatedAt, setLocationValidatedAt] = useState<string | null>(
+    summary.locationValidatedAt,
+  );
+  const [profileBio, setProfileBio] = useState(summary.bio);
 
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isEditAdOpen, setIsEditAdOpen] = useState(false);
   const [draftDisplayName, setDraftDisplayName] = useState(displayName);
   const [draftFarmName, setDraftFarmName] = useState(farmName);
   const [draftProducerRole, setDraftProducerRole] = useState(producerRole);
+  const [draftFarmAddress, setDraftFarmAddress] = useState(farmAddress);
+  const [draftFarmCep, setDraftFarmCep] = useState(formatCep(farmCep));
+  const [draftGateCoords, setDraftGateCoords] = useState<GateCoordinate | null>(gateCoords);
+  const [draftIsCepValidated, setDraftIsCepValidated] = useState(isCepValidated);
+  const [draftIsGatePinConfirmed, setDraftIsGatePinConfirmed] = useState(isGatePinConfirmed);
+  const [draftLocationValidatedAt, setDraftLocationValidatedAt] = useState<string | null>(
+    locationValidatedAt,
+  );
   const [draftProfileBio, setDraftProfileBio] = useState(profileBio);
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [isCepResolving, setIsCepResolving] = useState(false);
+  const [lastAutoValidatedCep, setLastAutoValidatedCep] = useState("");
 
   const [farmPhotos, setFarmPhotos] = useState<string[]>(getFarmPhotos(profileName));
   const [profilePhotoUri, setProfilePhotoUri] = useState<string | null>(
-    getProfileAvatar(profileName),
+    summary.avatarUri ?? getProfileAvatar(profileName),
   );
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
 
@@ -120,6 +175,39 @@ export default function AccountScreen() {
   const [editingAdPrice, setEditingAdPrice] = useState("");
   const [editingAdDetails, setEditingAdDetails] = useState("");
   const [editingAdPhotos, setEditingAdPhotos] = useState<string[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCommunityProfile = async () => {
+      await initCommunityStore();
+      if (!isMounted) return;
+
+      const nextSummary = getProfileSummary(profileName);
+      setDisplayName(nextSummary.displayName);
+      setFarmName(nextSummary.farmName);
+      setProducerRole(nextSummary.producerRole);
+      setFarmAddress(nextSummary.farmAddress);
+      setFarmCep(nextSummary.farmCep);
+      const nextCoords =
+        nextSummary.gateLatitude != null && nextSummary.gateLongitude != null
+          ? { latitude: nextSummary.gateLatitude, longitude: nextSummary.gateLongitude }
+          : null;
+      setGateCoords(nextCoords);
+      setIsCepValidated(nextSummary.isCepValidated);
+      setIsGatePinConfirmed(nextSummary.isGatePinConfirmed);
+      setLocationValidatedAt(nextSummary.locationValidatedAt);
+      setProfileBio(nextSummary.bio);
+      setFarmPhotos(getFarmPhotos(profileName));
+      setProfilePhotoUri(nextSummary.avatarUri ?? getProfileAvatar(profileName));
+    };
+
+    loadCommunityProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const openGalleryPicker = async (): Promise<string | null> => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -216,10 +304,157 @@ export default function AccountScreen() {
     setFarmPhotos(getFarmPhotos(profileName));
   };
 
+  const openPinPlacementModal = () => {
+    setIsEditProfileOpen(false);
+    setTimeout(() => {
+      setIsPinModalOpen(true);
+    }, 120);
+  };
+
+  const resolveCepAndOpenPin = async (inputCep: string) => {
+    const cepDigits = normalizeCep(inputCep);
+    if (cepDigits.length !== 8) {
+      Alert.alert("CEP invalido", "Informe um CEP com 8 digitos.");
+      setLastAutoValidatedCep("");
+      return;
+    }
+
+    try {
+      setIsCepResolving(true);
+      const response = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`);
+      if (!response.ok) {
+        throw new Error("cep_lookup_failed");
+      }
+
+      const data = (await response.json()) as {
+        erro?: boolean;
+        logradouro?: string;
+        bairro?: string;
+        localidade?: string;
+        uf?: string;
+      };
+
+      if (data.erro || !data.localidade || !data.uf) {
+        Alert.alert("CEP nao encontrado", "Nao foi possivel validar esse CEP.");
+        setLastAutoValidatedCep("");
+        return;
+      }
+
+      const resolvedAddress = [data.logradouro, data.bairro, `${data.localidade} - ${data.uf}`]
+        .filter(Boolean)
+        .join(", ");
+
+      if (resolvedAddress) {
+        setDraftFarmAddress(resolvedAddress);
+      }
+
+      let suggestedCoords: GateCoordinate | null = draftGateCoords;
+      try {
+        const geocoded = await Location.geocodeAsync(
+          `${resolvedAddress || `${data.localidade} - ${data.uf}`}, Brasil`,
+        );
+
+        if (geocoded.length) {
+          suggestedCoords = {
+            latitude: geocoded[0].latitude,
+            longitude: geocoded[0].longitude,
+          };
+        }
+      } catch {
+        // Continue with fallback flow when geocoding is unavailable.
+      }
+
+      if (!suggestedCoords) {
+        try {
+          const current = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          suggestedCoords = {
+            latitude: current.coords.latitude,
+            longitude: current.coords.longitude,
+          };
+        } catch {
+          suggestedCoords = {
+            latitude: DEFAULT_PIN_REGION.latitude,
+            longitude: DEFAULT_PIN_REGION.longitude,
+          };
+        }
+      }
+
+      setDraftFarmCep(formatCep(cepDigits));
+      setDraftGateCoords(suggestedCoords);
+      setDraftIsCepValidated(true);
+      setDraftIsGatePinConfirmed(false);
+      setDraftLocationValidatedAt(null);
+      openPinPlacementModal();
+    } catch {
+      Alert.alert(
+        "Falha ao validar CEP",
+        "Nao foi possivel consultar esse CEP agora. Voce ainda pode marcar a porteira manualmente.",
+      );
+
+      let fallbackCoords: GateCoordinate | null = draftGateCoords;
+      if (!fallbackCoords) {
+        try {
+          const current = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          fallbackCoords = {
+            latitude: current.coords.latitude,
+            longitude: current.coords.longitude,
+          };
+        } catch {
+          fallbackCoords = {
+            latitude: DEFAULT_PIN_REGION.latitude,
+            longitude: DEFAULT_PIN_REGION.longitude,
+          };
+        }
+      }
+
+      setDraftGateCoords(fallbackCoords);
+      openPinPlacementModal();
+      setLastAutoValidatedCep("");
+    } finally {
+      setIsCepResolving(false);
+    }
+  };
+
+  const onDraftCepChange = (text: string) => {
+    const formatted = formatCep(text);
+    setDraftFarmCep(formatted);
+    setDraftIsCepValidated(false);
+    setDraftIsGatePinConfirmed(false);
+    setDraftLocationValidatedAt(null);
+
+    const cepDigits = normalizeCep(formatted);
+    if (cepDigits.length < 8) {
+      setLastAutoValidatedCep("");
+      return;
+    }
+
+    if (isCepResolving || cepDigits === lastAutoValidatedCep) {
+      return;
+    }
+
+    setLastAutoValidatedCep(cepDigits);
+    void resolveCepAndOpenPin(cepDigits);
+  };
+
+  const onMapPressSetGate = (event: MapPressEvent) => {
+    const { latitude, longitude } = event.nativeEvent.coordinate;
+    setDraftGateCoords({ latitude, longitude });
+  };
+
   const openEditProfile = () => {
     setDraftDisplayName(displayName);
     setDraftFarmName(farmName);
     setDraftProducerRole(producerRole);
+    setDraftFarmAddress(farmAddress);
+    setDraftFarmCep(formatCep(farmCep));
+    setDraftGateCoords(gateCoords);
+    setDraftIsCepValidated(isCepValidated);
+    setDraftIsGatePinConfirmed(isGatePinConfirmed);
+    setDraftLocationValidatedAt(locationValidatedAt);
     setDraftProfileBio(profileBio);
     setIsEditProfileOpen(true);
   };
@@ -232,10 +467,27 @@ export default function AccountScreen() {
     const nextName = draftDisplayName.trim();
     const nextFarm = draftFarmName.trim();
     const nextRole = draftProducerRole.trim();
+    const nextAddress = draftFarmAddress.trim();
+    const nextCep = normalizeCep(draftFarmCep);
     const nextBio = draftProfileBio.trim();
 
-    if (!nextName || !nextFarm || !nextRole || !nextBio) {
-      Alert.alert("Campos obrigatórios", "Preencha nome, fazenda, função e descrição.");
+    if (!nextName || !nextFarm || !nextRole || !nextAddress || !nextBio || !nextCep) {
+      Alert.alert("Campos obrigatórios", "Preencha nome, fazenda, função, endereço, CEP e descrição.");
+      return;
+    }
+
+    if (nextCep.length !== 8) {
+      Alert.alert("CEP invalido", "O CEP deve ter 8 digitos.");
+      return;
+    }
+
+    if (!draftGateCoords) {
+      Alert.alert("Defina a porteira", "Valide o CEP e marque o pin da porteira no mapa.");
+      return;
+    }
+
+    if (!draftIsCepValidated || !draftIsGatePinConfirmed) {
+      Alert.alert("Validacao pendente", "Valide o CEP e confirme manualmente o pin da porteira.");
       return;
     }
 
@@ -247,7 +499,26 @@ export default function AccountScreen() {
     setDisplayName(nextName);
     setFarmName(nextFarm);
     setProducerRole(nextRole);
+    setFarmAddress(nextAddress);
+    setFarmCep(nextCep);
+    setGateCoords(draftGateCoords);
+    setIsCepValidated(draftIsCepValidated);
+    setIsGatePinConfirmed(draftIsGatePinConfirmed);
+    setLocationValidatedAt(draftLocationValidatedAt);
     setProfileBio(nextBio);
+    updateProfileSummary(profileName, {
+      displayName: nextName,
+      farmName: nextFarm,
+      producerRole: nextRole,
+      farmAddress: nextAddress,
+      farmCep: nextCep,
+      gateLatitude: draftGateCoords.latitude,
+      gateLongitude: draftGateCoords.longitude,
+      isCepValidated: draftIsCepValidated,
+      isGatePinConfirmed: draftIsGatePinConfirmed,
+      locationValidatedAt: draftLocationValidatedAt ?? undefined,
+      bio: nextBio,
+    });
     closeEditProfile();
   };
 
@@ -385,8 +656,39 @@ export default function AccountScreen() {
           </View>
 
           <Text style={styles.userName}>{displayName}</Text>
-          <Text style={styles.userRole}>{producerRole} • {farmName}</Text>
+          <Text style={styles.userRole}>{producerRole}</Text>
+          <Text style={styles.userAddress}>{farmName}</Text>
+          <Text style={styles.userAddress}>CEP: {formatCep(farmCep || "") || "Nao informado"}</Text>
           <Text style={styles.userBio}>{profileBio}</Text>
+
+          <View style={styles.trustCard}>
+            <Text style={styles.trustTitle}>Selo de Confiabilidade de Localizacao</Text>
+
+            <View style={styles.trustRow}>
+              <Ionicons
+                name={isCepValidated ? "checkmark-circle" : "alert-circle-outline"}
+                size={16}
+                color={isCepValidated ? theme.colors.primary : theme.colors.gray_500}
+              />
+              <Text style={styles.trustText}>CEP validado</Text>
+            </View>
+
+            <View style={styles.trustRow}>
+              <Ionicons
+                name={isGatePinConfirmed ? "checkmark-circle" : "alert-circle-outline"}
+                size={16}
+                color={isGatePinConfirmed ? theme.colors.primary : theme.colors.gray_500}
+              />
+              <Text style={styles.trustText}>Pin confirmado manualmente</Text>
+            </View>
+
+            <View style={styles.trustRow}>
+              <Ionicons name="time-outline" size={16} color={theme.colors.gray_500} />
+              <Text style={styles.trustText}>
+                Ultima validacao: {formatValidationTimestamp(locationValidatedAt)}
+              </Text>
+            </View>
+          </View>
 
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
@@ -607,6 +909,43 @@ export default function AccountScreen() {
                 value={draftProducerRole}
                 onChangeText={setDraftProducerRole}
               />
+
+              <Text style={styles.editLabel}>Endereço da fazenda</Text>
+              <TextInput
+                style={styles.photoInput}
+                placeholder="Ex: Rio Verde, GO - Bairro/Comunidade"
+                placeholderTextColor={theme.colors.gray_500}
+                value={draftFarmAddress}
+                onChangeText={setDraftFarmAddress}
+              />
+
+              <Text style={styles.editLabel}>CEP da fazenda</Text>
+              <TextInput
+                style={styles.photoInput}
+                placeholder="00000-000"
+                placeholderTextColor={theme.colors.gray_500}
+                value={draftFarmCep}
+                onChangeText={onDraftCepChange}
+                keyboardType="number-pad"
+                maxLength={9}
+              />
+              <TouchableOpacity
+                style={styles.validateCepButton}
+                onPress={() => resolveCepAndOpenPin(draftFarmCep)}
+                disabled={isCepResolving}
+              >
+                {isCepResolving ? (
+                  <ActivityIndicator size="small" color={theme.colors.white} />
+                ) : (
+                  <>
+                    <Ionicons name="pin-outline" size={16} color={theme.colors.white} />
+                    <Text style={styles.validateCepButtonText}>Validar CEP e marcar porteira</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+              <Text style={styles.cepHelperText}>
+                Ao validar o CEP, um mapa abre para voce posicionar o pin exatamente na porteira.
+              </Text>
 
               <Text style={styles.editLabel}>Descrição do perfil</Text>
               <TextInput
@@ -856,6 +1195,71 @@ export default function AccountScreen() {
           ) : null}
         </View>
       </Modal>
+
+      <Modal
+        visible={isPinModalOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          setIsPinModalOpen(false);
+          setIsEditProfileOpen(true);
+        }}
+      >
+        <View style={styles.pinModalBackdrop}>
+          <View style={styles.pinModalCard}>
+            <View style={styles.pinModalHeader}>
+              <Text style={styles.pinModalTitle}>Marcar porteira</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setIsPinModalOpen(false);
+                  setIsEditProfileOpen(true);
+                }}
+              >
+                <Ionicons name="close" size={22} color={theme.colors.gray_800} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.pinModalSubtitle}>
+              Toque no mapa para posicionar o pin no ponto exato da entrada da propriedade.
+            </Text>
+
+            <MapView
+              style={styles.pinMap}
+              initialRegion={
+                draftGateCoords
+                  ? {
+                      latitude: draftGateCoords.latitude,
+                      longitude: draftGateCoords.longitude,
+                      latitudeDelta: DEFAULT_PIN_REGION.latitudeDelta,
+                      longitudeDelta: DEFAULT_PIN_REGION.longitudeDelta,
+                    }
+                  : DEFAULT_PIN_REGION
+              }
+              onPress={onMapPressSetGate}
+            >
+              {draftGateCoords ? (
+                <Marker coordinate={draftGateCoords} title="Porteira da fazenda" />
+              ) : null}
+            </MapView>
+
+            <TouchableOpacity
+              style={styles.pinConfirmButton}
+              onPress={() => {
+                if (!draftGateCoords) {
+                  Alert.alert("Marque um ponto", "Toque no mapa para definir a porteira.");
+                  return;
+                }
+                setDraftIsGatePinConfirmed(true);
+                setDraftLocationValidatedAt(new Date().toISOString());
+                setIsPinModalOpen(false);
+                setIsEditProfileOpen(true);
+              }}
+            >
+              <Text style={styles.pinConfirmButtonText}>Confirmar pin da porteira</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -890,12 +1294,41 @@ const styles = StyleSheet.create({
   },
   userName: { fontSize: 22, fontWeight: "bold", color: theme.colors.gray_800 },
   userRole: { fontSize: 14, color: theme.colors.gray_500, marginTop: 4 },
+  userAddress: { fontSize: 13, color: theme.colors.gray_500, marginTop: 4 },
   userBio: {
     fontSize: 12,
     color: theme.colors.gray_500,
     marginTop: 6,
     textAlign: "center",
     paddingHorizontal: 22,
+  },
+  trustCard: {
+    marginTop: 12,
+    backgroundColor: theme.colors.lightGreen,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    width: "90%",
+  },
+  trustTitle: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  trustRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
+  trustText: {
+    fontSize: 12,
+    color: theme.colors.gray_800,
+    flex: 1,
   },
   statsRow: {
     flexDirection: "row",
@@ -1155,6 +1588,26 @@ const styles = StyleSheet.create({
     marginTop: -4,
     marginBottom: 8,
   },
+  validateCepButton: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 6,
+  },
+  validateCepButtonText: {
+    color: theme.colors.white,
+    fontWeight: "bold",
+    fontSize: 13,
+  },
+  cepHelperText: {
+    color: theme.colors.gray_500,
+    fontSize: 12,
+    marginBottom: 10,
+  },
   addPhotoGalleryButton: {
     backgroundColor: theme.colors.white,
     borderRadius: 10,
@@ -1358,6 +1811,51 @@ const styles = StyleSheet.create({
     right: 18,
     zIndex: 2,
     padding: 6,
+  },
+  pinModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(17,24,39,0.45)",
+    justifyContent: "flex-end",
+  },
+  pinModalCard: {
+    height: "82%",
+    backgroundColor: theme.colors.background,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    padding: 14,
+  },
+  pinModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  pinModalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+  },
+  pinModalSubtitle: {
+    fontSize: 13,
+    color: theme.colors.gray_500,
+    marginBottom: 10,
+  },
+  pinMap: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginBottom: 12,
+  },
+  pinConfirmButton: {
+    backgroundColor: theme.colors.gray_800,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  pinConfirmButtonText: {
+    color: theme.colors.white,
+    fontWeight: "bold",
+    fontSize: 14,
   },
   fullImage: { width: "94%", height: "82%" },
 });

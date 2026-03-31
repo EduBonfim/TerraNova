@@ -11,6 +11,7 @@ import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { SurfaceCard } from "../components/SurfaceCard";
+import { getProfileSummary, initCommunityStore } from "../services/communityStore";
 
 // 🎨 NOVA PALETA OFICIAL TERRA Nova
 const theme = {
@@ -18,6 +19,7 @@ const theme = {
     primary: "#6B8E23",
     lightGreen: "#E8F5E9",
     brown_500: "#8B6F47", // Marrom Terra
+    orange_500: "#F9A825",
     white: "#FFFFFF",
     background: "#F5F5F5",
     gray_200: "#E5E7EB",
@@ -63,9 +65,11 @@ const PONTOS_LOGISTICOS = [
 export default function MapScreen() {
   const [localUsuario, setLocalUsuario] =
     useState<Location.LocationObject | null>(null);
+  const [myFarmGate, setMyFarmGate] = useState<{ latitude: number; longitude: number } | null>(null);
   const [erroLocal, setErroLocal] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const router = useRouter();
+  const profileName = "Pedro Paulo";
 
   const initialRegion = {
     latitude: -17.7915,
@@ -77,6 +81,12 @@ export default function MapScreen() {
   // hook do GPS devolvido e verificado
   useEffect(() => {
     async function obterPermissaoLocal() {
+      await initCommunityStore();
+      const summary = getProfileSummary(profileName);
+      if (summary.gateLatitude != null && summary.gateLongitude != null) {
+        setMyFarmGate({ latitude: summary.gateLatitude, longitude: summary.gateLongitude });
+      }
+
       let { status } = await Location.requestForegroundPermissionsAsync();
 
       if (status !== "granted") {
@@ -151,6 +161,17 @@ export default function MapScreen() {
             </Callout>
           </Marker>
         ))}
+
+        {myFarmGate ? (
+          <Marker coordinate={myFarmGate} pinColor={theme.colors.orange_500}>
+            <Callout tooltip>
+              <SurfaceCard style={styles.customCallout} bordered={false}>
+                <Text style={styles.calloutTitle}>Minha porteira</Text>
+                <Text style={styles.calloutDesc}>Localizacao validada com CEP + pin manual.</Text>
+              </SurfaceCard>
+            </Callout>
+          </Marker>
+        ) : null}
       </MapView>
       {/* Cores da pesquisa e GPS atualizadas */}
       <View style={styles.searchBar}>

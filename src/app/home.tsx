@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -13,8 +13,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useIsFocused } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { SurfaceCard } from "../components/SurfaceCard";
+import { getProfileSummary, initCommunityStore } from "../services/communityStore";
 import {
   getNotifications,
   markAllNotificationsAsRead,
@@ -55,8 +57,30 @@ const MAX_NOTIFICATION_PREVIEW = 5;
 
 export default function HomeScreen() {
   const router = useRouter();
+  const isFocused = useIsFocused();
+  const profileName = "Pedro Paulo";
+  const [profileSummary, setProfileSummary] = useState(() => getProfileSummary(profileName));
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>(getNotifications());
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const syncProfile = async () => {
+      if (!isFocused) return;
+
+      await initCommunityStore();
+      if (!isMounted) return;
+
+      setProfileSummary(getProfileSummary(profileName));
+    };
+
+    syncProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isFocused]);
 
   const latestNotifications = notifications.slice(0, MAX_NOTIFICATION_PREVIEW);
   const hasMoreNotifications = notifications.length > MAX_NOTIFICATION_PREVIEW;
@@ -99,18 +123,22 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View style={styles.userInfo}>
             <Image
-              source={require("../assets/perfil.png")}
+              source={
+                profileSummary.avatarUri
+                  ? { uri: profileSummary.avatarUri }
+                  : require("../assets/perfil.png")
+              }
               style={styles.avatar}
             />
             <View>
-              <Text style={styles.greeting}>Olá, Pedro Paulo</Text>
+              <Text style={styles.greeting}>Olá, {profileSummary.displayName}</Text>
               <Text style={styles.location}>
                 <Ionicons
                   name="location"
                   size={12}
                   color={theme.colors.primary}
                 />{" "}
-                Rio Verde, GO
+                {profileSummary.farmName}
               </Text>
             </View>
           </View>

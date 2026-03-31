@@ -17,7 +17,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import { AppHeader } from "../components/AppHeader";
 import { SurfaceCard } from "../components/SurfaceCard";
-import { getAverageRating, getReviews } from "../services/communityStore";
+import { getAverageRating, getProfileSummary, getReviews } from "../services/communityStore";
 
 // 🎨 NOVA PALETA OFICIAL TERRA Nova
 const theme = {
@@ -116,6 +116,18 @@ export default function MarketplaceScreen() {
     return result;
   }, []);
 
+  const trustBySeller = useMemo(() => {
+    const result: Record<string, { cep: boolean; pin: boolean }> = {};
+    OPORTUNIDADES.forEach((item) => {
+      const summary = getProfileSummary(item.vendedor);
+      result[item.vendedor] = {
+        cep: summary.isCepValidated,
+        pin: summary.isGatePinConfirmed,
+      };
+    });
+    return result;
+  }, []);
+
   const renderItem = ({ item }: any) => {
     const isHighlighted = item.id === activeHighlightId;
 
@@ -151,6 +163,21 @@ export default function MarketplaceScreen() {
             {ratingBySeller[item.vendedor]?.avg || 0} (
             {ratingBySeller[item.vendedor]?.total || 0} avaliações)
           </Text>
+
+          <View style={styles.trustMiniRow}>
+            <Ionicons
+              name={trustBySeller[item.vendedor]?.cep ? "checkmark-circle" : "alert-circle-outline"}
+              size={12}
+              color={trustBySeller[item.vendedor]?.cep ? theme.colors.primary : theme.colors.gray_500}
+            />
+            <Text style={styles.trustMiniText}>CEP</Text>
+            <Ionicons
+              name={trustBySeller[item.vendedor]?.pin ? "checkmark-circle" : "alert-circle-outline"}
+              size={12}
+              color={trustBySeller[item.vendedor]?.pin ? theme.colors.primary : theme.colors.gray_500}
+            />
+            <Text style={styles.trustMiniText}>Porteira</Text>
+          </View>
         </View>
       </View>
 
@@ -271,6 +298,17 @@ const styles = StyleSheet.create({
   },
   vendedorText: { fontSize: 13, color: theme.colors.gray_500 },
   ratingText: { fontSize: 12, color: theme.colors.gray_800, marginTop: 4 },
+  trustMiniRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 6,
+  },
+  trustMiniText: {
+    fontSize: 11,
+    color: theme.colors.gray_500,
+    marginRight: 6,
+  },
   divisor: {
     height: 1,
     backgroundColor: theme.colors.gray_300,

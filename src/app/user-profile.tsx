@@ -40,6 +40,13 @@ export default function UserProfileScreen() {
   const rating = getAverageRating(name);
   const reviews = getReviews(name);
 
+  const formatValidationTimestamp = (value?: string) => {
+    if (!value) return "Nao validado";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Nao validado";
+    return date.toLocaleString("pt-BR");
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <StatusBar
@@ -63,6 +70,35 @@ export default function UserProfileScreen() {
             <Ionicons name="star" size={14} color={theme.colors.orange_500} />{" "}
             {rating} ({reviews.length} avaliações)
           </Text>
+
+          <View style={styles.trustCard}>
+            <Text style={styles.trustTitle}>Selo de Confiabilidade de Localizacao</Text>
+
+            <View style={styles.trustRow}>
+              <Ionicons
+                name={profile.isCepValidated ? "checkmark-circle" : "alert-circle-outline"}
+                size={16}
+                color={profile.isCepValidated ? theme.colors.primary : theme.colors.gray_500}
+              />
+              <Text style={styles.trustText}>CEP validado</Text>
+            </View>
+
+            <View style={styles.trustRow}>
+              <Ionicons
+                name={profile.isGatePinConfirmed ? "checkmark-circle" : "alert-circle-outline"}
+                size={16}
+                color={profile.isGatePinConfirmed ? theme.colors.primary : theme.colors.gray_500}
+              />
+              <Text style={styles.trustText}>Pin confirmado manualmente</Text>
+            </View>
+
+            <View style={styles.trustRow}>
+              <Ionicons name="time-outline" size={16} color={theme.colors.gray_500} />
+              <Text style={styles.trustText}>
+                Ultima validacao: {formatValidationTimestamp(profile.locationValidatedAt)}
+              </Text>
+            </View>
+          </View>
         </SurfaceCard>
 
         <SurfaceCard style={styles.card}>
@@ -165,6 +201,36 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: theme.colors.gray_800,
     marginTop: 8,
+  },
+
+  trustCard: {
+    marginTop: 12,
+    backgroundColor: "#F0FDF4",
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+
+  trustTitle: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: theme.colors.gray_900,
+    marginBottom: 6,
+  },
+
+  trustRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
+
+  trustText: {
+    flex: 1,
+    fontSize: 12,
+    color: theme.colors.gray_800,
   },
 
   photo: {

@@ -1,3 +1,5 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 export type ReviewRole = 'cliente' | 'vendedor';
 export type CertificateStatus = 'pending' | 'approved';
 
@@ -23,6 +25,15 @@ export type Review = {
 
 type CommunityProfile = {
   displayName: string;
+  farmName: string;
+  producerRole: string;
+  farmAddress: string;
+  farmCep: string;
+  gateLatitude?: number;
+  gateLongitude?: number;
+  isCepValidated: boolean;
+  isGatePinConfirmed: boolean;
+  locationValidatedAt?: string;
   bio: string;
   avatarUri?: string;
   farmPhotos: string[];
@@ -35,6 +46,15 @@ type CommunityProfile = {
 const profiles: Record<string, CommunityProfile> = {
   'Pedro Paulo': {
     displayName: 'Pedro Paulo',
+    farmName: 'Sitio Esperanca',
+    producerRole: 'Agricultor Familiar',
+    farmAddress: 'Rio Verde, GO',
+    farmCep: '',
+    gateLatitude: undefined,
+    gateLongitude: undefined,
+    isCepValidated: false,
+    isGatePinConfirmed: false,
+    locationValidatedAt: undefined,
     bio: 'Agricultor familiar com foco em manejo orgânico e compostagem.',
     avatarUri: undefined,
     farmPhotos: [
@@ -84,6 +104,15 @@ const profiles: Record<string, CommunityProfile> = {
   },
   'Fazenda Sao Joao': {
     displayName: 'Fazenda São João',
+    farmName: 'Fazenda Sao Joao',
+    producerRole: 'Produtor Rural',
+    farmAddress: 'Jatai, GO',
+    farmCep: '',
+    gateLatitude: undefined,
+    gateLongitude: undefined,
+    isCepValidated: false,
+    isGatePinConfirmed: false,
+    locationValidatedAt: undefined,
     bio: 'Produtor de bioinsumos e parceiro local para logística rural.',
     avatarUri: undefined,
     farmPhotos: [
@@ -121,6 +150,92 @@ const profiles: Record<string, CommunityProfile> = {
   },
 };
 
+const COMMUNITY_STORAGE_KEY = '@terra_nova/community_profiles';
+let isCommunityStoreInitialized = false;
+
+const persistCommunityStore = async () => {
+  try {
+    await AsyncStorage.setItem(COMMUNITY_STORAGE_KEY, JSON.stringify(profiles));
+  } catch {
+    // Ignore persistence errors to avoid blocking profile flows.
+  }
+};
+
+export const initCommunityStore = async () => {
+  if (isCommunityStoreInitialized) return;
+
+  try {
+    const raw = await AsyncStorage.getItem(COMMUNITY_STORAGE_KEY);
+
+    if (!raw) {
+      await persistCommunityStore();
+      isCommunityStoreInitialized = true;
+      return;
+    }
+
+    const parsed = JSON.parse(raw) as Record<string, Partial<CommunityProfile>>;
+
+    Object.entries(parsed).forEach(([key, value]) => {
+      const current = profiles[key] ?? {
+        displayName: key,
+        farmName: 'Minha Fazenda',
+        producerRole: 'Produtor Rural',
+        farmAddress: 'Endereco nao informado',
+        farmCep: '',
+        gateLatitude: undefined,
+        gateLongitude: undefined,
+        isCepValidated: false,
+        isGatePinConfirmed: false,
+        locationValidatedAt: undefined,
+        bio: 'Produtor cadastrado na comunidade Terra Nova.',
+        avatarUri: undefined,
+        farmPhotos: [],
+        reviews: [],
+        listings: [],
+        insumos: [],
+        certificates: [],
+      };
+
+      profiles[key] = {
+        displayName: value.displayName ?? current.displayName,
+        farmName: value.farmName ?? current.farmName,
+        producerRole: value.producerRole ?? current.producerRole,
+        farmAddress: value.farmAddress ?? current.farmAddress,
+        farmCep: value.farmCep ?? current.farmCep,
+        gateLatitude:
+          typeof value.gateLatitude === 'number' ? value.gateLatitude : current.gateLatitude,
+        gateLongitude:
+          typeof value.gateLongitude === 'number' ? value.gateLongitude : current.gateLongitude,
+        isCepValidated:
+          typeof value.isCepValidated === 'boolean'
+            ? value.isCepValidated
+            : current.isCepValidated,
+        isGatePinConfirmed:
+          typeof value.isGatePinConfirmed === 'boolean'
+            ? value.isGatePinConfirmed
+            : current.isGatePinConfirmed,
+        locationValidatedAt:
+          typeof value.locationValidatedAt === 'string'
+            ? value.locationValidatedAt
+            : current.locationValidatedAt,
+        bio: value.bio ?? current.bio,
+        avatarUri: value.avatarUri ?? current.avatarUri,
+        farmPhotos: Array.isArray(value.farmPhotos) ? value.farmPhotos : current.farmPhotos,
+        reviews: Array.isArray(value.reviews) ? value.reviews : current.reviews,
+        listings: Array.isArray(value.listings) ? value.listings : current.listings,
+        insumos: Array.isArray(value.insumos) ? value.insumos : current.insumos,
+        certificates: Array.isArray(value.certificates)
+          ? value.certificates
+          : current.certificates,
+      };
+    });
+  } catch {
+    // Fall back to in-memory defaults when storage is unavailable or malformed.
+  }
+
+  isCommunityStoreInitialized = true;
+};
+
 export const normalizeProfileName = (name: string) => name.replace('São', 'Sao');
 
 export const getProfile = (name: string): CommunityProfile => {
@@ -128,6 +243,15 @@ export const getProfile = (name: string): CommunityProfile => {
   if (!profiles[key]) {
     profiles[key] = {
       displayName: name,
+      farmName: 'Minha Fazenda',
+      producerRole: 'Produtor Rural',
+      farmAddress: 'Endereco nao informado',
+      farmCep: '',
+      gateLatitude: undefined,
+      gateLongitude: undefined,
+      isCepValidated: false,
+      isGatePinConfirmed: false,
+      locationValidatedAt: undefined,
       bio: 'Produtor cadastrado na comunidade Terra Nova.',
       avatarUri: undefined,
       farmPhotos: [],
@@ -144,9 +268,59 @@ export const getFarmPhotos = (name: string) => [...getProfile(name).farmPhotos];
 
 export const getProfileAvatar = (name: string) => getProfile(name).avatarUri ?? null;
 
+export const getProfileSummary = (name: string) => {
+  const profile = getProfile(name);
+  return {
+    displayName: profile.displayName,
+    farmName: profile.farmName,
+    producerRole: profile.producerRole,
+    farmAddress: profile.farmAddress,
+    farmCep: profile.farmCep,
+    gateLatitude: profile.gateLatitude ?? null,
+    gateLongitude: profile.gateLongitude ?? null,
+    isCepValidated: profile.isCepValidated,
+    isGatePinConfirmed: profile.isGatePinConfirmed,
+    locationValidatedAt: profile.locationValidatedAt ?? null,
+    bio: profile.bio,
+    avatarUri: profile.avatarUri ?? null,
+  };
+};
+
+export const updateProfileSummary = (
+  name: string,
+  payload: {
+    displayName: string;
+    farmName: string;
+    producerRole: string;
+    farmAddress: string;
+    farmCep: string;
+    gateLatitude?: number;
+    gateLongitude?: number;
+    isCepValidated: boolean;
+    isGatePinConfirmed: boolean;
+    locationValidatedAt?: string;
+    bio: string;
+  },
+) => {
+  const profile = getProfile(name);
+  profile.displayName = payload.displayName;
+  profile.farmName = payload.farmName;
+  profile.producerRole = payload.producerRole;
+  profile.farmAddress = payload.farmAddress;
+  profile.farmCep = payload.farmCep;
+  profile.gateLatitude = payload.gateLatitude;
+  profile.gateLongitude = payload.gateLongitude;
+  profile.isCepValidated = payload.isCepValidated;
+  profile.isGatePinConfirmed = payload.isGatePinConfirmed;
+  profile.locationValidatedAt = payload.locationValidatedAt;
+  profile.bio = payload.bio;
+  void persistCommunityStore();
+};
+
 export const setProfileAvatar = (name: string, uri: string) => {
   const profile = getProfile(name);
   profile.avatarUri = uri;
+  void persistCommunityStore();
 };
 
 export const addFarmPhoto = (name: string, uri: string): { ok: boolean; reason?: string } => {
@@ -155,12 +329,14 @@ export const addFarmPhoto = (name: string, uri: string): { ok: boolean; reason?:
     return { ok: false, reason: 'max' };
   }
   profile.farmPhotos.push(uri);
+  void persistCommunityStore();
   return { ok: true };
 };
 
 export const removeFarmPhoto = (name: string, uri: string) => {
   const profile = getProfile(name);
   profile.farmPhotos = profile.farmPhotos.filter((item) => item !== uri);
+  void persistCommunityStore();
 };
 
 export const addReview = (
@@ -173,6 +349,7 @@ export const addReview = (
     id: Math.random().toString(36).slice(2),
     date: new Date().toISOString().slice(0, 10),
   });
+  void persistCommunityStore();
 };
 
 export const getReviews = (name: string) => [...getProfile(name).reviews];
@@ -199,4 +376,5 @@ export const addCertificate = (
     ...payload,
     id: Math.random().toString(36).slice(2),
   });
+  void persistCommunityStore();
 };
