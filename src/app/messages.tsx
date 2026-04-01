@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -15,16 +15,19 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  BackHandler,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useFocusEffect } from "@react-navigation/native";
 import { SurfaceCard } from "../components/SurfaceCard";
 import {
   addReview,
   getAverageRating,
   getFarmPhotos,
+  getProfileAvatar,
   getReviews,
 } from "../services/communityStore";
 
@@ -152,6 +155,60 @@ const CONVERSAS_INICIAIS: ContactConversation[] = [
       },
     ],
   },
+  {
+    id: "c4",
+    nome: "Sítio Boa Terra",
+    status: "Produtor Agroecológico - Online",
+    unread: 1,
+    mensagens: [
+      {
+        id: "1",
+        texto: "Tenho composto peneirado pronto para retirada hoje.",
+        remetente: "other",
+        hora: "11:42",
+      },
+      {
+        id: "2",
+        texto: "Perfeito, consegue separar 8 sacos de 50kg?",
+        remetente: "me",
+        hora: "11:48",
+      },
+    ],
+  },
+  {
+    id: "c5",
+    nome: "Sítio Vale Azul",
+    status: "Produtor Rural - Online",
+    unread: 0,
+    mensagens: [
+      {
+        id: "1",
+        texto: "Cama de aviário curtida disponível, lote com laudo atualizado.",
+        remetente: "other",
+        hora: "Ontem",
+      },
+    ],
+  },
+  {
+    id: "c6",
+    nome: "Sítio Nova Raiz",
+    status: "Agricultor Familiar - Offline",
+    unread: 2,
+    mensagens: [
+      {
+        id: "1",
+        texto: "Tenho húmus de minhoca e composto maturado para essa semana.",
+        remetente: "other",
+        hora: "08:15",
+      },
+      {
+        id: "2",
+        texto: "Quero fechar 12 sacos. Você entrega em Anápolis?",
+        remetente: "me",
+        hora: "08:27",
+      },
+    ],
+  },
 ];
 
 function getInitials(name: string): string {
@@ -161,8 +218,20 @@ function getInitials(name: string): string {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 }
 
+function normalizeText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 export default function MessagesScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    sellerName?: string | string[];
+    productName?: string | string[];
+  }>();
   const tabBarHeight = useBottomTabBarHeight();
   const [conversas, setConversas] = useState(CONVERSAS_INICIAIS);
   const [conversaAtivaId, setConversaAtivaId] = useState<string | null>(null);
@@ -175,6 +244,16 @@ export default function MessagesScreen() {
   const [comment, setComment] = useState("");
   const [refresh, setRefresh] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [showConfirmCloseModal, setShowConfirmCloseModal] = useState(false);
+  const [negotiatedItem, setNegotiatedItem] = useState<string | null>(null);
+  const lastAutoOpenKeyRef = useRef<string | null>(null);
+
+  const routeSellerName = Array.isArray(params.sellerName)
+    ? params.sellerName[0]
+    : params.sellerName;
+  const routeProductName = Array.isArray(params.productName)
+    ? params.productName[0]
+    : params.productName;
 
   const conversaAtual = useMemo(() => {
     if (!conversaAtivaId) return null;
@@ -198,6 +277,8 @@ export default function MessagesScreen() {
   }, [conversas, searchQuery]);
 
   const sellerPhotos = sellerName ? getFarmPhotos(sellerName) : [];
+  const sellerAvatarUri = sellerName ? getProfileAvatar(sellerName) : null;
+  const sellerHeaderPhotoUri = sellerAvatarUri || sellerPhotos[0] || null;
   const sellerReviews = sellerName ? getReviews(sellerName) : [];
   const sellerRating = sellerName ? getAverageRating(sellerName) : 0;
 
@@ -218,12 +299,64 @@ export default function MessagesScreen() {
 
   useEffect(() => {
     setDealClosed(false);
-    setNovaMensagem("");
+    if (!conversaAtivaId) {
+      setNovaMensagem("");
+    }
     if (conversaAtivaId) {
       setIsSearchOpen(false);
       setSearchQuery("");
     }
   }, [conversaAtivaId]);
+
+  useEffect(() => {
+    if (!routeSellerName || !routeProductName) {
+      return;
+    }
+
+    const normalizedSeller = normalizeText(routeSellerName);
+    if (!normalizedSeller) {
+      return;
+    }
+
+    const autoOpenKey = `${normalizedSeller}|${normalizeText(routeProductName)}`;
+    if (lastAutoOpenKeyRef.current === autoOpenKey) {
+      return;
+    }
+
+    const existingConversation = conversas.find(
+      (item) => normalizeText(item.nome) === normalizedSeller,
+    );
+
+    const prefilledMessage = `*${routeProductName}* ainda esta disponivel?`;
+
+    if (existingConversation) {
+      setConversaAtivaId(existingConversation.id);
+      setConversas((prev) =>
+        prev.map((item) =>
+          item.id === existingConversation.id ? { ...item, unread: 0 } : item,
+        ),
+      );
+      setNovaMensagem(prefilledMessage);
+      setNegotiatedItem(routeProductName);
+      lastAutoOpenKeyRef.current = autoOpenKey;
+      return;
+    }
+
+    const newConversationId = `c${Date.now()}`;
+    const newConversation: ContactConversation = {
+      id: newConversationId,
+      nome: routeSellerName,
+      status: "Vendedor - Online",
+      unread: 0,
+      mensagens: [],
+    };
+
+    setConversas((prev) => [newConversation, ...prev]);
+    setConversaAtivaId(newConversationId);
+    setNovaMensagem(prefilledMessage);
+    setNegotiatedItem(routeProductName);
+    lastAutoOpenKeyRef.current = autoOpenKey;
+  }, [conversas, routeProductName, routeSellerName]);
 
   const inputBottomOffset = isKeyboardVisible
     ? 0
@@ -244,6 +377,25 @@ export default function MessagesScreen() {
 
     setConversaAtivaId(null);
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS !== "android") {
+        return undefined;
+      }
+
+      const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (conversaAtual) {
+          voltarParaLista();
+        } else {
+          router.replace("/home");
+        }
+        return true;
+      });
+
+      return () => subscription.remove();
+    }, [conversaAtual, dealClosed, router]),
+  );
 
   const enviarMensagem = () => {
     if (!conversaAtivaId || novaMensagem.trim() === "") return;
@@ -276,10 +428,12 @@ export default function MessagesScreen() {
       role: "cliente",
       stars,
       comment: comment.trim(),
+      ...(negotiatedItem && { negotiatedItem }),
     });
 
     setComment("");
     setStars(5);
+    setNegotiatedItem(null);
     setRefresh((prev) => prev + 1);
     Alert.alert("Sucesso", "Avaliacao publicada!", [{ text: "OK" }]);
     setDealClosed(false);
@@ -321,15 +475,22 @@ export default function MessagesScreen() {
 
   const renderConversation = ({ item }: { item: ContactConversation }) => {
     const lastMessage = item.mensagens[item.mensagens.length - 1];
+    const contactAvatarUri = getProfileAvatar(item.nome);
+    const contactPhotos = getFarmPhotos(item.nome);
+    const contactPhoto = contactAvatarUri || contactPhotos[0] || null;
 
     return (
       <TouchableOpacity
         style={styles.conversationRow}
         onPress={() => abrirConversa(item.id)}
       >
-        <View style={styles.avatarCircle}>
-          <Text style={styles.avatarText}>{getInitials(item.nome)}</Text>
-        </View>
+        {contactPhoto ? (
+          <Image source={{ uri: contactPhoto }} style={styles.avatarImage} />
+        ) : (
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarText}>{getInitials(item.nome)}</Text>
+          </View>
+        )}
 
         <View style={styles.conversationContent}>
           <View style={styles.conversationTopLine}>
@@ -368,6 +529,16 @@ export default function MessagesScreen() {
             <Ionicons name="arrow-back" size={24} color={theme.colors.white} />
           </TouchableOpacity>
 
+          {conversaAtual ? (
+            sellerHeaderPhotoUri ? (
+              <Image source={{ uri: sellerHeaderPhotoUri }} style={styles.headerAvatarImage} />
+            ) : (
+              <View style={styles.headerAvatarFallback}>
+                <Text style={styles.headerAvatarFallbackText}>{getInitials(conversaAtual.nome)}</Text>
+              </View>
+            )
+          ) : null}
+
           <View style={styles.headerTitleContainer}>
             <Text style={styles.headerTitle}>
               {conversaAtual ? conversaAtual.nome : "Mensagens"}
@@ -385,7 +556,7 @@ export default function MessagesScreen() {
                 styles.closeDealButton,
                 dealClosed && styles.closeDealButtonDisabled,
               ]}
-              onPress={() => setDealClosed(true)}
+              onPress={() => setShowConfirmCloseModal(true)}
               disabled={dealClosed}
             >
               <Ionicons
@@ -555,6 +726,11 @@ export default function MessagesScreen() {
                   <Text style={styles.reviewMeta}>
                     {item.author} - {item.role} - {item.date}
                   </Text>
+                  {item.negotiatedItem ? (
+                    <Text style={styles.negotiatedItemText}>
+                      Negociado: {item.negotiatedItem}
+                    </Text>
+                  ) : null}
                   <Text style={styles.reviewStars}>
                     {"*".repeat(item.stars)}
                     {".".repeat(5 - item.stars)}
@@ -577,6 +753,34 @@ export default function MessagesScreen() {
           ) : null}
         </View>
       </Modal>
+
+      <Modal visible={showConfirmCloseModal} transparent animationType="fade">
+        <View style={styles.confirmModalOverlay}>
+          <View style={styles.confirmModalContent}>
+            <Text style={styles.confirmModalTitle}>Fechar negocio?</Text>
+            <Text style={styles.confirmModalSubtitle}>
+              Voce deseja confirmar e avaliar esta negociacao?
+            </Text>
+            <View style={styles.confirmModalButtonRow}>
+              <TouchableOpacity
+                style={[styles.confirmModalButton, styles.confirmModalButtonCancel]}
+                onPress={() => setShowConfirmCloseModal(false)}
+              >
+                <Text style={styles.confirmModalButtonTextCancel}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmModalButton, styles.confirmModalButtonConfirm]}
+                onPress={() => {
+                  setShowConfirmCloseModal(false);
+                  setDealClosed(true);
+                }}
+              >
+                <Text style={styles.confirmModalButtonTextConfirm}>Confirmar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -596,6 +800,30 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(255,255,255,0.2)",
   },
   backButton: { padding: 8, marginRight: 8 },
+  headerAvatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.45)",
+  },
+  headerAvatarFallback: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+    backgroundColor: "rgba(255,255,255,0.22)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.4)",
+  },
+  headerAvatarFallbackText: {
+    color: theme.colors.white,
+    fontSize: 13,
+    fontWeight: "700",
+  },
   headerTitleContainer: { flex: 1 },
   headerTitle: { fontSize: 18, fontWeight: "bold", color: theme.colors.white },
   headerSubtitle: { fontSize: 12, color: theme.colors.white, opacity: 0.9 },
@@ -654,6 +882,12 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.gray_100,
     alignItems: "center",
     justifyContent: "center",
+    marginRight: 12,
+  },
+  avatarImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     marginRight: 12,
   },
   avatarText: { color: theme.colors.gray_800, fontWeight: "700", fontSize: 14 },
@@ -800,6 +1034,13 @@ const styles = StyleSheet.create({
   reviewMeta: { fontSize: 11, color: theme.colors.gray_500 },
   reviewStars: { fontSize: 12, color: theme.colors.primary, marginTop: 2 },
   reviewComment: { fontSize: 13, color: theme.colors.gray_800, marginTop: 2 },
+  negotiatedItemText: {
+    fontSize: 12,
+    color: theme.colors.primary,
+    fontWeight: "600",
+    marginTop: 6,
+    marginBottom: 4,
+  },
 
   modalOverlay: {
     flex: 1,
@@ -815,4 +1056,62 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   fullImage: { width: "94%", height: "82%" },
+
+  confirmModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmModalContent: {
+    backgroundColor: theme.colors.white,
+    borderRadius: 12,
+    padding: 20,
+    width: "80%",
+    maxWidth: 300,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+  },
+  confirmModalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: theme.colors.gray_900,
+    marginBottom: 8,
+  },
+  confirmModalSubtitle: {
+    fontSize: 14,
+    color: theme.colors.gray_500,
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  confirmModalButtonRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  confirmModalButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmModalButtonCancel: {
+    backgroundColor: theme.colors.gray_200,
+  },
+  confirmModalButtonConfirm: {
+    backgroundColor: theme.colors.primary,
+  },
+  confirmModalButtonTextCancel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.colors.gray_800,
+  },
+  confirmModalButtonTextConfirm: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.colors.white,
+  },
 });

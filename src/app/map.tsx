@@ -67,6 +67,8 @@ const PONTOS_LOGISTICOS = [
   },
 ];
 
+type LogisticPoint = (typeof PONTOS_LOGISTICOS)[number];
+
 const toRadians = (value: number) => (value * Math.PI) / 180;
 
 export default function MapScreen() {
@@ -87,6 +89,7 @@ export default function MapScreen() {
   const [activeResultIndex, setActiveResultIndex] = useState(0);
   const [iosNavigatorPosition, setIosNavigatorPosition] =
     useState<{ x: number; y: number } | null>(null);
+  const [dynamicProfilePoints, setDynamicProfilePoints] = useState<LogisticPoint[]>([]);
   const [selectedAndroidPoint, setSelectedAndroidPoint] =
     useState<(typeof PONTOS_LOGISTICOS)[number] | null>(null);
   const [androidCardPosition, setAndroidCardPosition] = useState<{ x: number; y: number } | null>(
@@ -141,19 +144,114 @@ export default function MapScreen() {
 
   const keyword = normalizeSearch(searchKeyword);
   const keywordTokens = keyword ? keyword.split(" ").filter(Boolean) : [];
+  const tokenize = (value: string) =>
+    normalizeSearch(value)
+      .split(" ")
+      .filter((token) => token.length > 2);
+
+  const CONTEXT_STOPWORDS = new Set([
+    "disponivel",
+    "disponiveis",
+    "para",
+    "com",
+    "sem",
+    "ton",
+    "tonelada",
+    "toneladas",
+    "kg",
+    "rica",
+    "rico",
+    "solo",
+    "imediata",
+  ]);
+
   const marketplaceBySeller = MARKETPLACE_OPPORTUNITIES.reduce<
-    Record<string, Array<{ raw: string; normalized: string }>>
+    Record<string, Array<{ id: string; raw: string; normalized: string; tokens: string[] }>>
   >(
     (acc, item) => {
       const key = normalizeSearch(item.vendedor);
       acc[key] = [
         ...(acc[key] || []),
-        { raw: item.produto, normalized: normalizeSearch(item.produto) },
+        {
+          id: item.id,
+          raw: item.produto,
+          normalized: normalizeSearch(item.produto),
+          tokens: tokenize(item.produto),
+        },
       ];
       return acc;
     },
     {},
   );
+
+  const allLogisticPoints = useMemo(() => {
+    const merged = [...PONTOS_LOGISTICOS, ...dynamicProfilePoints];
+    const byTitle = new Map<string, LogisticPoint>();
+
+    merged.forEach((point) => {
+      const key = normalizeSearch(point.titulo);
+      if (!byTitle.has(key)) {
+        byTitle.set(key, point);
+      }
+    });
+
+    return Array.from(byTitle.values());
+  }, [dynamicProfilePoints]);
+
+  const getMarketplaceOpportunityId = (ponto: (typeof PONTOS_LOGISTICOS)[number]) => {
+    const title = normalizeSearch(ponto.titulo);
+    const description = normalizeSearch(ponto.descricao);
+    const sellerEntry = Object.entries(marketplaceBySeller).find(([seller]) =>
+      seller.includes(title) || title.includes(seller),
+    );
+
+    if (!sellerEntry || sellerEntry[1].length === 0) return null;
+
+    const contextTokens = [
+      ...tokenize(ponto.titulo),
+      ...tokenize(ponto.descricao),
+    ].filter((token) => !CONTEXT_STOPWORDS.has(token));
+
+    let bestProduct = sellerEntry[1][0];
+    let bestScore = -1;
+
+    sellerEntry[1].forEach((product) => {
+      let score = 0;
+
+      if (keywordTokens.length > 0) {
+        const keywordMatches = keywordTokens.filter((token) => product.normalized.includes(token)).length;
+        score += keywordMatches * 30;
+        if (keywordMatches === keywordTokens.length) {
+          score += 80;
+        }
+      }
+
+      const contextMatches = product.tokens.filter((token) => contextTokens.includes(token)).length;
+      score += contextMatches * 10;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestProduct = product;
+      }
+    });
+
+    return bestProduct.id;
+  };
+
+  const openMarketplaceFromPoint = (ponto: (typeof PONTOS_LOGISTICOS)[number]) => {
+    const highlight = getMarketplaceOpportunityId(ponto);
+    const params: any = {};
+    
+    if (highlight) {
+      params.highlight = highlight;
+    }
+    
+    if (ponto.tipo === "fazenda") {
+      params.filterByVendor = ponto.titulo;
+    }
+    
+    router.push({ pathname: "/profile", params });
+  };
 
   const getMatchedProductLabel = (ponto: (typeof PONTOS_LOGISTICOS)[number]) => {
     if (!keywordTokens.length) return null;
@@ -174,7 +272,7 @@ export default function MapScreen() {
     return foundProduct?.raw ?? null;
   };
 
-  const filteredPoints = PONTOS_LOGISTICOS.filter((ponto) => {
+  const filteredPoints = allLogisticPoints.filter((ponto) => {
     if (!keywordTokens.length) return true;
 
     const title = normalizeSearch(ponto.titulo);
@@ -225,7 +323,7 @@ export default function MapScreen() {
   };
 
   const orderedSearchResults = useMemo(() => {
-    if (!keywordTokens.length) return [] as typeof PONTOS_LOGISTICOS;
+    if (!keywordTokens.length) return [] as LogisticPoint[];
 
     return [...filteredPoints].sort((a, b) => getDistanceScore(a.coords) - getDistanceScore(b.coords));
   }, [filteredPoints, keyword, localUsuario]);
@@ -281,6 +379,28 @@ export default function MapScreen() {
   useEffect(() => {
     async function obterPermissaoLocal() {
       await initCommunityStore();
+
+      const uniqueSellerPoints = new Map<string, LogisticPoint>();
+      MARKETPLACE_OPPORTUNITIES.forEach((item, index) => {
+        const sellerSummary = getProfileSummary(item.vendedor);
+        if (sellerSummary.gateLatitude == null || sellerSummary.gateLongitude == null) return;
+
+        const sellerKey = normalizeSearch(item.vendedor);
+        if (uniqueSellerPoints.has(sellerKey)) return;
+
+        uniqueSellerPoints.set(sellerKey, {
+          id: 1000 + index,
+          tipo: "fazenda",
+          titulo: item.vendedor,
+          descricao: `Disponível: ${item.produto}`,
+          coords: {
+            latitude: sellerSummary.gateLatitude,
+            longitude: sellerSummary.gateLongitude,
+          },
+        });
+      });
+      setDynamicProfilePoints(Array.from(uniqueSellerPoints.values()));
+
       const summary = getProfileSummary(profileName);
       if (summary.gateLatitude != null && summary.gateLongitude != null) {
         setMyFarmGate({ latitude: summary.gateLatitude, longitude: summary.gateLongitude });
@@ -400,6 +520,8 @@ export default function MapScreen() {
           (() => {
             const matchedProduct = getMatchedProductLabel(ponto);
             const isActiveResult = activeResultId === ponto.id;
+            const trustSummary = ponto.tipo === "fazenda" ? getProfileSummary(ponto.titulo) : null;
+            const isFullyValidated = Boolean(trustSummary?.isCepValidated && trustSummary?.isGatePinConfirmed);
             const distanceLabel = formatDistanceLabel(ponto.coords);
             const markerDescription = matchedProduct
               ? `${ponto.descricao}\n${distanceLabel}\nProduto encontrado: ${matchedProduct}${ponto.tipo === "fazenda" ? "\nToque para ver oportunidades" : ""}`
@@ -419,7 +541,9 @@ export default function MapScreen() {
                 ? theme.colors.orange_500
                 : ponto.tipo === "armazem"
                 ? theme.colors.brown_500
-                : theme.colors.primary
+                : isFullyValidated
+                ? theme.colors.primary
+                : theme.colors.gray_500
             }
             onPress={() => {
               if (Platform.OS === "android") {
@@ -428,11 +552,30 @@ export default function MapScreen() {
             }}
           >
             {Platform.OS === "ios" ? (
-              <Callout tooltip={true}>
+              <Callout
+                tooltip={true}
+                onPress={() => {
+                  if (ponto.tipo === "fazenda") {
+                    openMarketplaceFromPoint(ponto);
+                  }
+                }}
+              >
                 <SurfaceCard style={styles.customCallout} bordered={false}>
                   <Text style={styles.calloutTitle}>{ponto.titulo}</Text>
                   <Text style={styles.calloutDesc}>{ponto.descricao}</Text>
                   <Text style={styles.calloutDistance}>{distanceLabel}</Text>
+                  {ponto.tipo === "fazenda" ? (
+                    <View style={[styles.trustMarkerBadge, isFullyValidated ? styles.trustMarkerBadgeOk : styles.trustMarkerBadgeWarn]}>
+                      <Ionicons
+                        name={isFullyValidated ? "shield-checkmark" : "alert-circle-outline"}
+                        size={12}
+                        color={theme.colors.white}
+                      />
+                      <Text style={styles.trustMarkerBadgeText}>
+                        {isFullyValidated ? "Perfil validado (CEP + Porteira)" : "Perfil sem validação completa"}
+                      </Text>
+                    </View>
+                  ) : null}
                   {matchedProduct ? (
                     <View style={styles.matchedProductBadge}>
                       <Ionicons name="search" size={12} color={theme.colors.white} />
@@ -440,13 +583,7 @@ export default function MapScreen() {
                     </View>
                   ) : null}
                   {ponto.tipo === "fazenda" ? (
-                    <View
-                      style={styles.calloutButton}
-                      onStartShouldSetResponder={() => true}
-                      onResponderRelease={() => {
-                        router.push("/profile");
-                      }}
-                    >
+                    <View style={styles.calloutButton}>
                       <Text style={styles.calloutButtonText}>Ver Oportunidades</Text>
                     </View>
                   ) : null}
@@ -566,6 +703,12 @@ export default function MapScreen() {
       ) : null}
 
       {Platform.OS === "android" && selectedAndroidPoint && androidCardPosition ? (
+        (() => {
+          const selectedTrust =
+            selectedAndroidPoint.tipo === "fazenda" ? getProfileSummary(selectedAndroidPoint.titulo) : null;
+          const selectedValidated = Boolean(selectedTrust?.isCepValidated && selectedTrust?.isGatePinConfirmed);
+
+          return (
         <View
           onLayout={(event) => {
             const nextHeight = event.nativeEvent.layout.height;
@@ -590,6 +733,19 @@ export default function MapScreen() {
           <Text style={[styles.calloutDistance, styles.androidCalloutDistance]}>
             {formatDistanceLabel(selectedAndroidPoint.coords)}
           </Text>
+
+          {selectedAndroidPoint.tipo === "fazenda" ? (
+            <View style={[styles.trustMarkerBadge, selectedValidated ? styles.trustMarkerBadgeOk : styles.trustMarkerBadgeWarn, styles.androidTrustMarkerBadge]}>
+              <Ionicons
+                name={selectedValidated ? "shield-checkmark" : "alert-circle-outline"}
+                size={12}
+                color={theme.colors.white}
+              />
+              <Text style={styles.trustMarkerBadgeText}>
+                {selectedValidated ? "Perfil validado" : "Validação pendente"}
+              </Text>
+            </View>
+          ) : null}
 
           {keywordTokens.length > 0 && orderedSearchResults.length > 0 && activeResultId === selectedAndroidPoint.id ? (
             <View style={styles.calloutNavigatorWrap}>
@@ -631,7 +787,7 @@ export default function MapScreen() {
               onPress={() => {
                 setSelectedAndroidPoint(null);
                 setAndroidCardPosition(null);
-                router.push("/profile");
+                openMarketplaceFromPoint(selectedAndroidPoint);
               }}
             >
               <Text style={[styles.calloutButtonText, styles.androidCalloutButtonText]}>
@@ -640,6 +796,8 @@ export default function MapScreen() {
             </TouchableOpacity>
           ) : null}
         </View>
+          );
+        })()
       ) : null}
     </View>
   );
@@ -834,6 +992,34 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
     flexShrink: 1,
+  },
+  trustMarkerBadge: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    marginBottom: 10,
+  },
+  trustMarkerBadgeOk: {
+    backgroundColor: theme.colors.primary,
+  },
+  trustMarkerBadgeWarn: {
+    backgroundColor: theme.colors.orange_500,
+  },
+  trustMarkerBadgeText: {
+    color: theme.colors.white,
+    fontSize: 11,
+    fontWeight: "700",
+    textAlign: "center",
+    flexShrink: 1,
+  },
+  androidTrustMarkerBadge: {
+    marginBottom: 7,
+    paddingVertical: 5,
   },
   calloutButtonText: { color: "#FFF", fontSize: 14, fontWeight: "bold" },
   androidPinCard: {

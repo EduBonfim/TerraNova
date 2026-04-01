@@ -10,6 +10,7 @@ import {
   StatusBar,
   Modal,
   Pressable,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -62,6 +63,7 @@ export default function HomeScreen() {
   const [profileSummary, setProfileSummary] = useState(() => getProfileSummary(profileName));
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>(getNotifications());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -108,6 +110,21 @@ export default function HomeScreen() {
     router.push("/notifications");
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Simular delay de requisição
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Recarregar dados
+      await initCommunityStore();
+      setProfileSummary(getProfileSummary(profileName));
+      setNotifications(getNotifications());
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <StatusBar
@@ -118,6 +135,14 @@ export default function HomeScreen() {
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+          />
+        }
       >
         {/* --- CABEÇALHO DO USUÁRIO --- */}
         <View style={styles.header}>
@@ -221,11 +246,11 @@ export default function HomeScreen() {
               <View style={styles.actionIconCircle}>
                 <Ionicons
                   name="add-circle"
-                  size={30}
+                  size={40}
                   color={theme.colors.primary}
                 />
               </View>
-              <Text style={styles.actionText}>Postar Insumo</Text>
+              <Text style={styles.actionText}>Postar Insumo/Colheita</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -233,23 +258,9 @@ export default function HomeScreen() {
               onPress={() => router.push("/scan")}
             >
               <View style={styles.actionIconCircle}>
-                <Ionicons name="scan" size={30} color={theme.colors.primary} />
+                <Ionicons name="scan" size={40} color={theme.colors.primary} />
               </View>
               <Text style={styles.actionText}>Análise de Solo</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => router.push("/profile")}
-            >
-              <View style={styles.actionIconCircle}>
-                <Ionicons
-                  name="basket"
-                  size={30}
-                  color={theme.colors.primary}
-                />
-              </View>
-              <Text style={styles.actionText}>Vender Colheita</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -464,27 +475,28 @@ const styles = StyleSheet.create({
   alertDesc: { fontSize: 13, color: theme.colors.gray_500, marginTop: 2 },
 
   // Ações Rápidas
-  actionsGrid: { flexDirection: "row", justifyContent: "space-between" },
-  actionButton: { alignItems: "center", width: "30%" },
+  actionsGrid: { flexDirection: "row", justifyContent: "space-between", gap: 12 },
+  actionButton: { alignItems: "center", flex: 1 },
   actionIconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: theme.colors.white,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: theme.colors.lightGreen,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 8,
-    elevation: 2,
+    marginBottom: 12,
+    elevation: 3,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
   },
   actionText: {
-    fontSize: 12,
+    fontSize: 14,
     color: theme.colors.gray_900,
     textAlign: "center",
-    fontWeight: "500",
+    fontWeight: "600",
+    lineHeight: 20,
   },
 
   // Notícias

@@ -1,15 +1,18 @@
-import React, { type ReactNode } from "react";
+import React, { useCallback, useMemo, type ReactNode } from "react";
 import {
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
   Platform,
+  PanResponder,
+  BackHandler,
   type StyleProp,
   type TextStyle,
   type ViewStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 
 // Cabecalho reutilizavel para telas do app com acessorios opcionais e controle de alinhamento.
 export type AppHeaderProps = {
@@ -31,6 +34,7 @@ export type AppHeaderProps = {
   // Alinhamento do titulo dentro do container de texto.
   titleAlign?: "left" | "center";
   // Sobrescritas opcionais de estilo.
+  titleStyle?: StyleProp<TextStyle>;
   subtitleStyle?: StyleProp<TextStyle>;
   containerStyle?: StyleProp<ViewStyle>;
 };
@@ -61,9 +65,45 @@ export function AppHeader({
   leftAccessory,
   rightAccessory,
   titleAlign = "left",
+  titleStyle,
   subtitleStyle,
   containerStyle,
 }: AppHeaderProps) {
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS !== "android" || !showBackButton) {
+        return undefined;
+      }
+
+      const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+        onBackPress();
+        return true;
+      });
+
+      return () => subscription.remove();
+    }, [onBackPress, showBackButton]),
+  );
+
+  const swipeBackResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+          if (Platform.OS !== "ios") return false;
+          const horizontalIntent = Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+          return horizontalIntent && gestureState.dx > 10;
+        },
+        onPanResponderRelease: (event, gestureState) => {
+          if (Platform.OS !== "ios") return;
+          const startedFromLeftEdge = event.nativeEvent.pageX <= 36;
+          const shouldGoBack = startedFromLeftEdge && gestureState.dx > 70 && Math.abs(gestureState.dy) < 30;
+          if (shouldGoBack) {
+            onBackPress();
+          }
+        },
+      }),
+    [onBackPress],
+  );
+
   return (
     <View
       style={[
@@ -77,6 +117,7 @@ export function AppHeader({
         },
         containerStyle,
       ]}
+      {...(Platform.OS === "ios" ? swipeBackResponder.panHandlers : {})}
     >
       {showBackButton ? (
         <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
@@ -91,6 +132,7 @@ export function AppHeader({
           style={[
             styles.headerTitle,
             { color: textColor, textAlign: titleAlign },
+            titleStyle,
           ]}
         >
           {title}

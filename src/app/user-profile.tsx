@@ -6,6 +6,7 @@ import {
   ScrollView,
   Image,
   StatusBar,
+  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,6 +18,7 @@ import {
   getProfile,
   getReviews,
 } from "../services/communityStore";
+import { MARKETPLACE_OPPORTUNITIES } from "../services/marketplaceStore";
 
 const theme = {
   colors: {
@@ -31,6 +33,14 @@ const theme = {
   },
 };
 
+function normalizeText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 export default function UserProfileScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ name?: string }>();
@@ -39,6 +49,10 @@ export default function UserProfileScreen() {
   const profile = getProfile(name);
   const rating = getAverageRating(name);
   const reviews = getReviews(name);
+
+  const userListings = MARKETPLACE_OPPORTUNITIES.filter(
+    (item) => normalizeText(item.vendedor) === normalizeText(name)
+  );
 
   const formatValidationTimestamp = (value?: string) => {
     if (!value) return "Nao validado";
@@ -111,17 +125,40 @@ export default function UserProfileScreen() {
         </SurfaceCard>
 
         <SurfaceCard style={styles.card}>
-          <Text style={styles.sectionTitle}>Itens para venda/doação</Text>
-          {profile.listings.length === 0 ? (
-            <Text style={styles.emptyText}>Sem itens cadastrados.</Text>
+          <Text style={styles.sectionTitle}>Itens à venda</Text>
+          {userListings.length === 0 ? (
+            <Text style={styles.emptyText}>Sem itens disponíveis no mercado.</Text>
           ) : null}
-          {profile.listings.map((item) => (
-            <View key={item.id} style={styles.rowItem}>
-              <Text style={styles.itemTitle}>{item.title}</Text>
-              <Text style={styles.badge}>
-                {item.type === "venda" ? item.price || "Venda" : "Doação"}
-              </Text>
-            </View>
+          {userListings.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.listingCard}
+              onPress={() => {}}
+            >
+              <Image source={{ uri: item.foto }} style={styles.listingImage} />
+              <View style={styles.listingContent}>
+                <View style={styles.listingHeader}>
+                  <Ionicons name={item.icone} size={18} color={theme.colors.primary} />
+                  <Text style={styles.listingTitle}>{item.produto}</Text>
+                </View>
+                <Text style={styles.listingPrice}>{item.preco}</Text>
+                <Text style={styles.listingStock}>{item.estoque}</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.negotiateButton}
+                onPress={() =>
+                  router.push({
+                    pathname: "/messages",
+                    params: {
+                      sellerName: item.vendedor,
+                      productName: item.produto,
+                    },
+                  })
+                }
+              >
+                <Text style={styles.negotiateButtonText}>Negociar</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
           ))}
         </SurfaceCard>
 
@@ -266,6 +303,68 @@ const styles = StyleSheet.create({
 
   amount: {
     color: theme.colors.gray_500,
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+
+  listingCard: {
+    flexDirection: "row",
+    backgroundColor: theme.colors.white,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.gray_200,
+  },
+
+  listingImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+
+  listingContent: {
+    flex: 1,
+  },
+
+  listingHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 4,
+  },
+
+  listingTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.colors.gray_900,
+    flex: 1,
+  },
+
+  listingPrice: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: theme.colors.primary,
+    marginBottom: 2,
+  },
+
+  listingStock: {
+    fontSize: 12,
+    color: theme.colors.gray_500,
+  },
+
+  negotiateButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+
+  negotiateButtonText: {
+    color: theme.colors.white,
     fontSize: 12,
     fontWeight: "bold",
   },

@@ -21,6 +21,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import MapView, { Marker, type MapPressEvent } from "react-native-maps";
 import { AppHeader } from "../components/AppHeader";
+import { useAuth } from "../contexts/AuthContext";
 import {
   addFarmPhoto,
   getFarmPhotos,
@@ -103,6 +104,7 @@ const parseAdSubtitle = (subtitle: string) => {
 
 export default function AccountScreen() {
   const profileName = "Pedro Paulo";
+  const { logout } = useAuth();
   const summary = getProfileSummary(profileName);
   const [displayName, setDisplayName] = useState(summary.displayName);
   const [farmName, setFarmName] = useState(summary.farmName);
@@ -629,7 +631,7 @@ export default function AccountScreen() {
       <AppHeader
         title="Meu Perfil"
         onBackPress={() => router.replace("/home")}
-        showBackButton={false}
+        showBackButton={true}
         titleAlign="center"
         backgroundColor={theme.colors.primary}
         textColor={theme.colors.white}
@@ -793,7 +795,10 @@ export default function AccountScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Definições</Text>
 
-          <TouchableOpacity style={styles.settingsRow}>
+          <TouchableOpacity
+            style={styles.settingsRow}
+            onPress={() => router.push("/soil-reports")}
+          >
             <Ionicons
               name="document-text-outline"
               size={22}
@@ -859,7 +864,26 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={() => router.replace("/")}>
+        <TouchableOpacity 
+          style={styles.logoutButton} 
+          onPress={() => {
+            Alert.alert(
+              "Confirmar",
+              "Tem certeza que deseja sair da sua conta?",
+              [
+                { text: "Cancelar", onPress: () => {}, style: "cancel" },
+                {
+                  text: "Sair",
+                  onPress: async () => {
+                    await logout();
+                    router.replace("/");
+                  },
+                  style: "destructive",
+                },
+              ],
+            );
+          }}
+        >
           <Ionicons name="log-out-outline" size={20} color={theme.colors.red_500} />
           <Text style={styles.logoutText}>Sair da Conta</Text>
         </TouchableOpacity>

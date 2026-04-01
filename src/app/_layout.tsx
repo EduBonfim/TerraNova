@@ -1,6 +1,8 @@
+import React from "react";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Platform } from "react-native";
+import { Platform, View, ActivityIndicator } from "react-native";
+import { AuthProvider, useAuth } from "../contexts/AuthContext";
 
 const IOS_TAB_BAR = {
   height: 70,
@@ -27,7 +29,7 @@ const ANDROID_TOP_SCREEN = {
 const CURRENT_TOP_SCREEN =
   Platform.OS === "ios" ? IOS_TOP_SCREEN : ANDROID_TOP_SCREEN;
 
-export default function AppLayout() {
+function AppLayoutTabs() {
   return (
     <Tabs
       screenOptions={{
@@ -192,6 +194,36 @@ export default function AppLayout() {
           tabBarStyle: { display: "none" },
         }}
       />
+
+      <Tabs.Screen
+        name="soil-reports"
+        options={{
+          href: null,
+          tabBarStyle: { display: "none" },
+        }}
+      />
     </Tabs>
   );
+}
+
+export default function AppLayout() {
+  return (
+    <AuthProvider>
+      <AppLayoutContent />
+    </AuthProvider>
+  );
+}
+
+function AppLayoutContent() {
+  const { isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#FFFFFF" }}>
+        <ActivityIndicator size="large" color="#6B8E23" />
+      </View>
+    );
+  }
+
+  return <AppLayoutTabs />;
 }

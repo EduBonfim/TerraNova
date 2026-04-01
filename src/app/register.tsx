@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { AppHeader } from "../components/AppHeader";
 import { initAuthStore, registerUser } from "../services/authStore";
+import { useAuth } from "../contexts/AuthContext";
 
 // 🎨 PALETA OFICIAL TERRA NOVA
 const theme = {

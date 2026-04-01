@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   View,
@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { authenticateUser, initAuthStore } from "../services/authStore";
+import { useAuth } from "../contexts/AuthContext";
 
 // 🎨 PALETA OFICIAL TERRA NOVA
 const theme = {
@@ -49,26 +49,13 @@ const sanitizePasswordInput = (value: string) =>
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { login: authLogin } = useAuth();
   const [login, setLogin] = useState("");
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
-  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      await initAuthStore();
-      setIsAuthReady(true);
-    };
-
-    load();
-  }, []);
-
-  const fazerLogin = () => {
-    if (!isAuthReady) {
-      Alert.alert("Aguarde", "Carregando dados de acesso...");
-      return;
-    }
-
+  const fazerLogin = async () => {
     const user = login.trim();
     const password = senha.trim();
 
@@ -77,7 +64,10 @@ export default function LoginScreen() {
       return;
     }
 
-    const authUser = authenticateUser(user, password);
+    setIsLoading(true);
+    const authUser = await authLogin(user, password);
+    setIsLoading(false);
+
     if (!authUser) {
       Alert.alert("Login invalido", "Usuario ou senha incorretos.");
       return;
@@ -167,8 +157,12 @@ export default function LoginScreen() {
               <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.loginButton} onPress={fazerLogin}>
-              <Text style={styles.loginButtonText}>{isAuthReady ? "Entrar" : "Carregando..."}</Text>
+            <TouchableOpacity 
+              style={[styles.loginButton, isLoading && styles.loginButtonDisabled]} 
+              onPress={fazerLogin}
+              disabled={isLoading}
+            >
+              <Text style={styles.loginButtonText}>{isLoading ? "Entrando..." : "Entrar"}</Text>
               <Ionicons
                 name="arrow-forward"
                 size={20}
@@ -256,6 +250,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     elevation: 2,
+  },
+  loginButtonDisabled: {
+    opacity: 0.6,
   },
   loginButtonText: {
     color: theme.colors.white,
