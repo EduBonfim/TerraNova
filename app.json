@@ -37,8 +37,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "f3e92264-a5b2-4bc5-900e-e51b37410a88"
+        "projectId": "ecd75409-8c10-490c-ac58-a847c6c7680c"
       }
-    }
+    },
+    "owner": "eduubonfiim"
   }
 }
