@@ -50,6 +50,8 @@ const ANDROID_VISUAL = {
 const CURRENT_KEYBOARD_BEHAVIOR =
   Platform.OS === "ios" ? IOS_VISUAL.keyboardBehavior : ANDROID_VISUAL.keyboardBehavior;
 
+const A4_ASPECT: [number, number] = [210, 297];
+
 export default function ScanScreen() {
   const router = useRouter();
   const { user } = useAuth();
@@ -60,15 +62,15 @@ export default function ScanScreen() {
   const [savedReportId, setSavedReportId] = useState<string | null>(null);
   const [duplicateReport, setDuplicateReport] = useState<SoilReport | null>(null);
 
-  const [ph, setPh] = useState("5.2");
-  const [materiaOrganica, setMateriaOrganica] = useState("1.5");
-  const [fosforo, setFosforo] = useState("12.0");
-  const [potassio, setPotassio] = useState("45.0");
-  const [calcio, setCalcio] = useState("1.5");
-  const [magnesio, setMagnesio] = useState("0.8");
-  const [aluminio, setAluminio] = useState("0.3");
-  const [ctc, setCtc] = useState("6.2");
-  const [vBase, setVBase] = useState("45.0");
+  const [ph, setPh] = useState("");
+  const [materiaOrganica, setMateriaOrganica] = useState("");
+  const [fosforo, setFosforo] = useState("");
+  const [potassio, setPotassio] = useState("");
+  const [calcio, setCalcio] = useState("");
+  const [magnesio, setMagnesio] = useState("");
+  const [aluminio, setAluminio] = useState("");
+  const [ctc, setCtc] = useState("");
+  const [vBase, setVBase] = useState("");
   const [carencias, setCarencias] = useState<string[]>([]);
 
   const solicitarPermissoes = async () => {
@@ -88,11 +90,13 @@ export default function ScanScreen() {
     return Number.isFinite(parsed) ? parsed : 0;
   };
 
+  const hasValue = (value: string) => value.trim().length > 0;
+
   const atualizarDiagnostico = () => {
     const lista: string[] = [];
-    if (toNumber(fosforo) < 10) lista.push("Deficiência de Fósforo (P)");
-    if (toNumber(materiaOrganica) < 2) lista.push("Baixa Matéria Orgânica");
-    if (toNumber(ph) < 6) lista.push("Solo ácido (pH baixo)");
+    if (hasValue(fosforo) && toNumber(fosforo) < 10) lista.push("Deficiência de Fósforo (P)");
+    if (hasValue(materiaOrganica) && toNumber(materiaOrganica) < 2) lista.push("Baixa Matéria Orgânica");
+    if (hasValue(ph) && toNumber(ph) < 6) lista.push("Solo ácido (pH baixo)");
     if (lista.length === 0) lista.push("Solo dentro dos padrões para manutenção");
     setCarencias(lista);
   };
@@ -109,6 +113,21 @@ export default function ScanScreen() {
       if (analise.nutrientes.fosforo) setFosforo(analise.nutrientes.fosforo);
       if (analise.nutrientes.potassio) setPotassio(analise.nutrientes.potassio);
       setCarencias(analise.carencias_identificadas || []);
+
+      const extraiuAlgumDado = Boolean(
+        analise.ph ||
+          analise.materia_organica ||
+          analise.nutrientes.nitrogenio ||
+          analise.nutrientes.fosforo ||
+          analise.nutrientes.potassio,
+      );
+
+      if (!extraiuAlgumDado) {
+        Alert.alert(
+          "Leitura sem dados detectados",
+          "Não encontramos valores no laudo. Tente recortar melhor a área do documento e revisar manualmente.",
+        );
+      }
     } catch (error) {
       Alert.alert("Leitura parcial", "Não foi possível ler tudo automaticamente. Revise os campos manualmente.");
       console.error(error);
@@ -124,7 +143,7 @@ export default function ScanScreen() {
     const resultado = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       quality: 0.8,
-      aspect: [4, 3],
+      aspect: A4_ASPECT,
     });
 
     if (!resultado.canceled && resultado.assets?.[0]?.uri) {
@@ -139,7 +158,7 @@ export default function ScanScreen() {
     const resultado = await ImagePicker.launchImageLibraryAsync({
       allowsEditing: true,
       quality: 0.8,
-      aspect: [4, 3],
+      aspect: A4_ASPECT,
       mediaTypes: ["images"],
     });
 
@@ -178,9 +197,9 @@ export default function ScanScreen() {
 
   const confirmarDadosComVerificacao = async () => {
     const lista: string[] = [];
-    if (toNumber(fosforo) < 10) lista.push("Deficiência de Fósforo (P)");
-    if (toNumber(materiaOrganica) < 2) lista.push("Baixa Matéria Orgânica");
-    if (toNumber(ph) < 6) lista.push("Solo ácido (pH baixo)");
+    if (hasValue(fosforo) && toNumber(fosforo) < 10) lista.push("Deficiência de Fósforo (P)");
+    if (hasValue(materiaOrganica) && toNumber(materiaOrganica) < 2) lista.push("Baixa Matéria Orgânica");
+    if (hasValue(ph) && toNumber(ph) < 6) lista.push("Solo ácido (pH baixo)");
     if (lista.length === 0) lista.push("Solo dentro dos padrões para manutenção");
 
     setCarencias(lista);
@@ -264,6 +283,7 @@ export default function ScanScreen() {
               <Text style={styles.subtitle}>
                 Tire uma foto ou envie o arquivo do seu laudo. Vamos extrair os dados automaticamente para você revisar.
               </Text>
+              <Text style={styles.cropHint}>Use o recorte para enquadrar o documento A4 antes da leitura.</Text>
 
               <TouchableOpacity style={styles.uploadButton} onPress={capturarLaudo}>
                 <Ionicons name="camera-outline" size={24} color={theme.colors.white} style={styles.iconMarginRightLg} />
@@ -298,6 +318,10 @@ export default function ScanScreen() {
                 <SurfaceCard style={styles.previewCard}>
                   <Image source={{ uri: imagemUri }} style={styles.previewImage} />
                   <Text style={styles.previewMeta}>Confiança da leitura: {confiancaLeitura.toFixed(1)}%</Text>
+                  <TouchableOpacity style={styles.recropButton} onPress={selecionarArquivo}>
+                    <Ionicons name="scan-outline" size={16} color={theme.colors.primary} style={styles.iconMarginRightSm} />
+                    <Text style={styles.recropButtonText}>Trocar foto e recortar novamente</Text>
+                  </TouchableOpacity>
                 </SurfaceCard>
               ) : null}
 
@@ -461,6 +485,13 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     paddingHorizontal: 10,
   },
+  cropHint: {
+    marginTop: -10,
+    marginBottom: 24,
+    color: theme.colors.gray_500,
+    fontSize: 13,
+    textAlign: "center",
+  },
   iconMarginRightLg: { marginRight: 10 },
   iconMarginRightSm: { marginRight: 8 },
   loadingIndicator: { transform: [{ scale: 1.5 }], marginBottom: 24 },
@@ -515,6 +546,19 @@ const styles = StyleSheet.create({
   previewCard: { marginBottom: 14, padding: 10 },
   previewImage: { width: "100%", height: 160, borderRadius: 10, marginBottom: 8 },
   previewMeta: { fontSize: 12, color: theme.colors.gray_500, textAlign: "center" },
+  recropButton: {
+    marginTop: 10,
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  recropButtonText: {
+    color: theme.colors.primary,
+    fontSize: 13,
+    fontWeight: "700",
+  },
   formTitle: {
     fontSize: 18,
     fontWeight: "bold",

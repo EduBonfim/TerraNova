@@ -13,6 +13,7 @@ import {
   Pressable,
   StatusBar,
   ActivityIndicator,
+  Share,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -88,20 +89,6 @@ const formatValidationTimestamp = (value?: string | null) => {
   return date.toLocaleString("pt-BR");
 };
 
-type MyAd = {
-  id: string;
-  icon: "leaf" | "basket";
-  title: string;
-  subtitle: string;
-  details: string;
-  photos: string[];
-};
-
-const parseAdSubtitle = (subtitle: string) => {
-  const [quantity = "", price = ""] = subtitle.split("•").map((part) => part.trim());
-  return { quantity, price };
-};
-
 export default function AccountScreen() {
   const profileName = "Pedro Paulo";
   const { logout } = useAuth();
@@ -124,7 +111,6 @@ export default function AccountScreen() {
   const [profileBio, setProfileBio] = useState(summary.bio);
 
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [isEditAdOpen, setIsEditAdOpen] = useState(false);
   const [draftDisplayName, setDraftDisplayName] = useState(displayName);
   const [draftFarmName, setDraftFarmName] = useState(farmName);
   const [draftProducerRole, setDraftProducerRole] = useState(producerRole);
@@ -146,37 +132,100 @@ export default function AccountScreen() {
     summary.avatarUri ?? getProfileAvatar(profileName),
   );
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
+  const [isRatingsModalOpen, setIsRatingsModalOpen] = useState(false);
+  const [isAccountHealthOpen, setIsAccountHealthOpen] = useState(false);
+  const [hasNewMessages, setHasNewMessages] = useState(true);
+  const [isSalesMetricsOpen, setIsSalesMetricsOpen] = useState(false);
+  const [isMyOrdersOpen, setIsMyOrdersOpen] = useState(false);
+  const [selectedOrderTab, setSelectedOrderTab] = useState<"aguardando" | "transporte" | "finalizado">("aguardando");
+  const [salesPeriod, setSalesPeriod] = useState<"dias" | "semanas" | "meses" | "total">("total");
 
-  const [ads, setAds] = useState<MyAd[]>([
-    {
-      id: "a1",
-      icon: "leaf",
-      title: "Esterco Bovino Curtido",
-      subtitle: "2 Toneladas • R$ 90,00/ton",
-      details: "Material curtido, pronto para retirada imediata no sítio.",
-      photos: [
-        "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1200&q=80",
-      ],
-    },
-    {
-      id: "a2",
-      icon: "basket",
-      title: "Tomate Cereja Orgânico",
-      subtitle: "Caixa 15kg • R$ 110,00",
-      details: "Colheita do dia, ideal para feira e consumo direto.",
-      photos: [
-        "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=1200&q=80",
-      ],
-    },
-  ]);
+  // Função para obter dados de vendas baseado no período
+  const getSalesDataByPeriod = () => {
+    switch (salesPeriod) {
+      case "dias":
+        return { total: 32, alimentos: 12, insumos: 9, sementes: 11 };
+      case "semanas":
+        return { total: 98, alimentos: 36, insumos: 30, sementes: 32 };
+      case "meses":
+        return { total: 180, alimentos: 67, insumos: 54, sementes: 59 };
+      case "total":
+        return { total: 213, alimentos: 92, insumos: 63, sementes: 58 };
+      default:
+        return { total: 213, alimentos: 92, insumos: 63, sementes: 58 };
+    }
+  };
 
-  const [editingAdId, setEditingAdId] = useState<string | null>(null);
-  const [editingAdType, setEditingAdType] = useState<"leaf" | "basket">("leaf");
-  const [editingAdTitle, setEditingAdTitle] = useState("");
-  const [editingAdQuantity, setEditingAdQuantity] = useState("");
-  const [editingAdPrice, setEditingAdPrice] = useState("");
-  const [editingAdDetails, setEditingAdDetails] = useState("");
-  const [editingAdPhotos, setEditingAdPhotos] = useState<string[]>([]);
+  const myOrders = {
+    aguardando: [
+      { id: "VND001", produto: "Milho Amarelo Premium", quantidade: "50 kg", valor: "R$ 450,00", data: "01/04/2025", comprador: "João Silva" },
+      { id: "VND002", produto: "Adubo NPK", quantidade: "25 kg", valor: "R$ 320,00", data: "31/03/2025", comprador: "Maria Santos" },
+    ],
+    transporte: [
+      { id: "VND003", produto: "Sementes de Soja", quantidade: "100 kg", valor: "R$ 850,00", data: "30/03/2025", comprador: "Agropecuária XYZ", transportadora: "Translog" },
+      { id: "VND004", produto: "Fertilizante Orgânico", quantidade: "200 kg", valor: "R$ 1.200,00", data: "28/03/2025", comprador: "Fazenda do Vale", transportadora: "Sedex Agro" },
+    ],
+    finalizado: [
+      { id: "VND005", produto: "Feijão Carioca", quantidade: "80 kg", valor: "R$ 960,00", data: "25/03/2025", comprador: "Cooperativa Rural" },
+      { id: "VND006", produto: "Milho Verde", quantidade: "40 kg", valor: "R$ 380,00", data: "24/03/2025", comprador: "Mercado Central" },
+      { id: "VND007", produto: "Calcário Agrícola", quantidade: "500 kg", valor: "R$ 2.500,00", data: "20/03/2025", comprador: "Granja Pousada" },
+    ],
+  };
+
+  const exportToCSV = async () => {
+    try {
+      const currentDate = new Date().toLocaleDateString("pt-BR");
+      const currentTime = new Date().toLocaleTimeString("pt-BR");
+      
+      const periodLabels: Record<string, string> = {
+        dias: "Últimos 7 dias",
+        semanas: "Últimas 4 semanas",
+        meses: "Últimos 3 meses",
+        total: "Total acumulado"
+      };
+
+      const csvData = [
+        ["🌾 TERRA NOVA - CONECTANDO FAZENDAS 🌾"],
+        [""],
+        ["RELATÓRIO DE VENDAS"],
+        [""],
+        ["Fazenda:", farmName],
+        ["Produtor:", displayName],
+        ["Endereço:", `${farmAddress}, CEP ${farmCep}`],
+        [""],
+        ["Período:", periodLabels[salesPeriod as keyof typeof periodLabels]],
+        ["Data do Relatório:", `${currentDate} às ${currentTime}`],
+        [""],
+        ["─────────────────────────────────────────"],
+        ["RESUMO DE VENDAS"],
+        ["─────────────────────────────────────────"],
+        [""],
+        ["Categoria", "Quantidade", "% do Total"],
+        ["Alimentos", salesData.alimentos, `${((salesData.alimentos / salesData.total) * 100).toFixed(1)}%`],
+        ["Insumos", salesData.insumos, `${((salesData.insumos / salesData.total) * 100).toFixed(1)}%`],
+        ["Sementes", salesData.sementes, `${((salesData.sementes / salesData.total) * 100).toFixed(1)}%`],
+        [""],
+        ["─────────────────────────────────────────"],
+        ["TOTAL GERAL", salesData.total, "100%"],
+        ["─────────────────────────────────────────"],
+        [""],
+        ["Relatório gerado automaticamente pelo app Terra Nova"],
+        ["Conectando Fazendas - Marketplace Agrícola"],
+      ]
+        .map((row) => row.join(","))
+        .join("\n");
+
+      await Share.share({
+        message: csvData,
+        title: "Relatório de Vendas - Terra Nova",
+        url: undefined,
+      });
+    } catch (error) {
+      Alert.alert("Erro", "Não foi possível exportar o relatório");
+    }
+  };
+
+  const salesData = getSalesDataByPeriod();
 
   useEffect(() => {
     let isMounted = true;
@@ -524,114 +573,14 @@ export default function AccountScreen() {
     closeEditProfile();
   };
 
-  const openAdEditor = (ad: MyAd) => {
-    const parsed = parseAdSubtitle(ad.subtitle);
-
-    setEditingAdId(ad.id);
-    setEditingAdType(ad.icon);
-    setEditingAdTitle(ad.title);
-    setEditingAdQuantity(parsed.quantity);
-    setEditingAdPrice(parsed.price);
-    setEditingAdDetails(ad.details || "");
-    setEditingAdPhotos(ad.photos || []);
-    setIsEditAdOpen(true);
-  };
-
-  const closeAdEditor = () => {
-    setIsEditAdOpen(false);
-    setEditingAdId(null);
-    setEditingAdType("leaf");
-    setEditingAdTitle("");
-    setEditingAdQuantity("");
-    setEditingAdPrice("");
-    setEditingAdDetails("");
-    setEditingAdPhotos([]);
-  };
-
-  const onSaveAd = () => {
-    const title = editingAdTitle.trim();
-    const quantity = editingAdQuantity.trim();
-    const price = editingAdPrice.trim();
-    const details = editingAdDetails.trim();
-
-    if (!editingAdId || !title || !quantity || !price || !details) {
-      Alert.alert("Campos obrigatórios", "Preencha título, quantidade, preço e descrição.");
-      return;
-    }
-
-    setAds((prev) =>
-      prev.map((item) =>
-        item.id === editingAdId
-          ? {
-              ...item,
-              icon: editingAdType,
-              title,
-              subtitle: `${quantity} • ${price}`,
-              details,
-              photos: editingAdPhotos,
-            }
-          : item,
-      ),
-    );
-
-    closeAdEditor();
-  };
-
-  const onDeleteAd = () => {
-    if (!editingAdId) return;
-
-    Alert.alert(
-      "Excluir anúncio",
-      "Tem certeza que deseja excluir este anúncio?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: () => {
-            setAds((prev) => prev.filter((item) => item.id !== editingAdId));
-            closeAdEditor();
-          },
-        },
-      ],
-    );
-  };
-
-  const onPickAdPhoto = async () => {
-    const uri = await openGalleryPicker();
-    if (!uri) return;
-
-    if (editingAdPhotos.length >= 5) {
-      Alert.alert("Limite atingido", "Você pode adicionar no máximo 5 fotos por anúncio.");
-      return;
-    }
-
-    setEditingAdPhotos((prev) => [...prev, uri]);
-  };
-
-  const onTakeAdPhoto = async () => {
-    const uri = await openCameraPicker();
-    if (!uri) return;
-
-    if (editingAdPhotos.length >= 5) {
-      Alert.alert("Limite atingido", "Você pode adicionar no máximo 5 fotos por anúncio.");
-      return;
-    }
-
-    setEditingAdPhotos((prev) => [...prev, uri]);
-  };
-
-  const onRemoveAdPhoto = (uri: string) => {
-    setEditingAdPhotos((prev) => prev.filter((item) => item !== uri));
-  };
-
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
-      <AppHeader
-        title="Meu Perfil"
+    <>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+        <AppHeader
+          title="Central"
         onBackPress={() => router.replace("/home")}
-        showBackButton={true}
+        showBackButton={false}
         titleAlign="center"
         backgroundColor={theme.colors.primary}
         textColor={theme.colors.white}
@@ -639,172 +588,66 @@ export default function AccountScreen() {
       />
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.profileSection}>
-          <View style={styles.avatarWrap}>
+        {/* Profile Header Section */}
+        <View style={styles.profileHeaderSection}>
+          <TouchableOpacity
+            style={styles.profileHeaderContent}
+            onPress={openEditProfile}
+          >
             <Image
               source={
                 profilePhotoUri
                   ? { uri: profilePhotoUri }
                   : require("../assets/perfil.png")
               }
-              style={styles.avatarLarge}
+              style={styles.profileHeaderAvatar}
             />
-            <TouchableOpacity
-              style={styles.avatarEditButton}
-              onPress={openEditProfile}
-            >
-              <Ionicons name="image-outline" size={16} color={theme.colors.white} />
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.userName}>{displayName}</Text>
-          <Text style={styles.userRole}>{producerRole}</Text>
-          <Text style={styles.userAddress}>{farmName}</Text>
-          <Text style={styles.userAddress}>CEP: {formatCep(farmCep || "") || "Nao informado"}</Text>
-          <Text style={styles.userBio}>{profileBio}</Text>
-
-          <View style={styles.trustCard}>
-            <Text style={styles.trustTitle}>Selo de Confiabilidade de Localizacao</Text>
-
-            <View style={styles.trustRow}>
-              <Ionicons
-                name={isCepValidated ? "checkmark-circle" : "alert-circle-outline"}
-                size={16}
-                color={isCepValidated ? theme.colors.primary : theme.colors.gray_500}
-              />
-              <Text style={styles.trustText}>CEP validado</Text>
-            </View>
-
-            <View style={styles.trustRow}>
-              <Ionicons
-                name={isGatePinConfirmed ? "checkmark-circle" : "alert-circle-outline"}
-                size={16}
-                color={isGatePinConfirmed ? theme.colors.primary : theme.colors.gray_500}
-              />
-              <Text style={styles.trustText}>Pin confirmado manualmente</Text>
-            </View>
-
-            <View style={styles.trustRow}>
-              <Ionicons name="time-outline" size={16} color={theme.colors.gray_500} />
-              <Text style={styles.trustText}>
-                Ultima validacao: {formatValidationTimestamp(locationValidatedAt)}
+            <View style={styles.profileHeaderInfo}>
+              <Text style={styles.profileHeaderName}>{displayName}</Text>
+              <Text style={styles.profileHeaderSubtitle}>Meu perfil</Text>
+              <Text style={styles.profileHeaderFarm}>{farmName}</Text>
+              <Text style={styles.profileHeaderState}>
+                {farmAddress.split("-")[1]?.trim() || "Estado não informado"}
               </Text>
             </View>
-          </View>
-
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>4.9</Text>
-              <Text style={styles.statLabel}>
-                <Ionicons name="star" size={12} color={theme.colors.orange_500} /> Avaliação
-              </Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{ads.length}</Text>
-              <Text style={styles.statLabel}>Anúncios Ativos</Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={styles.editProfileButton}
-            onPress={openEditProfile}
-          >
-            <Ionicons name="create-outline" size={16} color={theme.colors.white} />
-            <Text style={styles.editProfileButtonText}>Editar perfil</Text>
+            <Ionicons name="chevron-forward" size={20} color={theme.colors.gray_500} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.galleryHeaderRow}>
-            <View style={styles.gallerySideSpacer} />
-            <Text style={[styles.sectionTitle, styles.sectionTitleCentered]}>Fotos da Fazenda</Text>
-            <Text style={styles.galleryCount}>{farmPhotos.length}/5</Text>
-          </View>
-
-          <Text style={styles.galleryHelperText}>
-            Toque em editar perfil para adicionar ou remover fotos.
-          </Text>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.galleryRow}
+        {/* Quick Stats */}
+        <View style={styles.statsQuickRow}>
+          <TouchableOpacity
+            style={styles.quickStatItem}
+            onPress={() => setIsRatingsModalOpen(true)}
           >
-            {farmPhotos.map((uri) => (
-              <View key={uri} style={styles.photoBox}>
-                <TouchableOpacity onPress={() => setPreviewPhoto(uri)}>
-                  <Image source={{ uri }} style={styles.farmPhoto} />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-
-        <View style={styles.actionButtonsContainer}>
-          <Text style={[styles.sectionTitle, styles.sectionTitleCentered]}>O que deseja anunciar?</Text>
-          <View style={styles.buttonsRow}>
-            <TouchableOpacity style={styles.primaryActionButton} onPress={() => router.push("/post")}>
-              <Ionicons
-                name="leaf"
-                size={24}
-                color={theme.colors.white}
-                style={styles.actionIconSpacing}
-              />
-              <Text style={styles.actionButtonText}>Insumo/Resíduo</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.primaryActionButton, { backgroundColor: theme.colors.orange_500 }]}
-              onPress={() => router.push("/post")}
-            >
-              <Ionicons
-                name="basket"
-                size={24}
-                color={theme.colors.white}
-                style={styles.actionIconSpacing}
-              />
-              <Text style={styles.actionButtonText}>Vender Produção</Text>
-            </TouchableOpacity>
+            <Text style={styles.quickStatNumber}>4.9</Text>
+            <Text style={styles.quickStatLabel}>
+              <Ionicons name="star" size={11} color={theme.colors.orange_500} /> Avaliação
+            </Text>
+          </TouchableOpacity>
+          <View style={styles.quickStatDivider} />
+          <View style={styles.quickStatItem}>
+            <Text style={styles.quickStatNumber}>100%</Text>
+            <Text style={styles.quickStatLabel}>Completo</Text>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, styles.sectionTitleCentered]}>Meus Anúncios</Text>
-
-          {ads.map((ad) => (
-            <View key={ad.id} style={styles.myAdCard}>
-              <View style={styles.myAdIcon}>
-                <Ionicons name={ad.icon} size={24} color={theme.colors.primary} />
-              </View>
-              <View style={styles.myAdContent}>
-                <Text style={styles.myAdTitle}>{ad.title}</Text>
-                <Text style={styles.myAdSubtitle}>{ad.subtitle}</Text>
-                <Text style={styles.myAdDetails} numberOfLines={2}>{ad.details}</Text>
-                {ad.photos.length > 0 ? (
-                  <Image source={{ uri: ad.photos[0] }} style={styles.myAdThumb} />
-                ) : null}
-              </View>
-              <TouchableOpacity onPress={() => openAdEditor(ad)}>
-                <Ionicons name="pencil" size={20} color={theme.colors.gray_500} />
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Definições</Text>
+        {/* Menu Section - My Activity */}
+        <View style={styles.menuSection}>
+          <Text style={styles.menuSectionTitle}>Minha atividade</Text>
 
           <TouchableOpacity
-            style={styles.settingsRow}
+            style={styles.menuItem}
             onPress={() => router.push("/soil-reports")}
           >
-            <Ionicons
-              name="document-text-outline"
-              size={22}
-              color={theme.colors.gray_800}
-            />
-            <Text style={styles.settingsText}>Meus Laudos de Solo</Text>
+            <View style={styles.menuIconContainer}>
+              <Ionicons
+                name="document-text-outline"
+                size={24}
+                color={theme.colors.primary}
+              />
+            </View>
+            <Text style={styles.menuItemText}>Meus Laudos de Solo</Text>
             <Ionicons
               name="chevron-forward"
               size={20}
@@ -813,15 +656,56 @@ export default function AccountScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.settingsRow}
+            style={styles.menuItem}
+            onPress={() => setIsMyOrdersOpen(true)}
+          >
+            <View style={styles.menuIconContainer}>
+              <Ionicons
+                name="cart-outline"
+                size={24}
+                color={theme.colors.primary}
+              />
+            </View>
+            <Text style={styles.menuItemText}>Minhas Vendas</Text>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={theme.colors.gray_500}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push("/messages")}
+          >
+            <View style={[styles.menuIconContainer, styles.chatIconContainer]}>
+              <Ionicons
+                name="chatbubble-outline"
+                size={24}
+                color={theme.colors.primary}
+              />
+              {hasNewMessages && <View style={styles.notificationDot} />}
+            </View>
+            <Text style={styles.menuItemText}>Chat</Text>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={theme.colors.gray_500}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
             onPress={() => router.push("/certificates")}
           >
-            <Ionicons
-              name="shield-checkmark-outline"
-              size={22}
-              color={theme.colors.gray_800}
-            />
-            <Text style={styles.settingsText}>Certificados MAPA</Text>
+            <View style={styles.menuIconContainer}>
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={24}
+                color={theme.colors.primary}
+              />
+            </View>
+            <Text style={styles.menuItemText}>Certificados MAPA</Text>
             <Ionicons
               name="chevron-forward"
               size={20}
@@ -830,15 +714,41 @@ export default function AccountScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.settingsRow}
+            style={styles.menuItem}
             onPress={() => router.push("/transport")}
           >
+            <View style={styles.menuIconContainer}>
+              <Ionicons
+                name="car-outline"
+                size={24}
+                color={theme.colors.primary}
+              />
+            </View>
+            <Text style={styles.menuItemText}>Transporte e Frete</Text>
             <Ionicons
-              name="car-outline"
-              size={22}
-              color={theme.colors.gray_800}
+              name="chevron-forward"
+              size={20}
+              color={theme.colors.gray_500}
             />
-            <Text style={styles.settingsText}>Regras de Transporte e Frete</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Menu Section - Discover */}
+        <View style={styles.menuSection}>
+          <Text style={styles.menuSectionTitle}>Descubra</Text>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => setIsAccountHealthOpen(true)}
+          >
+            <View style={styles.menuIconContainer}>
+              <Ionicons
+                name="heart-outline"
+                size={24}
+                color={theme.colors.primary}
+              />
+            </View>
+            <Text style={styles.menuItemText}>Saúde da Conta</Text>
             <Ionicons
               name="chevron-forward"
               size={20}
@@ -847,15 +757,79 @@ export default function AccountScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.settingsRow}
+            style={styles.menuItem}
             onPress={() => router.push("/organic")}
           >
+            <View style={styles.menuIconContainer}>
+              <Ionicons
+                name="leaf-outline"
+                size={24}
+                color={theme.colors.primary}
+              />
+            </View>
+            <Text style={styles.menuItemText}>Seja Orgânico!</Text>
             <Ionicons
-              name="leaf-outline"
-              size={22}
-              color={theme.colors.gray_800}
+              name="chevron-forward"
+              size={20}
+              color={theme.colors.gray_500}
             />
-            <Text style={styles.settingsText}>Seja Orgânico!</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => setIsSalesMetricsOpen(true)}
+          >
+            <View style={styles.menuIconContainer}>
+              <Ionicons
+                name="bar-chart-outline"
+                size={24}
+                color={theme.colors.primary}
+              />
+            </View>
+            <Text style={styles.menuItemText}>Relatórios e Métricas</Text>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={theme.colors.gray_500}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Menu Section - Settings */}
+        <View style={styles.menuSection}>
+          <Text style={styles.menuSectionTitle}>Configurações</Text>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push("/privacy-lgpd")}
+          >
+            <View style={styles.menuIconContainer}>
+              <Ionicons
+                name="shield-outline"
+                size={24}
+                color={theme.colors.primary}
+              />
+            </View>
+            <Text style={styles.menuItemText}>Privacidade e LGPD</Text>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={theme.colors.gray_500}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={openEditProfile}
+          >
+            <View style={styles.menuIconContainer}>
+              <Ionicons
+                name="create-outline"
+                size={24}
+                color={theme.colors.primary}
+              />
+            </View>
+            <Text style={styles.menuItemText}>Editar perfil</Text>
             <Ionicons
               name="chevron-forward"
               size={20}
@@ -1048,167 +1022,6 @@ export default function AccountScreen() {
         </View>
       </Modal>
 
-      <Modal
-        visible={isEditAdOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={closeAdEditor}
-      >
-        <View style={styles.editAdBackdrop}>
-          <View style={styles.editAdCard}>
-            <View style={styles.editAdHeader}>
-              <Text style={styles.editAdTitle}>Editar anúncio</Text>
-              <TouchableOpacity onPress={closeAdEditor}>
-                <Ionicons name="close" size={20} color={theme.colors.gray_800} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView
-              style={styles.editAdBody}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.editAdBodyContent}
-            >
-              <Text style={styles.editAdLabel}>Tipo de anúncio</Text>
-              <View style={styles.editAdTypeRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.editAdTypeButton,
-                    editingAdType === "leaf" ? styles.editAdTypeButtonActive : null,
-                  ]}
-                  onPress={() => setEditingAdType("leaf")}
-                >
-                  <Ionicons
-                    name="leaf"
-                    size={18}
-                    color={editingAdType === "leaf" ? theme.colors.white : theme.colors.gray_500}
-                  />
-                  <Text
-                    style={[
-                      styles.editAdTypeText,
-                      editingAdType === "leaf" ? styles.editAdTypeTextActive : null,
-                    ]}
-                  >
-                    Insumo / Resíduo
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.editAdTypeButton,
-                    editingAdType === "basket" ? styles.editAdTypeButtonActiveOrange : null,
-                  ]}
-                  onPress={() => setEditingAdType("basket")}
-                >
-                  <Ionicons
-                    name="basket"
-                    size={18}
-                    color={editingAdType === "basket" ? theme.colors.white : theme.colors.gray_500}
-                  />
-                  <Text
-                    style={[
-                      styles.editAdTypeText,
-                      editingAdType === "basket" ? styles.editAdTypeTextActive : null,
-                    ]}
-                  >
-                    Produção Orgânica
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              <Text style={styles.editAdLabel}>Título do anúncio</Text>
-              <TextInput
-                style={styles.editAdInput}
-                placeholder="Ex: Cama de frango, tomate orgânico..."
-                placeholderTextColor={theme.colors.gray_500}
-                value={editingAdTitle}
-                onChangeText={setEditingAdTitle}
-              />
-
-              <View style={styles.editAdInlineRow}>
-                <View style={styles.editAdInlineCol}>
-                  <Text style={styles.editAdLabel}>Quantidade</Text>
-                  <TextInput
-                    style={styles.editAdInput}
-                    placeholder="Ex: 2 toneladas"
-                    placeholderTextColor={theme.colors.gray_500}
-                    value={editingAdQuantity}
-                    onChangeText={setEditingAdQuantity}
-                  />
-                </View>
-
-                <View style={styles.editAdInlineCol}>
-                  <Text style={styles.editAdLabel}>Preço</Text>
-                  <TextInput
-                    style={styles.editAdInput}
-                    placeholder="Ex: R$ 90,00/ton"
-                    placeholderTextColor={theme.colors.gray_500}
-                    value={editingAdPrice}
-                    onChangeText={setEditingAdPrice}
-                  />
-                </View>
-              </View>
-
-              <Text style={styles.editAdLabel}>Descrição e detalhes</Text>
-              <TextInput
-                style={[styles.editAdInput, styles.editAdInputTextArea]}
-                placeholder="Ex: qualidade, condições de retirada, observações"
-                placeholderTextColor={theme.colors.gray_500}
-                value={editingAdDetails}
-                onChangeText={setEditingAdDetails}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-
-              <View style={styles.editAdPhotosHeaderRow}>
-                <Text style={styles.editAdLabel}>Fotos do anúncio</Text>
-                <Text style={styles.editAdPhotosCount}>{editingAdPhotos.length}/5</Text>
-              </View>
-              <TouchableOpacity style={styles.addPhotoGalleryButton} onPress={onPickAdPhoto}>
-                <Ionicons name="images-outline" size={18} color={theme.colors.primary} />
-                <Text style={styles.addPhotoGalleryButtonText}>Adicionar da galeria</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.addPhotoCameraButton} onPress={onTakeAdPhoto}>
-                <Ionicons name="camera-outline" size={18} color={theme.colors.primary} />
-                <Text style={styles.addPhotoCameraButtonText}>Adicionar da camera</Text>
-              </TouchableOpacity>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.galleryRow}
-              >
-                {editingAdPhotos.map((uri) => (
-                  <View key={uri} style={styles.photoBox}>
-                    <TouchableOpacity onPress={() => setPreviewPhoto(uri)}>
-                      <Image source={{ uri }} style={styles.farmPhoto} />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.removePhotoButton} onPress={() => onRemoveAdPhoto(uri)}>
-                      <Ionicons name="close" size={12} color={theme.colors.white} />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </ScrollView>
-
-              <TouchableOpacity style={styles.editAdSaveMainButton} onPress={onSaveAd}>
-                <Text style={styles.editAdSaveMainText}>Salvar alterações</Text>
-                <Ionicons name="checkmark-circle-outline" size={18} color={theme.colors.white} />
-              </TouchableOpacity>
-
-              <View style={styles.editAdActions}>
-                <TouchableOpacity style={styles.editAdDeleteButton} onPress={onDeleteAd}>
-                  <Text style={styles.editAdDeleteText}>Excluir</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.editAdCancelButton} onPress={closeAdEditor}>
-                  <Text style={styles.editAdCancelText}>Cancelar</Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
       <Modal visible={Boolean(previewPhoto)} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <Pressable style={styles.modalClose} onPress={() => setPreviewPhoto(null)}>
@@ -1284,7 +1097,520 @@ export default function AccountScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Ratings Modal */}
+      <Modal
+        visible={isRatingsModalOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsRatingsModalOpen(false)}
+      >
+        <View style={styles.ratingsModalBackdrop}>
+          <View style={styles.ratingsModalCard}>
+            <View style={styles.ratingsModalHeader}>
+              <Text style={styles.ratingsModalTitle}>Minhas Avaliações</Text>
+              <TouchableOpacity onPress={() => setIsRatingsModalOpen(false)}>
+                <Ionicons name="close" size={24} color={theme.colors.gray_800} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.ratingsSummary}>
+                <Text style={styles.ratingsSummaryNumber}>4.9</Text>
+                <View style={styles.ratingsStars}>
+                  <Ionicons name="star" size={16} color={theme.colors.orange_500} />
+                  <Ionicons name="star" size={16} color={theme.colors.orange_500} />
+                  <Ionicons name="star" size={16} color={theme.colors.orange_500} />
+                  <Ionicons name="star" size={16} color={theme.colors.orange_500} />
+                  <Ionicons name="star-half" size={16} color={theme.colors.orange_500} />
+                </View>
+                <Text style={styles.ratingsCount}>baseado em 47 avaliações</Text>
+              </View>
+
+              <View style={styles.ratingsBreakdown}>
+                <View style={styles.ratingBar}>
+                  <Text style={styles.ratingLabel}>5 estrelas</Text>
+                  <View style={styles.ratingBarContainer}>
+                    <View style={[styles.ratingBarFill, { width: "85%", backgroundColor: "#10B981" }]} />
+                  </View>
+                  <Text style={styles.ratingCount}>40</Text>
+                </View>
+                <View style={styles.ratingBar}>
+                  <Text style={styles.ratingLabel}>4 estrelas</Text>
+                  <View style={styles.ratingBarContainer}>
+                    <View style={[styles.ratingBarFill, { width: "12%", backgroundColor: "#F59E0B" }]} />
+                  </View>
+                  <Text style={styles.ratingCount}>5</Text>
+                </View>
+                <View style={styles.ratingBar}>
+                  <Text style={styles.ratingLabel}>3 estrelas</Text>
+                  <View style={styles.ratingBarContainer}>
+                    <View style={[styles.ratingBarFill, { width: "2%", backgroundColor: "#EF4444" }]} />
+                  </View>
+                  <Text style={styles.ratingCount}>1</Text>
+                </View>
+                <View style={styles.ratingBar}>
+                  <Text style={styles.ratingLabel}>2 estrelas</Text>
+                  <View style={styles.ratingBarContainer}>
+                    <View style={[styles.ratingBarFill, { width: "0%", backgroundColor: "#EF4444" }]} />
+                  </View>
+                  <Text style={styles.ratingCount}>0</Text>
+                </View>
+                <View style={styles.ratingBar}>
+                  <Text style={styles.ratingLabel}>1 estrela</Text>
+                  <View style={styles.ratingBarContainer}>
+                    <View style={[styles.ratingBarFill, { width: "1%", backgroundColor: "#EF4444" }]} />
+                  </View>
+                  <Text style={styles.ratingCount}>1</Text>
+                </View>
+              </View>
+
+              <Text style={styles.reviewsTitle}>Avaliações recentes</Text>
+              <View style={styles.reviewItem}>
+                <View style={styles.reviewHeader}>
+                  <Text style={styles.reviewerName}>João Silva</Text>
+                  <View style={styles.reviewStars}>
+                    <Ionicons name="star" size={12} color={theme.colors.orange_500} />
+                    <Ionicons name="star" size={12} color={theme.colors.orange_500} />
+                    <Ionicons name="star" size={12} color={theme.colors.orange_500} />
+                    <Ionicons name="star" size={12} color={theme.colors.orange_500} />
+                    <Ionicons name="star" size={12} color={theme.colors.orange_500} />
+                  </View>
+                </View>
+                <Text style={styles.reviewDate}>2 dias atrás</Text>
+                <Text style={styles.reviewText}>Excelente produto! Entrega rápida e bem embalado. Muito satisfeito!</Text>
+              </View>
+
+              <View style={styles.reviewItem}>
+                <View style={styles.reviewHeader}>
+                  <Text style={styles.reviewerName}>Maria Santos</Text>
+                  <View style={styles.reviewStars}>
+                    <Ionicons name="star" size={12} color={theme.colors.orange_500} />
+                    <Ionicons name="star" size={12} color={theme.colors.orange_500} />
+                    <Ionicons name="star" size={12} color={theme.colors.orange_500} />
+                    <Ionicons name="star" size={12} color={theme.colors.orange_500} />
+                    <Ionicons name="star-outline" size={12} color={theme.colors.gray_300} />
+                  </View>
+                </View>
+                <Text style={styles.reviewDate}>1 semana atrás</Text>
+                <Text style={styles.reviewText}>Bom produto, mas a entrega demorou um pouco mais que o esperado.</Text>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Account Health Modal */}
+      <Modal
+        visible={isAccountHealthOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsAccountHealthOpen(false)}
+      >
+        <View style={styles.healthModalBackdrop}>
+          <View style={styles.healthModalCard}>
+            <View style={styles.healthModalHeader}>
+              <Text style={styles.healthModalTitle}>Saúde da Conta</Text>
+              <TouchableOpacity onPress={() => setIsAccountHealthOpen(false)}>
+                <Ionicons name="close" size={24} color={theme.colors.gray_800} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Health Status Bar */}
+              <View style={styles.healthStatusContainer}>
+                <View style={styles.healthStatusHeader}>
+                  <Text style={styles.healthStatusLabel}>Status da Sua Conta</Text>
+                  <View style={[styles.healthBadge, styles.healthBadgeGreen]}>
+                    <Ionicons name="checkmark-circle" size={16} color={theme.colors.white} />
+                    <Text style={styles.healthBadgeText}>Saudável!</Text>
+                  </View>
+                </View>
+                <View style={styles.healthBar}>
+                  <View style={[styles.healthBarFill, { width: "95%", backgroundColor: "#10B981" }]} />
+                </View>
+                <Text style={styles.healthPercentage}>95% - Você é um usuário 100% confiável!</Text>
+              </View>
+
+              {/* Account Details */}
+              <View style={styles.healthSection}>
+                <Text style={styles.healthSectionTitle}>Comportamento do Usuário</Text>
+                
+                <View style={styles.healthDetailItem}>
+                  <View style={styles.healthDetailIconGreen}>
+                    <Ionicons name="checkmark" size={20} color={theme.colors.white} />
+                  </View>
+                  <View style={styles.healthDetailContent}>
+                    <Text style={styles.healthDetailLabel}>Avaliação Média</Text>
+                    <Text style={styles.healthDetailValue}>4.9 de 5 estrelas</Text>
+                  </View>
+                </View>
+
+                <View style={styles.healthDetailItem}>
+                  <View style={styles.healthDetailIconGreen}>
+                    <Ionicons name="checkmark" size={20} color={theme.colors.white} />
+                  </View>
+                  <View style={styles.healthDetailContent}>
+                    <Text style={styles.healthDetailLabel}>Taxa de Resposta</Text>
+                    <Text style={styles.healthDetailValue}>98% de respostas em 24 horas</Text>
+                  </View>
+                </View>
+
+                <View style={styles.healthDetailItem}>
+                  <View style={styles.healthDetailIconGreen}>
+                    <Ionicons name="checkmark" size={20} color={theme.colors.white} />
+                  </View>
+                  <View style={styles.healthDetailContent}>
+                    <Text style={styles.healthDetailLabel}>Entregas no Prazo</Text>
+                    <Text style={styles.healthDetailValue}>100% das entregas pontuais</Text>
+                  </View>
+                </View>
+
+                <View style={styles.healthDetailItem}>
+                  <View style={styles.healthDetailIconGreen}>
+                    <Ionicons name="checkmark" size={20} color={theme.colors.white} />
+                  </View>
+                  <View style={styles.healthDetailContent}>
+                    <Text style={styles.healthDetailLabel}>Cancelamentos</Text>
+                    <Text style={styles.healthDetailValue}>0,2% taxa de cancelamento</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Tips Section */}
+              <View style={styles.healthSection}>
+                <Text style={styles.healthSectionTitle}>Dicas para Manter a Saúde</Text>
+                
+                <View style={styles.healthTipItem}>
+                  <View style={styles.healthTipNumber}>
+                    <Text style={styles.healthTipNumberText}>1</Text>
+                  </View>
+                  <View style={styles.healthTipContent}>
+                    <Text style={styles.healthTipTitle}>Responda rapidamente às mensagens</Text>
+                    <Text style={styles.healthTipDescription}>Mantenha uma comunicação ativa com seus clientes</Text>
+                  </View>
+                </View>
+
+                <View style={styles.healthTipItem}>
+                  <View style={styles.healthTipNumber}>
+                    <Text style={styles.healthTipNumberText}>2</Text>
+                  </View>
+                  <View style={styles.healthTipContent}>
+                    <Text style={styles.healthTipTitle}>Cumpra os prazos de entrega</Text>
+                    <Text style={styles.healthTipDescription}>Prepare e envie seus produtos dentro do prazo acordado</Text>
+                  </View>
+                </View>
+
+                <View style={styles.healthTipItem}>
+                  <View style={styles.healthTipNumber}>
+                    <Text style={styles.healthTipNumberText}>3</Text>
+                  </View>
+                  <View style={styles.healthTipContent}>
+                    <Text style={styles.healthTipTitle}>Mantenha descrições precisas</Text>
+                    <Text style={styles.healthTipDescription}>Atualize seu perfil com informações corretas e fotos claras</Text>
+                  </View>
+                </View>
+
+                <View style={styles.healthTipItem}>
+                  <View style={styles.healthTipNumber}>
+                    <Text style={styles.healthTipNumberText}>4</Text>
+                  </View>
+                  <View style={styles.healthTipContent}>
+                    <Text style={styles.healthTipTitle}>Resolva conflitos amigavelmente</Text>
+                    <Text style={styles.healthTipDescription}>Negocie soluções com seus clientes de forma respeitosa</Text>
+                  </View>
+                </View>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Sales Metrics Modal */}
+      <Modal
+        visible={isSalesMetricsOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsSalesMetricsOpen(false)}
+      >
+        <View style={styles.metricsModalBackdrop}>
+          <View style={styles.metricsModalCard}>
+            <View style={styles.metricsModalHeader}>
+              <Text style={styles.metricsModalTitle}>Relatórios e Métricas</Text>
+              <TouchableOpacity onPress={() => setIsSalesMetricsOpen(false)}>
+                <Ionicons name="close" size={24} color={theme.colors.gray_800} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.metricsScrollView}>
+              {/* Period Selector */}
+              <View style={styles.periodSelector}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {["dias", "semanas", "meses", "total"].map((period) => (
+                    <TouchableOpacity
+                      key={period}
+                      style={[
+                        styles.periodButton,
+                        salesPeriod === period && styles.periodButtonActive,
+                      ]}
+                      onPress={() => setSalesPeriod(period as typeof salesPeriod)}
+                    >
+                      <Text
+                        style={[
+                          styles.periodButtonText,
+                          salesPeriod === period && styles.periodButtonTextActive,
+                        ]}
+                      >
+                        {period.charAt(0).toUpperCase() + period.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              {/* Total Sales */}
+              <View style={styles.totalSalesContainer}>
+                <Text style={styles.totalSalesLabel}>Total de Vendas</Text>
+                <Text style={styles.totalSalesNumber}>{salesData.total}</Text>
+                <Text style={styles.totalSalesDescription}>vendas efetuadas neste período</Text>
+              </View>
+
+              {/* Sales Breakdown */}
+              <View style={styles.salesBreakdownContainer}>
+                <Text style={styles.breakdownTitle}>Vendas por Categoria</Text>
+                
+                {/* Bar Chart Visual */}
+                <View style={styles.chartContainer}>
+                  <View style={styles.chartBar}>
+                    <View style={styles.chartBarLabel}>
+                      <View style={[styles.chartBarColor, { backgroundColor: "#10B981" }]} />
+                      <View style={styles.chartBarInfo}>
+                        <Text style={styles.chartBarName}>Alimentos</Text>
+                        <Text style={styles.chartBarStats}>
+                          {salesData.alimentos} vendas ({Math.round((salesData.alimentos / salesData.total) * 100)}%)
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.barFillContainer}>
+                      <View
+                        style={[
+                          styles.barFill,
+                          { width: `${Math.round((salesData.alimentos / salesData.total) * 100)}%`, backgroundColor: "#10B981" },
+                        ]}
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.chartBar}>
+                    <View style={styles.chartBarLabel}>
+                      <View style={[styles.chartBarColor, { backgroundColor: "#F59E0B" }]} />
+                      <View style={styles.chartBarInfo}>
+                        <Text style={styles.chartBarName}>Insumos</Text>
+                        <Text style={styles.chartBarStats}>
+                          {salesData.insumos} vendas ({Math.round((salesData.insumos / salesData.total) * 100)}%)
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.barFillContainer}>
+                      <View
+                        style={[
+                          styles.barFill,
+                          { width: `${Math.round((salesData.insumos / salesData.total) * 100)}%`, backgroundColor: "#F59E0B" },
+                        ]}
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.chartBar}>
+                    <View style={styles.chartBarLabel}>
+                      <View style={[styles.chartBarColor, { backgroundColor: "#3B82F6" }]} />
+                      <View style={styles.chartBarInfo}>
+                        <Text style={styles.chartBarName}>Sementes</Text>
+                        <Text style={styles.chartBarStats}>
+                          {salesData.sementes} vendas ({Math.round((salesData.sementes / salesData.total) * 100)}%)
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.barFillContainer}>
+                      <View
+                        style={[
+                          styles.barFill,
+                          { width: `${Math.round((salesData.sementes / salesData.total) * 100)}%`, backgroundColor: "#3B82F6" },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* Sales Summary Statistics */}
+              <View style={styles.salesStats}>
+                <Text style={styles.statsTitle}>Estatísticas</Text>
+
+                <View style={styles.statRow}>
+                  <View style={styles.statBox}>
+                    <Text style={styles.statBoxLabel}>Ticket Médio</Text>
+                    <Text style={styles.statBoxValue}>R$ 425,00</Text>
+                  </View>
+                  <View style={styles.statBox}>
+                    <Text style={styles.statBoxLabel}>Maior Venda</Text>
+                    <Text style={styles.statBoxValue}>R$ 2.100,00</Text>
+                  </View>
+                </View>
+
+                <View style={styles.statRow}>
+                  <View style={styles.statBox}>
+                    <Text style={styles.statBoxLabel}>Menor Venda</Text>
+                    <Text style={styles.statBoxValue}>R$ 150,00</Text>
+                  </View>
+                  <View style={styles.statBox}>
+                    <Text style={styles.statBoxLabel}>Faturamento Total</Text>
+                    <Text style={styles.statBoxValue}>R$ 104.775</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Export Button */}
+              <TouchableOpacity style={styles.exportButton} onPress={exportToCSV}>
+                <Ionicons name="document-outline" size={18} color={theme.colors.white} />
+                <Text style={styles.exportButtonText}>Exportar como CSV</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* My Orders Modal */}
+      <Modal
+        visible={isMyOrdersOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsMyOrdersOpen(false)}
+      >
+        <View style={styles.metricsModalBackdrop}>
+          <View style={styles.metricsModalCard}>
+            <View style={styles.metricsModalHeader}>
+              <Text style={styles.metricsModalTitle}>Minhas Vendas</Text>
+              <TouchableOpacity onPress={() => setIsMyOrdersOpen(false)}>
+                <Ionicons name="close" size={24} color={theme.colors.gray_800} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Tab Buttons */}
+            <View style={styles.orderTabsContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.orderTab,
+                  selectedOrderTab === "aguardando" && styles.orderTabActive,
+                ]}
+                onPress={() => setSelectedOrderTab("aguardando")}
+              >
+                <Ionicons
+                  name="time-outline"
+                  size={18}
+                  color={selectedOrderTab === "aguardando" ? theme.colors.white : theme.colors.gray_500}
+                />
+                <Text
+                  style={[
+                    styles.orderTabText,
+                    selectedOrderTab === "aguardando" && styles.orderTabTextActive,
+                  ]}
+                >
+                  Aguardando
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.orderTab,
+                  selectedOrderTab === "transporte" && styles.orderTabActive,
+                ]}
+                onPress={() => setSelectedOrderTab("transporte")}
+              >
+                <Ionicons
+                  name="car-outline"
+                  size={18}
+                  color={selectedOrderTab === "transporte" ? theme.colors.white : theme.colors.gray_500}
+                />
+                <Text
+                  style={[
+                    styles.orderTabText,
+                    selectedOrderTab === "transporte" && styles.orderTabTextActive,
+                  ]}
+                >
+                  Transporte
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.orderTab,
+                  selectedOrderTab === "finalizado" && styles.orderTabActive,
+                ]}
+                onPress={() => setSelectedOrderTab("finalizado")}
+              >
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={18}
+                  color={selectedOrderTab === "finalizado" ? theme.colors.white : theme.colors.gray_500}
+                />
+                <Text
+                  style={[
+                    styles.orderTabText,
+                    selectedOrderTab === "finalizado" && styles.orderTabTextActive,
+                  ]}
+                >
+                  Finalizado
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Orders List */}
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.ordersListContainer}>
+              {myOrders[selectedOrderTab].map((order) => (
+                <View key={order.id} style={styles.orderCard}>
+                  <View style={styles.orderCardHeader}>
+                    <View>
+                      <Text style={styles.orderCardId}>Pedido #{order.id}</Text>
+                      <Text style={styles.orderCardProduct}>{order.produto}</Text>
+                    </View>
+                    <Text style={styles.orderCardValue}>{order.valor}</Text>
+                  </View>
+
+                  <View style={styles.orderCardDetails}>
+                    <View style={styles.orderDetail}>
+                      <Ionicons name="cube-outline" size={16} color={theme.colors.primary} />
+                      <Text style={styles.orderDetailText}>{order.quantidade}</Text>
+                    </View>
+                    <View style={styles.orderDetail}>
+                      <Ionicons name="calendar-outline" size={16} color={theme.colors.primary} />
+                      <Text style={styles.orderDetailText}>{order.data}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.orderCardFooter}>
+                    <Text style={styles.orderBuyer}>
+                      {selectedOrderTab === "transporte" ? "Transportadora: " : "Comprador: "}
+                      {selectedOrderTab === "transporte" && "transportadora" in order ? order.transportadora : order.comprador}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+
+              {myOrders[selectedOrderTab].length === 0 && (
+                <View style={styles.emptyState}>
+                  <Ionicons name="bag-outline" size={48} color={theme.colors.gray_300} />
+                  <Text style={styles.emptyStateText}>Nenhuma venda nesta categoria</Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
+
+
+    </>
   );
 }
 
@@ -1494,6 +1820,129 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: theme.colors.gray_800,
     marginLeft: 12,
+  },
+
+  // New Mercado Livre style sections
+  profileHeaderSection: {
+    backgroundColor: theme.colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.gray_200,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  profileHeaderContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  profileHeaderAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  profileHeaderInfo: {
+    flex: 1,
+  },
+  profileHeaderName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+  },
+  profileHeaderSubtitle: {
+    fontSize: 12,
+    color: theme.colors.gray_500,
+    marginTop: 2,
+  },
+  profileHeaderFarm: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: theme.colors.gray_800,
+    marginTop: 6,
+  },
+  profileHeaderState: {
+    fontSize: 11,
+    color: theme.colors.gray_500,
+    marginTop: 2,
+  },
+
+  statsQuickRow: {
+    flexDirection: "row",
+    backgroundColor: theme.colors.white,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.gray_200,
+  },
+  quickStatItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  quickStatNumber: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+  },
+  quickStatLabel: {
+    fontSize: 11,
+    color: theme.colors.gray_500,
+    marginTop: 2,
+  },
+  quickStatDivider: {
+    width: 1,
+    backgroundColor: theme.colors.gray_200,
+  },
+
+  menuSection: {
+    backgroundColor: theme.colors.white,
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.gray_200,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.gray_200,
+    paddingVertical: 0,
+  },
+  menuSectionTitle: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: theme.colors.gray_500,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.gray_200,
+  },
+  menuIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.lightGreen,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  menuItemText: {
+    flex: 1,
+    fontSize: 14,
+    color: theme.colors.gray_800,
+    fontWeight: "500",
+  },
+  badgeNew: {
+    backgroundColor: "#3B82F6",
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  badgeNewText: {
+    color: theme.colors.white,
+    fontSize: 10,
+    fontWeight: "bold",
   },
 
   logoutButton: {
@@ -1882,4 +2331,588 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   fullImage: { width: "94%", height: "82%" },
+
+  // Notification dot for chat
+  chatIconContainer: {
+    position: "relative",
+  },
+  notificationDot: {
+    position: "absolute",
+    top: 2,
+    right: 2,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: theme.colors.red_500,
+    borderWidth: 2,
+    borderColor: theme.colors.white,
+  },
+
+  // Ratings Modal Styles
+  ratingsModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(17,24,39,0.45)",
+    justifyContent: "flex-end",
+  },
+  ratingsModalCard: {
+    maxHeight: "90%",
+    backgroundColor: theme.colors.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 20,
+  },
+  ratingsModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  ratingsModalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+  },
+  ratingsSummary: {
+    backgroundColor: theme.colors.white,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  ratingsSummaryNumber: {
+    fontSize: 48,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+  },
+  ratingsStars: {
+    flexDirection: "row",
+    gap: 4,
+    marginVertical: 8,
+  },
+  ratingsCount: {
+    fontSize: 12,
+    color: theme.colors.gray_500,
+  },
+  ratingsBreakdown: {
+    backgroundColor: theme.colors.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  ratingBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  ratingLabel: {
+    fontSize: 12,
+    color: theme.colors.gray_800,
+    width: 80,
+  },
+  ratingBarContainer: {
+    flex: 1,
+    height: 8,
+    backgroundColor: theme.colors.gray_200,
+    borderRadius: 4,
+    marginHorizontal: 8,
+    overflow: "hidden",
+  },
+  ratingBarFill: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  ratingCount: {
+    fontSize: 12,
+    color: theme.colors.gray_500,
+    width: 30,
+    textAlign: "right",
+  },
+  reviewsTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+    marginBottom: 12,
+  },
+  reviewItem: {
+    backgroundColor: theme.colors.white,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  reviewHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  reviewerName: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: theme.colors.gray_800,
+  },
+  reviewStars: {
+    flexDirection: "row",
+    gap: 2,
+  },
+  reviewDate: {
+    fontSize: 11,
+    color: theme.colors.gray_500,
+    marginBottom: 6,
+  },
+  reviewText: {
+    fontSize: 12,
+    color: theme.colors.gray_800,
+    lineHeight: 18,
+  },
+
+  // Health Modal Styles
+  healthModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(17,24,39,0.45)",
+    justifyContent: "flex-end",
+  },
+  healthModalCard: {
+    maxHeight: "92%",
+    backgroundColor: theme.colors.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 20,
+  },
+  healthModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  healthModalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+  },
+  healthStatusContainer: {
+    backgroundColor: theme.colors.white,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+  },
+  healthStatusHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  healthStatusLabel: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+  },
+  healthBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  healthBadgeGreen: {
+    backgroundColor: "#10B981",
+  },
+  healthBadgeOrange: {
+    backgroundColor: "#F59E0B",
+  },
+  healthBadgeRed: {
+    backgroundColor: theme.colors.red_500,
+  },
+  healthBadgeText: {
+    color: theme.colors.white,
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  healthBar: {
+    height: 12,
+    backgroundColor: theme.colors.gray_200,
+    borderRadius: 6,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  healthBarFill: {
+    height: "100%",
+    borderRadius: 6,
+  },
+  healthPercentage: {
+    fontSize: 12,
+    color: theme.colors.gray_500,
+    fontWeight: "500",
+  },
+  healthSection: {
+    backgroundColor: theme.colors.white,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+  },
+  healthSectionTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+    marginBottom: 12,
+  },
+  healthDetailItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  healthDetailIconGreen: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#10B981",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  healthDetailIconOrange: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F59E0B",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  healthDetailContent: {
+    flex: 1,
+  },
+  healthDetailLabel: {
+    fontSize: 12,
+    color: theme.colors.gray_500,
+  },
+  healthDetailValue: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: theme.colors.gray_800,
+    marginTop: 2,
+  },
+  healthTipItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  healthTipNumber: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  healthTipNumberText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: theme.colors.white,
+  },
+  healthTipContent: {
+    flex: 1,
+  },
+  healthTipTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: theme.colors.gray_800,
+  },
+  healthTipDescription: {
+    fontSize: 12,
+    color: theme.colors.gray_500,
+    marginTop: 2,
+  },
+
+  // Sales Metrics Modal Styles
+  metricsModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(17,24,39,0.45)",
+    justifyContent: "flex-end",
+  },
+  metricsModalCard: {
+    maxHeight: "94%",
+    backgroundColor: theme.colors.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 0,
+    paddingTop: 14,
+    paddingBottom: 20,
+  },
+  metricsScrollView: {
+    paddingHorizontal: 16,
+  },
+  metricsModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  metricsModalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+  },
+  periodSelector: {
+    marginBottom: 16,
+  },
+  periodButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: theme.colors.white,
+    borderWidth: 1,
+    borderColor: theme.colors.gray_200,
+    marginRight: 6,
+  },
+  periodButtonActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  periodButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: theme.colors.gray_500,
+  },
+  periodButtonTextActive: {
+    color: theme.colors.white,
+  },
+  totalSalesContainer: {
+    backgroundColor: theme.colors.white,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  totalSalesLabel: {
+    fontSize: 13,
+    color: theme.colors.gray_500,
+    marginBottom: 4,
+  },
+  totalSalesNumber: {
+    fontSize: 42,
+    fontWeight: "bold",
+    color: theme.colors.primary,
+  },
+  totalSalesDescription: {
+    fontSize: 12,
+    color: theme.colors.gray_500,
+    marginTop: 4,
+  },
+  salesBreakdownContainer: {
+    backgroundColor: theme.colors.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  breakdownTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+    marginBottom: 16,
+  },
+  chartContainer: {
+    marginTop: 12,
+  },
+  chartBar: {
+    marginBottom: 16,
+  },
+  chartBarLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  chartBarColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 2,
+    marginRight: 10,
+  },
+  chartBarInfo: {
+    flex: 1,
+  },
+  chartBarName: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: theme.colors.gray_800,
+  },
+  chartBarStats: {
+    fontSize: 11,
+    color: theme.colors.gray_500,
+    marginTop: 2,
+  },
+  barFillContainer: {
+    height: 24,
+    backgroundColor: theme.colors.gray_200,
+    borderRadius: 6,
+    overflow: "hidden",
+  },
+  barFill: {
+    height: "100%",
+    borderRadius: 6,
+  },
+  salesStats: {
+    backgroundColor: theme.colors.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  statsTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+    marginBottom: 12,
+  },
+  statRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 12,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+    borderRadius: 10,
+    padding: 12,
+    alignItems: "center",
+  },
+  statBoxLabel: {
+    fontSize: 11,
+    color: theme.colors.gray_500,
+    marginBottom: 4,
+  },
+  statBoxValue: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: theme.colors.primary,
+  },
+  exportButton: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  exportButtonText: {
+    color: theme.colors.white,
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+
+  // Order Tabs
+  orderTabsContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.gray_200,
+    gap: 8,
+  },
+  orderTab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: theme.colors.background,
+  },
+  orderTabActive: {
+    backgroundColor: theme.colors.primary,
+  },
+  orderTabText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: theme.colors.gray_500,
+  },
+  orderTabTextActive: {
+    color: theme.colors.white,
+  },
+
+  // Orders List
+  ordersListContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  orderCard: {
+    backgroundColor: theme.colors.white,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.gray_200,
+  },
+  orderCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 10,
+  },
+  orderCardId: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: theme.colors.primary,
+    marginBottom: 4,
+  },
+  orderCardProduct: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.colors.gray_800,
+  },
+  orderCardValue: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: theme.colors.primary,
+  },
+  orderCardDetails: {
+    flexDirection: "row",
+    gap: 16,
+    marginBottom: 10,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.gray_200,
+  },
+  orderDetail: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  orderDetailText: {
+    fontSize: 12,
+    color: theme.colors.gray_500,
+    fontWeight: "500",
+  },
+  orderCardFooter: {
+    paddingTop: 8,
+  },
+  orderBuyer: {
+    fontSize: 12,
+    color: theme.colors.gray_500,
+    fontWeight: "500",
+  },
+
+  // Empty State
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: theme.colors.gray_500,
+    marginTop: 12,
+    fontWeight: "500",
+  },
+
+ 
 });
+

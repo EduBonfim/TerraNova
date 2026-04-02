@@ -73,6 +73,15 @@ export default function LoginScreen() {
       return;
     }
 
+    if (authUser.role === "admin") {
+      if (authUser.pendingLgpdReacceptance) {
+        router.replace({ pathname: "/privacy-lgpd", params: { forceConsent: "1" } });
+        return;
+      }
+      router.replace("/admin-panel");
+      return;
+    }
+
     router.replace("/home");
   };
 

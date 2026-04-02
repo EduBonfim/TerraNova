@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { authenticateUser, initAuthStore, type AppUser } from "../services/authStore";
+import { authenticateUser, getUserByUsername, initAuthStore, type AppUser } from "../services/authStore";
 
 const AUTH_STORAGE_KEY = "@terra_nova/current_user";
 
@@ -9,6 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (username: string, password: string) => Promise<AppUser | null>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   isLoggedIn: boolean;
 }
 
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   login: async () => null,
   logout: async () => {},
+  refreshUser: async () => {},
   isLoggedIn: false,
 });
 
@@ -72,6 +74,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    if (!user?.username) return;
+    const latest = await getUserByUsername(user.username);
+    if (!latest) return;
+
+    await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(latest));
+    setUser(latest);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -79,6 +90,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isLoading,
         login,
         logout,
+        refreshUser,
         isLoggedIn: !!user,
       }}
     >

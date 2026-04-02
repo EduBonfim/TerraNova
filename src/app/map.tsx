@@ -815,7 +815,7 @@ const styles = StyleSheet.create({
   textLoading: { marginTop: 10, fontSize: 16, color: theme.colors.gray_500 },
   searchBar: {
     position: "absolute",
-    top: 60,
+    top: 40,
     left: 20,
     right: 20,
     backgroundColor: "#FFF",
@@ -900,7 +900,7 @@ const styles = StyleSheet.create({
   },
   gpsButton: {
     position: "absolute",
-    bottom: 80,
+    bottom: 30,
     right: 20,
     backgroundColor: theme.colors.primary,
     width: 50,

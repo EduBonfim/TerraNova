@@ -241,20 +241,6 @@ export default function HomeScreen() {
           <View style={styles.actionsGrid}>
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => router.push("/post")}
-            >
-              <View style={styles.actionIconCircle}>
-                <Ionicons
-                  name="add-circle"
-                  size={40}
-                  color={theme.colors.primary}
-                />
-              </View>
-              <Text style={styles.actionText}>Postar Insumo/Colheita</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionButton}
               onPress={() => router.push("/scan")}
             >
               <View style={styles.actionIconCircle}>

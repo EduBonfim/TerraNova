@@ -30,6 +30,9 @@ const CURRENT_TOP_SCREEN =
   Platform.OS === "ios" ? IOS_TOP_SCREEN : ANDROID_TOP_SCREEN;
 
 function AppLayoutTabs() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
   return (
     <Tabs
       screenOptions={{
@@ -46,10 +49,6 @@ function AppLayoutTabs() {
           height: CURRENT_TAB_BAR.height,
           paddingBottom: CURRENT_TAB_BAR.paddingBottom,
           paddingTop: CURRENT_TAB_BAR.paddingTop,
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -70,10 +69,14 @@ function AppLayoutTabs() {
       <Tabs.Screen
         name="home"
         options={{
-          title: "Início",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
-          ),
+          ...(isAdmin
+            ? { href: null, tabBarStyle: { display: "none" } }
+            : {
+                title: "Início",
+                tabBarIcon: ({ color, size }) => (
+                  <Ionicons name="home" size={size} color={color} />
+                ),
+              }),
         }}
       />
 
@@ -81,25 +84,70 @@ function AppLayoutTabs() {
       <Tabs.Screen
         name="map"
         options={{
-          title: "Mapa",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="map" size={size} color={color} />
-          ),
+          ...(isAdmin
+            ? { href: null, tabBarStyle: { display: "none" } }
+            : {
+                title: "Mapa",
+                tabBarIcon: ({ color, size }) => (
+                  <Ionicons name="map" size={size} color={color} />
+                ),
+              }),
         }}
       />
 
-      {/* 3. Aba do Marketplace */}
+      {/* 3. Aba de Anunciar */}
+      <Tabs.Screen
+        name="post"
+        options={{
+          ...(isAdmin
+            ? { href: null, tabBarStyle: { display: "none" } }
+            : {
+                title: "Anunciar",
+                tabBarIcon: ({ color, size }) => (
+                  <View
+                    style={{
+                      width: 50,
+                      height: 50,
+                      borderRadius: 30,
+                      backgroundColor: "rgba(249, 168, 37, 0.1)",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Ionicons name="add-circle" size={50} color={color} />
+                  </View>
+                ),
+                tabBarItemStyle: {
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginBottom: 0,
+                  marginTop: -5,
+                },
+                tabBarLabelStyle: {
+                  marginTop: 5,
+                  fontSize: 12,
+                  fontWeight: "bold",
+                },
+              }),
+        }}
+      />
+
+      {/* 4. Aba do Marketplace */}
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Mercado",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="storefront" size={size} color={color} />
-          ),
+          ...(isAdmin
+            ? { href: null, tabBarStyle: { display: "none" } }
+            : {
+                title: "Mercado",
+                tabBarIcon: ({ color, size }) => (
+                  <Ionicons name="storefront" size={size} color={color} />
+                ),
+              }),
         }}
       />
 
-      {/* 4. Aba da Trilha Orgânica */}
+      {/* 5. Aba da Trilha Orgânica */}
       <Tabs.Screen
         name="organic"
         options={{
@@ -108,39 +156,89 @@ function AppLayoutTabs() {
         }}
       />
 
-      {/* 5. Aba de Mensagens (Chat) */}
+      {/* 6. Tela de Mensagens (oculta da barra) */}
       <Tabs.Screen
         name="messages"
-        options={{
-          title: "Chat",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubbles" size={size} color={color} />
-          ),
-        }}
-      />
-
-      {/* 6. Aba de Perfil */}
-      <Tabs.Screen
-        name="account"
-        options={{
-          title: "Perfil",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
-          ),
-        }}
-      />
-
-      {/* --- TELAS OCULTAS DO MENU --- */}
-      <Tabs.Screen
-        name="scan"
         options={{
           href: null,
           tabBarStyle: { display: "none" },
         }}
       />
 
+      {/* 7. Aba de Perfil */}
       <Tabs.Screen
-        name="post"
+        name="account"
+        options={{
+          ...(isAdmin
+            ? { href: null, tabBarStyle: { display: "none" } }
+            : {
+                title: "Central",
+                tabBarIcon: ({ color, size }) => (
+                  <Ionicons name="person" size={size} color={color} />
+                ),
+              }),
+        }}
+      />
+
+      <Tabs.Screen
+        name="admin-panel"
+        options={{
+          ...(isAdmin
+            ? {
+                title: "Painel",
+                tabBarIcon: ({ color, size }) => (
+                  <Ionicons name="grid" size={size} color={color} />
+                ),
+              }
+            : { href: null, tabBarStyle: { display: "none" } }),
+        }}
+      />
+
+      <Tabs.Screen
+        name="admin-metrics"
+        options={{
+          ...(isAdmin
+            ? {
+                title: "Métricas",
+                tabBarIcon: ({ color, size }) => (
+                  <Ionicons name="stats-chart" size={size} color={color} />
+                ),
+              }
+            : { href: null, tabBarStyle: { display: "none" } }),
+        }}
+      />
+
+      <Tabs.Screen
+        name="admin-sales"
+        options={{
+          ...(isAdmin
+            ? {
+                title: "Vendas",
+                tabBarIcon: ({ color, size }) => (
+                  <Ionicons name="cash" size={size} color={color} />
+                ),
+              }
+            : { href: null, tabBarStyle: { display: "none" } }),
+        }}
+      />
+
+      <Tabs.Screen
+        name="admin-reports"
+        options={{
+          ...(isAdmin
+            ? {
+                title: "Denúncias",
+                tabBarIcon: ({ color, size }) => (
+                  <Ionicons name="flag" size={size} color={color} />
+                ),
+              }
+            : { href: null, tabBarStyle: { display: "none" } }),
+        }}
+      />
+
+      {/* --- TELAS OCULTAS DO MENU --- */}
+      <Tabs.Screen
+        name="scan"
         options={{
           href: null,
           tabBarStyle: { display: "none" },
@@ -197,6 +295,14 @@ function AppLayoutTabs() {
 
       <Tabs.Screen
         name="soil-reports"
+        options={{
+          href: null,
+          tabBarStyle: { display: "none" },
+        }}
+      />
+
+      <Tabs.Screen
+        name="privacy-lgpd"
         options={{
           href: null,
           tabBarStyle: { display: "none" },

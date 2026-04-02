@@ -2,6 +2,14 @@
 // Serviço de OCR com Tesseract.js (100% Gratuito)
 
 import { Platform } from "react-native";
+import { API_BASE_URL } from "./api";
+
+const OCR_ENDPOINT = "/ocr/tesseract";
+
+type OcrApiResponse = {
+  text?: string;
+  confidence?: number;
+};
 
 export interface AnaliseSoloExtraida {
   texto_bruto: string;
@@ -26,10 +34,13 @@ export async function extrairTextoDoLaudo(
   try {
     console.log("🔄 Iniciando OCR da imagem...");
 
-    // Em React Native, tesseract.js pode não ter suporte completo de worker.
-    // Retornamos um fallback seguro para não quebrar a UX do scan.
+    // Em mobile, o OCR real deve vir da API (ex.: backend com Tesseract).
+    // Em web, usamos tesseract.js localmente.
     if (Platform.OS !== "web") {
-      return gerarFallbackAnalise();
+      const servidor = await extrairTextoViaServidor(imagemUri);
+      const analiseServidor = processarTextoLaudo(servidor.text);
+      analiseServidor.confianca_extracao = servidor.confidence;
+      return analiseServidor;
     }
 
     const Tesseract = await import("tesseract.js");
@@ -54,26 +65,49 @@ export async function extrairTextoDoLaudo(
 
     return analise;
   } catch (erro) {
-    console.error("❌ Erro na extração OCR. Aplicando fallback:", erro);
-    return gerarFallbackAnalise();
+    console.error("❌ Erro na extração OCR:", erro);
+    return {
+      texto_bruto: "",
+      nutrientes: {},
+      materia_organica: undefined,
+      ph: undefined,
+      carencias_identificadas: [],
+      confianca_extracao: 0,
+    };
   }
 }
 
-function gerarFallbackAnalise(): AnaliseSoloExtraida {
-  return {
-    texto_bruto: "LEITURA AUTOMATICA PARCIAL - revise os campos manualmente",
-    nutrientes: {
-      nitrogenio: "20",
-      fosforo: "9",
-      potassio: "38",
+async function extrairTextoViaServidor(imagemUri: string): Promise<{ text: string; confidence: number }> {
+  const formData = new FormData();
+  formData.append("file", {
+    uri: imagemUri,
+    name: "laudo.jpg",
+    type: "image/jpeg",
+  } as any);
+
+  const response = await fetch(`${API_BASE_URL}${OCR_ENDPOINT}`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
     },
-    materia_organica: "1.8",
-    ph: "5.6",
-    carencias_identificadas: [
-      "Deficiência de Fósforo (P) - Recomenda-se esterco curtido ou rochas fosfatadas",
-      "Baixa Matéria Orgânica - Recomenda-se incorporação de palhada e compostagem",
-    ],
-    confianca_extracao: 65,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`OCR API indisponível (HTTP ${response.status})`);
+  }
+
+  const data = (await response.json()) as OcrApiResponse;
+  const text = (data.text || "").trim();
+  const confidence = Number(data.confidence || 0);
+
+  if (!text) {
+    throw new Error("OCR sem texto extraído");
+  }
+
+  return {
+    text,
+    confidence: Number.isFinite(confidence) ? confidence : 0,
   };
 }
 

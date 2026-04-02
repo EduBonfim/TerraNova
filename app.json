@@ -10,17 +10,16 @@
     "splash": {
       "image": "./src/assets/mascote.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F5F5F5"
+      "backgroundColor": "#F9F8F3"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#4CAF50",
+        "backgroundColor": "#527e38",
         "foregroundImage": "./src/assets/mascote.png"
       },
-      "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -29,25 +28,10 @@
       "favicon": "./src/assets/mascote.png"
     },
     "plugins": [
-      "expo-router",
-      "expo-font",
-      "expo-web-browser"
+      "expo-router"
     ],
     "experiments": {
-      "typedRoutes": false
-    },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "f3e92264-a5b2-4bc5-900e-e51b37410a88"
-      }
-    },
-    "owner": "eduubonfiim",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/f3e92264-a5b2-4bc5-900e-e51b37410a88"
+      "typedRoutes": true
     }
   }
 }

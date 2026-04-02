@@ -15,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { AppHeader } from "../components/AppHeader";
-import { initAuthStore, registerUser } from "../services/authStore";
+import { initAuthStore, LGPD_TERMS_VERSION, registerUser } from "../services/authStore";
 import { useAuth } from "../contexts/AuthContext";
 
 // 🎨 PALETA OFICIAL TERRA NOVA
@@ -52,6 +52,30 @@ const formatCep = (value: string) => {
   return `${digits.slice(0, 5)}-${digits.slice(5)}`;
 };
 
+const normalizeDocument = (value: string) => value.replace(/\D/g, "");
+
+const formatDocument = (value: string) => {
+  const digits = normalizeDocument(value).slice(0, 14);
+
+  if (digits.length <= 11) {
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+  }
+
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+  if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
+  if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
+  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
+};
+
+const isFarmDocumentValid = (value: string) => {
+  const digits = normalizeDocument(value);
+  return digits.length === 11 || digits.length === 14;
+};
+
 const isEmailOrCpfValid = (value: string) => {
   const input = value.trim();
   const cpfDigits = input.replace(/\D/g, "");
@@ -76,6 +100,7 @@ export default function RegisterScreen() {
   const router = useRouter();
   const [nomeCompleto, setNomeCompleto] = useState("");
   const [nomePropriedade, setNomePropriedade] = useState("");
+  const [documentoPropriedade, setDocumentoPropriedade] = useState("");
   const [loginUsuario, setLoginUsuario] = useState("");
   const [senha, setSenha] = useState("");
   const [cep, setCep] = useState("");
@@ -90,6 +115,7 @@ export default function RegisterScreen() {
   const [isCepLookupLoading, setIsCepLookupLoading] = useState(false);
   const [lastResolvedCep, setLastResolvedCep] = useState("");
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [aceiteLgpd, setAceiteLgpd] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -103,14 +129,20 @@ export default function RegisterScreen() {
   const validarDadosIniciais = () => {
     const nome = nomeCompleto.trim();
     const propriedade = nomePropriedade.trim();
+    const documento = documentoPropriedade.trim();
     const login = loginUsuario.trim();
     const senhaLimpa = senha.trim();
 
-    if (!nome || !propriedade || !login || !senhaLimpa) {
+    if (!nome || !propriedade || !documento || !login || !senhaLimpa) {
       Alert.alert(
         "Campos obrigatorios",
-        "Preencha Nome completo, Nome da propriedade, Email ou CPF e Criar Senha.",
+        "Preencha Nome completo, Nome da propriedade, CPF/CNPJ da propriedade, Email ou CPF e Criar Senha.",
       );
+      return false;
+    }
+
+    if (!isFarmDocumentValid(documento)) {
+      Alert.alert("Documento invalido", "Informe CPF (11 digitos) ou CNPJ (14 digitos) da propriedade/responsavel.");
       return false;
     }
 
@@ -124,6 +156,11 @@ export default function RegisterScreen() {
         "Senha invalida",
         "Use 8 a 64 caracteres, com letra maiuscula, minuscula, numero e caractere especial, sem espacos.",
       );
+      return false;
+    }
+
+    if (!aceiteLgpd) {
+      Alert.alert("Consentimento obrigatório", "Você precisa aceitar os termos de Privacidade e LGPD para concluir o cadastro.");
       return false;
     }
 
@@ -180,6 +217,7 @@ export default function RegisterScreen() {
 
     const nome = nomeCompleto.trim();
     const propriedade = nomePropriedade.trim();
+    const documento = normalizeDocument(documentoPropriedade);
     const usuario = loginUsuario.trim();
     const senhaLimpa = senha.trim();
     const cepDigits = normalizeCep(cep);
@@ -211,8 +249,10 @@ export default function RegisterScreen() {
     const result = await registerUser({
       username: usuario,
       password: senhaLimpa,
+      acceptLgpd: aceiteLgpd,
       fullName: nome,
       farmName: propriedade,
+      farmDocument: documento,
       address: {
         cep: formatCep(cepDigits),
         street: ruaValue,
@@ -226,6 +266,11 @@ export default function RegisterScreen() {
 
     if (!result.ok && result.reason === "exists") {
       Alert.alert("Usuario ja existe", "Use outro login para cadastrar.");
+      return;
+    }
+
+    if (!result.ok && result.reason === "document_exists") {
+      Alert.alert("Documento ja cadastrado", "Ja existe cadastro com este CPF/CNPJ de propriedade.");
       return;
     }
 
@@ -334,6 +379,27 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.inputGroup}>
+              <Text style={styles.label}>CPF ou CNPJ da Propriedade</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons
+                  name="document-text-outline"
+                  size={20}
+                  color={theme.colors.gray_500}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Documento unico da propriedade"
+                  placeholderTextColor={theme.colors.gray_800}
+                  value={documentoPropriedade}
+                  onChangeText={(value) => setDocumentoPropriedade(formatDocument(value))}
+                  keyboardType="number-pad"
+                  autoCorrect={false}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
               <Text style={styles.label}>Criar Senha</Text>
               <View style={styles.inputContainer}>
                 <Ionicons
@@ -369,6 +435,21 @@ export default function RegisterScreen() {
                 color={theme.colors.white}
                 style={styles.submitIconSpacing}
               />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.lgpdRow} onPress={() => setAceiteLgpd((prev) => !prev)}>
+              <Ionicons
+                name={aceiteLgpd ? "checkbox" : "square-outline"}
+                size={22}
+                color={aceiteLgpd ? theme.colors.primary : theme.colors.gray_500}
+              />
+              <Text style={styles.lgpdText}>
+                Li e aceito os Termos de Privacidade e LGPD (v{LGPD_TERMS_VERSION}).
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => router.push("/privacy-lgpd")}>
+              <Text style={styles.lgpdLink}>Ver termos e direitos LGPD</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -607,6 +688,24 @@ const styles = StyleSheet.create({
     color: theme.colors.white,
     fontSize: 18,
     fontWeight: "bold",
+  },
+  lgpdRow: {
+    marginTop: 14,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  lgpdText: {
+    flex: 1,
+    fontSize: 13,
+    color: theme.colors.gray_800,
+    lineHeight: 18,
+  },
+  lgpdLink: {
+    marginTop: 8,
+    color: theme.colors.primary,
+    fontWeight: "700",
+    fontSize: 13,
   },
   modalBackdrop: {
     flex: 1,

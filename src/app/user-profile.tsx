@@ -138,7 +138,7 @@ export default function UserProfileScreen() {
               <Image source={{ uri: item.foto }} style={styles.listingImage} />
               <View style={styles.listingContent}>
                 <View style={styles.listingHeader}>
-                  <Ionicons name={item.icone} size={18} color={theme.colors.primary} />
+                  <Ionicons name={item.categoria === "Mercado" ? "cart" : "leaf"} size={18} color={theme.colors.primary} />
                   <Text style={styles.listingTitle}>{item.produto}</Text>
                 </View>
                 <Text style={styles.listingPrice}>{item.preco}</Text>

@@ -12,6 +12,9 @@ import {
   StatusBar,
   InteractionManager,
   RefreshControl,
+  ScrollView,
+  TextInput,
+  Keyboard,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -60,13 +63,16 @@ export default function MarketplaceScreen() {
   const [imageModalUri, setImageModalUri] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [storeVersion, setStoreVersion] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<TextInput>(null);
   const listRef = useRef<FlatList<any> | null>(null);
   const itemOffsetsRef = useRef<Record<string, number>>({});
   const pendingHighlightScrollRef = useRef<string | null>(null);
   const isIOS = Platform.OS === "ios";
 
-  const scrollToHighlightedItem = useCallback((itemId: string) => {
-    const index = MARKETPLACE_OPPORTUNITIES.findIndex((item) => item.id === itemId);
+  const scrollToHighlightedItem = useCallback((itemId: string, items: any[]) => {
+    const index = items.findIndex((item) => item.id === itemId);
     if (index < 0) return;
 
     const measuredOffset = itemOffsetsRef.current[itemId];
@@ -130,7 +136,7 @@ export default function MarketplaceScreen() {
     if (!isFocused || !highlightedItemId) return;
 
     setActiveHighlightId(highlightedItemId);
-    scrollToHighlightedItem(highlightedItemId);
+    scrollToHighlightedItem(highlightedItemId, filteredMarketplaceItems);
 
     const clearParamsTimeout = setTimeout(() => {
       router.setParams({ highlight: undefined });
@@ -139,7 +145,7 @@ export default function MarketplaceScreen() {
     return () => {
       clearTimeout(clearParamsTimeout);
     };
-  }, [highlightedItemId, isFocused, router, scrollToHighlightedItem]);
+  }, [highlightedItemId, isFocused, router, scrollToHighlightedItem, filteredMarketplaceItems]);
 
   useEffect(() => {
     if (!isFocused) {
@@ -194,99 +200,91 @@ export default function MarketplaceScreen() {
       .trim();
   };
 
+  const categories = useMemo(() => {
+    return ["Todos", "Mercado", "Cultivo"];
+  }, []);
+
   const filteredMarketplaceItems = useMemo(() => {
-    if (!filterByVendor) {
-      return MARKETPLACE_OPPORTUNITIES;
-    }
+    let items = MARKETPLACE_OPPORTUNITIES;
     
-    const normalizedFilter = normalizeText(filterByVendor);
-    return MARKETPLACE_OPPORTUNITIES.filter(
-      (item) => normalizeText(item.vendedor) === normalizedFilter
-    );
-  }, [filterByVendor]);
+    if (filterByVendor) {
+      const normalizedFilter = normalizeText(filterByVendor);
+      items = items.filter(
+        (item) => normalizeText(item.vendedor) === normalizedFilter
+      );
+    }
+
+    if (selectedCategory && selectedCategory !== "Todos") {
+      items = items.filter((item) => item.categoria === selectedCategory);
+    }
+
+    if (searchQuery.trim()) {
+      const normalizedSearch = normalizeText(searchQuery);
+      items = items.filter((item) =>
+        normalizeText(item.produto).includes(normalizedSearch) ||
+        normalizeText(item.vendedor).includes(normalizedSearch) ||
+        normalizeText(item.categoria).includes(normalizedSearch)
+      );
+    }
+
+    return items;
+  }, [filterByVendor, selectedCategory, searchQuery]);
 
   const renderItem = ({ item }: any) => {
     const isHighlighted = item.id === activeHighlightId;
 
     return (
-    <View
-      onLayout={(event) => {
-        registerItemLayout(item.id, event.nativeEvent.layout.y);
-      }}
-    >
-      <SurfaceCard style={[styles.card, isHighlighted ? styles.cardHighlighted : null]}>
-        <TouchableOpacity onPress={() => setImageModalUri(item.foto)}>
-          <Image source={{ uri: item.foto }} style={styles.itemImage} />
-        </TouchableOpacity>
-
-        {isHighlighted ? (
-          <View style={styles.highlightBadge}>
-            <Ionicons name="notifications" size={12} color={theme.colors.white} />
-            <Text style={styles.highlightBadgeText}>Item da sua notificacao</Text>
-          </View>
-        ) : null}
-
-        <View style={styles.cardHeader}>
-          <View style={styles.iconContainer}>
-            <Ionicons name={item.icone} size={24} color={theme.colors.primary} />
-          </View>
-          <View style={styles.headerText}>
-            <Text style={styles.produtoTitle}>{item.produto}</Text>
-            <Text style={styles.vendedorText}>
-              <Ionicons
-                name="location-outline"
-                size={14}
-                color={theme.colors.gray_500}
-              />{" "}
-              {item.vendedor}
-            </Text>
-            <Text style={styles.ratingText}>
-              <Ionicons name="star" size={13} color={theme.colors.orange_500} />{" "}
-              {ratingBySeller[item.vendedor]?.avg || 0} (
-              {ratingBySeller[item.vendedor]?.total || 0} avaliações)
-            </Text>
-
-            <View style={styles.trustMiniRow}>
-              <Ionicons
-                name={trustBySeller[item.vendedor]?.cep ? "checkmark-circle" : "alert-circle-outline"}
-                size={12}
-                color={trustBySeller[item.vendedor]?.cep ? theme.colors.primary : theme.colors.gray_500}
-              />
-              <Text style={styles.trustMiniText}>CEP</Text>
-              <Ionicons
-                name={trustBySeller[item.vendedor]?.pin ? "checkmark-circle" : "alert-circle-outline"}
-                size={12}
-                color={trustBySeller[item.vendedor]?.pin ? theme.colors.primary : theme.colors.gray_500}
-              />
-              <Text style={styles.trustMiniText}>Porteira</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.divisor} />
-
-        <View style={styles.cardFooter}>
-          <View>
-            <Text style={styles.precoText}>{item.preco}</Text>
-            <Text style={styles.estoqueText}>{item.estoque}</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.buyButton}
-            onPress={() =>
-              router.push({
-                pathname: "/messages",
-                params: {
-                  sellerName: item.vendedor,
-                  productName: item.produto,
-                },
-              })
-            }
-          >
-            <Text style={styles.buyButtonText}>Negociar</Text>
+      <View
+        onLayout={(event) => {
+          registerItemLayout(item.id, event.nativeEvent.layout.y);
+        }}
+        style={styles.cardWrapper}
+      >
+        <SurfaceCard style={[styles.card, isHighlighted && styles.cardHighlighted]}>
+          {/* Imagem */}
+          <TouchableOpacity onPress={() => setImageModalUri(item.foto)} style={styles.imageContainer}>
+            <Image source={{ uri: item.foto }} style={styles.productImage} resizeMode="cover" />
           </TouchableOpacity>
-        </View>
-      </SurfaceCard>
-    </View>
+
+          {/* Título */}
+          <Text style={styles.productTitle} numberOfLines={2}>{item.produto}</Text>
+
+          {/* Vendor */}
+          <View style={styles.vendorRow}>
+            <Ionicons name="location" size={11} color={theme.colors.gray_500} />
+            <Text style={styles.vendorName} numberOfLines={1}>{item.vendedor}</Text>
+          </View>
+
+          {/* Rating */}
+          <View style={styles.ratingRow}>
+            <Ionicons name="star" size={11} color={theme.colors.orange_500} />
+            <Text style={styles.ratingValue}>{ratingBySeller[item.vendedor]?.avg || 0}</Text>
+            <Text style={styles.reviewCount}>({ratingBySeller[item.vendedor]?.total || 0})</Text>
+          </View>
+
+          {/* Footer: Preço + Botão */}
+          <View style={styles.footer}>
+            <View style={styles.priceSection}>
+              <Text style={styles.price}>{item.preco}</Text>
+              <Text style={styles.stock} numberOfLines={1}>{item.estoque}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.negotiateBtn}
+              onPress={() =>
+                router.push({
+                  pathname: "/messages",
+                  params: {
+                    sellerName: item.vendedor,
+                    productName: item.produto,
+                  },
+                })
+              }
+            >
+              <Text style={styles.negotiateBtnText}>Negociar</Text>
+            </TouchableOpacity>
+          </View>
+        </SurfaceCard>
+      </View>
     );
   };
 
@@ -333,6 +331,49 @@ export default function MarketplaceScreen() {
         </View>
       ) : null}
 
+      {/* Chip de Busca - Input Direto */}
+      <View style={styles.activeSearchChip}>
+        <Ionicons name="search" size={14} color={theme.colors.primary} />
+        <TextInput
+          ref={searchInputRef}
+          style={styles.searchChipInput}
+          placeholder="Buscar produto, vendedor..."
+          placeholderTextColor={theme.colors.gray_500}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          returnKeyType="done"
+          onSubmitEditing={() => Keyboard.dismiss()}
+        />
+        {searchQuery ? (
+          <TouchableOpacity
+            onPress={() => setSearchQuery("")}
+            hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+          >
+            <Ionicons name="close-circle" size={16} color={theme.colors.gray_500} />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      {/* Filtros de Categoria */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryFilterContainer}>
+        {categories.map((cat) => (
+          <TouchableOpacity
+            key={cat}
+            style={[
+              styles.categoryFilterButton,
+              selectedCategory === cat && styles.categoryFilterButtonActive,
+            ]}
+            onPress={() => {
+              setSelectedCategory(cat === "Todos" ? null : cat);
+            }}
+          >
+            <Text style={[styles.categoryFilterText, selectedCategory === cat && styles.categoryFilterTextActive]}>
+              {cat}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
       <FlatList
         ref={listRef}
         data={filteredMarketplaceItems}
@@ -368,7 +409,7 @@ export default function MarketplaceScreen() {
         onContentSizeChange={() => {
           const pendingItemId = pendingHighlightScrollRef.current;
           if (pendingItemId) {
-            scrollToHighlightedItem(pendingItemId);
+            scrollToHighlightedItem(pendingItemId, filteredMarketplaceItems);
           }
         }}
         refreshControl={
@@ -382,6 +423,8 @@ export default function MarketplaceScreen() {
         style={styles.list}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        numColumns={2}
+        columnWrapperStyle={{ gap: 6 }}
       />
 
       <Modal visible={Boolean(imageModalUri)} transparent animationType="fade">
@@ -408,90 +451,116 @@ export default function MarketplaceScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.primary },
   list: { flex: 1, backgroundColor: theme.colors.background },
-  listContainer: { padding: 15 },
+  listContainer: { padding: 6, paddingBottom: 20 },
+  cardWrapper: { flex: 1, height: 280, marginHorizontal: 4, marginBottom: 8 },
   card: {
-    padding: 15,
-    marginBottom: 15,
+    flex: 1,
+    backgroundColor: theme.colors.white,
+    borderRadius: 8,
+    overflow: "hidden",
     elevation: 2,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    display: "flex",
+    flexDirection: "column",
   },
   cardHighlighted: {
     borderWidth: 2,
     borderColor: theme.colors.orange_500,
-    backgroundColor: "#FFFBEA",
   },
-  itemImage: { width: "100%", height: 160, borderRadius: 10, marginBottom: 12 },
-  highlightBadge: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: theme.colors.orange_500,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginBottom: 10,
-    gap: 4,
+  
+  /* Imagem */
+  imageContainer: {
+    width: "100%",
+    height: 120,
+    backgroundColor: theme.colors.background,
+    overflow: "hidden",
   },
-  highlightBadgeText: {
-    color: theme.colors.white,
-    fontSize: 11,
-    fontWeight: "700",
+  productImage: {
+    width: "100%",
+    height: "100%",
   },
-  cardHeader: { flexDirection: "row", alignItems: "center" },
-  iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: theme.colors.lightGreen,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 15,
-  },
-  headerText: { flex: 1 },
-  produtoTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
+
+  /* Título */
+  productTitle: {
+    fontSize: 13,
+    fontWeight: "600",
     color: theme.colors.gray_900,
-    marginBottom: 4,
+    paddingHorizontal: 8,
+    paddingTop: 8,
+    paddingBottom: 4,
+    lineHeight: 15,
   },
-  vendedorText: { fontSize: 13, color: theme.colors.gray_500 },
-  ratingText: { fontSize: 12, color: theme.colors.gray_800, marginTop: 4 },
-  trustMiniRow: {
+
+  /* Vendor */
+  vendorRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    marginTop: 6,
+    paddingHorizontal: 8,
+    paddingBottom: 3,
   },
-  trustMiniText: {
-    fontSize: 11,
+  vendorName: {
+    fontSize: 9,
     color: theme.colors.gray_500,
-    marginRight: 6,
+    marginLeft: 3,
+    flex: 1,
   },
-  divisor: {
-    height: 1,
-    backgroundColor: theme.colors.gray_300,
-    marginVertical: 15,
+
+  /* Rating */
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingBottom: 6,
   },
-  cardFooter: {
+  ratingValue: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: theme.colors.orange_500,
+    marginLeft: 2,
+  },
+  reviewCount: {
+    fontSize: 8,
+    color: theme.colors.gray_500,
+    marginLeft: 2,
+  },
+
+  /* Footer */
+  footer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-end",
+    paddingHorizontal: 8,
+    paddingTop: 6,
+    marginTop: "auto",
+    paddingBottom: 8,
   },
-  precoText: { fontSize: 18, fontWeight: "bold", color: theme.colors.primary },
-  estoqueText: { fontSize: 12, color: theme.colors.gray_500, marginTop: 2 },
-  buyButton: {
+  priceSection: {
+    flex: 1,
+  },
+  price: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: theme.colors.primary,
+  },
+  stock: {
+    fontSize: 8,
+    color: theme.colors.gray_500,
+    marginTop: 1,
+  },
+  negotiateBtn: {
     backgroundColor: theme.colors.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 5,
+    marginLeft: 8,
   },
-  buyButtonText: {
+  negotiateBtnText: {
     color: theme.colors.white,
     fontWeight: "bold",
-    fontSize: 14,
+    fontSize: 10,
   },
   modalOverlay: {
     flex: 1,
@@ -550,5 +619,64 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.white,
     fontWeight: "600",
+  },
+  categoryFilterContainer: {
+    backgroundColor: theme.colors.white,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+    flexGrow: 0,
+    maxHeight: 40,
+  },
+  categoryFilterButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginRight: 6,
+    borderRadius: 12,
+    backgroundColor: "#F0F0F0",
+    borderWidth: 0,
+    borderColor: "#D0D0D0",
+    justifyContent: "center",
+    alignItems: "center",
+    height: 28,
+  },
+  categoryFilterButtonActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  categoryFilterText: { fontSize: 12, fontWeight: "500", color: theme.colors.gray_800, lineHeight: 14 },
+  categoryFilterTextActive: { color: theme.colors.white },
+
+  // Search
+  activeSearchChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 16,
+    marginVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: theme.colors.lightGreen,
+    borderRadius: 16,
+    gap: 6,
+  },
+  activeSearchChipText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "500",
+    color: theme.colors.primary,
+  },
+  activeSearchChipPlaceholder: {
+    fontSize: 12,
+    fontWeight: "400",
+    color: theme.colors.gray_500,
+  },
+  searchChipInput: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "500",
+    color: theme.colors.primary,
+    padding: 0,
+    margin: 0,
   },
 });

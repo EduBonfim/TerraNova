@@ -54,10 +54,11 @@ const IOS_VISUAL = {
   headerPaddingTop: 16,
   modalCloseTop: 58,
   inputBottomOffsetBase: 0,
+  inputBottomExtraOffset: 0,
   reviewBottomExtra: 18,
   chatListBottomPadding: 20,
   inputContainerPadding: 12,
-  inputPaddingVertical: 12,
+  inputPaddingVertical: 14,
   inputMaxHeight: 100,
   sendButtonSize: 44,
   sendButtonRadius: 22,
@@ -71,6 +72,7 @@ const ANDROID_VISUAL = {
   headerPaddingTop: 10,
   modalCloseTop: 32,
   inputBottomOffsetBase: 0,
+  inputBottomExtraOffset: 0,
   reviewBottomExtra: 18,
   chatListBottomPadding: 20,
   inputContainerPadding: 12,
@@ -360,7 +362,7 @@ export default function MessagesScreen() {
 
   const inputBottomOffset = isKeyboardVisible
     ? 0
-    : Math.max(tabBarHeight - CURRENT_PLATFORM_UI.inputBottomOffsetBase, 0);
+    : CURRENT_PLATFORM_UI.inputBottomExtraOffset;
 
   const abrirConversa = (id: string) => {
     setConversaAtivaId(id);
