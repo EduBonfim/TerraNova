@@ -40,6 +40,12 @@
         "projectId": "ecd75409-8c10-490c-ac58-a847c6c7680c"
       }
     },
-    "owner": "eduubonfiim"
+    "owner": "eduubonfiim",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ecd75409-8c10-490c-ac58-a847c6c7680c"
+    }
   }
 }
