@@ -32,6 +32,19 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f3e92264-a5b2-4bc5-900e-e51b37410a88"
+      }
+    },
+    "owner": "eduubonfiim",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f3e92264-a5b2-4bc5-900e-e51b37410a88"
     }
   }
 }

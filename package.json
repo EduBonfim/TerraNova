@@ -19,6 +19,7 @@
     "expo-splash-screen": "~55.0.12",
     "expo-status-bar": "~55.0.4",
     "expo-symbols": "~55.0.5",
+    "expo-updates": "~29.0.16",
     "expo-web-browser": "~55.0.10",
     "react": "18.3.1",
     "react-dom": "18.3.1",
@@ -33,6 +34,5 @@
     "@types/react": "~18.3.12",
     "typescript": "~5.9.2"
   },
-  
   "private": true
 }
