@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Terra Nova",
+    "slug": "terra-nova",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/mascote.png",
+    "scheme": "terranova",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./src/assets/mascote.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F9F8F3"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#527e38",
+        "foregroundImage": "./src/assets/mascote.png"
+      },
+      "package": "com.eduubonfiim.terranova"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/08885437-1313-4fda-bf16-0953f33270c3"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "08885437-1313-4fda-bf16-0953f33270c3"
+      }
+    },
+    "owner": "eduubonfiim"
+  }
+}

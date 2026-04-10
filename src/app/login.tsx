@@ -1,0 +1,280 @@
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  KeyboardAvoidingView,
+  Platform,
+  Image,
+  Alert,
+  Keyboard,
+  ActivityIndicator,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useAuth } from "@/contexts/AuthContext";
+import { appTheme as theme } from "@/theme/appTheme";
+
+// 🎨 PALETA OFICIAL TERRA NOVA já importada do theme
+
+const IOS_VISUAL = {
+  keyboardBehavior: "padding" as const,
+};
+
+const ANDROID_VISUAL = {
+  keyboardBehavior: "height" as const,
+};
+
+const CURRENT_PLATFORM_UI = Platform.OS === "ios" ? IOS_VISUAL : ANDROID_VISUAL;
+
+const sanitizePasswordInput = (value: string) =>
+  value.replace(/[^A-Za-z0-9!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/g, "");
+
+export default function LoginScreen() {
+  const router = useRouter();
+  const { login: authLogin } = useAuth();
+  const [login, setLogin] = useState("");
+  const [senha, setSenha] = useState("");
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fazerLogin = async () => {
+    const user = login.trim();
+    const password = senha.trim();
+
+    if (!user || !password) {
+      Alert.alert("Campos obrigatorios", "Informe usuario e senha para entrar.");
+      return;
+    }
+
+    setIsLoading(true);
+    const authUser = await authLogin(user, password);
+
+    if (!authUser) {
+      setIsLoading(false);
+      Alert.alert("Login invalido", "Usuario ou senha incorretos.");
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    if (authUser.role === "admin") {
+      if (authUser.pendingLgpdReacceptance) {
+        router.replace({ pathname: "/privacy-lgpd", params: { forceConsent: "1" } });
+        return;
+      }
+      router.replace("/(admin)/home");
+      return;
+    }
+
+    if (authUser.role === "buyer") {
+      router.replace("/(buyer)/home" as never);
+      return;
+    }
+
+    // Produtor (role: "user" ou undefined)
+    router.replace("/(tabs)/home");
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <KeyboardAvoidingView
+          style={styles.container}
+          behavior={CURRENT_PLATFORM_UI.keyboardBehavior}
+        >
+          <View style={styles.content}>
+          {/* --- LOGO E BOAS-VINDAS --- */}
+          <View style={styles.header}>
+            <View style={styles.logoCircle}>
+              <Image
+                source={require("../assets/perfil.png")}
+                style={styles.avatar}
+              />
+            </View>
+            <Text style={styles.title}>Terra Nova</Text>
+            <Text style={styles.subtitle}>Conectando a agroecologia.</Text>
+          </View>
+
+          {/* --- FORMULÁRIO DE LOGIN --- */}
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Login</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons
+                  name="person-outline"
+                  size={20}
+                  color={theme.colors.gray_500}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Usuário, e-mail ou CPF"
+                  placeholderTextColor={theme.colors.gray_800}
+                  value={login}
+                  onChangeText={setLogin}
+                  keyboardType="email-address"
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Senha</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={20}
+                  color={theme.colors.gray_500}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Sua senha secreta"
+                  placeholderTextColor={theme.colors.gray_800}
+                  value={senha}
+                  onChangeText={(value) => setSenha(sanitizePasswordInput(value))}
+                  secureTextEntry={!mostrarSenha}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="default"
+                />
+                <TouchableOpacity
+                  onPress={() => setMostrarSenha(!mostrarSenha)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons
+                    name={mostrarSenha ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color={theme.colors.gray_500}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.forgotPassword}>
+              <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.loginButton, isLoading && styles.loginButtonDisabled]} 
+              onPress={fazerLogin}
+              disabled={isLoading}
+            >
+              {isLoading && <ActivityIndicator size="small" color={theme.colors.white} style={{ marginRight: 8 }} />}
+              <Text style={styles.loginButtonText}>
+                {isLoading ? "Redirecionando..." : "Entrar"}
+              </Text>
+              {!isLoading && (
+                <Ionicons
+                  name="arrow-forward"
+                  size={20}
+                  color={theme.colors.white}
+                  style={styles.submitIconSpacing}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* --- RODAPÉ PARA CADASTRO --- */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              Ainda não faz parte da comunidade?
+            </Text>
+            <TouchableOpacity onPress={() => router.push("/register-type" as never)}>
+              <Text style={styles.registerLink}>Criar minha conta</Text>
+            </TouchableOpacity>
+          </View>
+          </View>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: theme.colors.background },
+  container: { flex: 1, justifyContent: "center" },
+  content: { flex: 1, padding: 24, justifyContent: "center" },
+
+  header: { alignItems: "center", marginBottom: 40 },
+  logoCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: theme.colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+    elevation: 4,
+  },
+  avatar: { width: 80, height: 80, borderRadius: 40 },
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: theme.colors.primary,
+    marginBottom: 4,
+  },
+  subtitle: { fontSize: 16, color: theme.colors.gray_500 },
+
+  form: { width: "100%" },
+  inputGroup: { marginBottom: 20 },
+  label: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+    marginBottom: 8,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: theme.colors.white,
+    borderWidth: 1,
+    borderColor: theme.colors.gray_300,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 56,
+  },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, fontSize: 16, color: theme.colors.gray_800 },
+  eyeIcon: { padding: 8 },
+
+  forgotPassword: { alignItems: "flex-end", marginBottom: 24 },
+  forgotPasswordText: {
+    color: theme.colors.primary,
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+
+  loginButton: {
+    flexDirection: "row",
+    backgroundColor: theme.colors.primary,
+    height: 56,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 2,
+  },
+  loginButtonDisabled: {
+    opacity: 0.6,
+  },
+  loginButtonText: {
+    color: theme.colors.white,
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+
+  footer: { marginTop: 40, alignItems: "center" },
+  footerText: { fontSize: 14, color: theme.colors.gray_500, marginBottom: 8 },
+  registerLink: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: theme.colors.orange_500,
+  },
+  submitIconSpacing: { marginLeft: 8 },
+});
