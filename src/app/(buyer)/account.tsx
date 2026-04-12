@@ -269,7 +269,7 @@ export default function BuyerAccountScreen() {
               label="Meus Pedidos"
               iconBg="#FFF8E1"
               iconColor={theme.colors.orange_500}
-              onPress={() => Alert.alert("Em breve", "O histórico de pedidos estará disponível em breve.")}
+              onPress={() => router.push("/my-orders")}
             />
             <MenuCard
               icon="chatbubble-outline"

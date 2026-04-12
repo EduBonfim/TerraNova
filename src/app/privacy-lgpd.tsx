@@ -20,6 +20,8 @@ import {
   exportUserPersonalData,
   LGPD_TERMS_VERSION,
   maskDocument,
+  maskEmail,
+  maskPhone,
   type UserPersonalDataExport,
 } from "@/services/authStore";
 
@@ -172,6 +174,13 @@ export default function PrivacyLgpdScreen() {
               Documento: {exportedData.farmDocumentType ? exportedData.farmDocumentType.toUpperCase() : "DOC"} {" "}
               {maskDocument(exportedData.farmDocument, 4)}
             </Text>
+            {exportedData.cpf && (
+              <Text style={styles.dataLine}>
+                CPF (Comprador): {maskDocument(exportedData.cpf, 4)}
+              </Text>
+            )}
+            <Text style={styles.dataLine}>Email: {maskEmail(user?.email)}</Text>
+            <Text style={styles.dataLine}>Telefone: {maskPhone(user?.phone)}</Text>
             <Text style={styles.dataLine}>Aceite LGPD: {exportedData.lgpdAcceptedAt || "Nao registrado"}</Text>
           </SurfaceCard>
         ) : null}

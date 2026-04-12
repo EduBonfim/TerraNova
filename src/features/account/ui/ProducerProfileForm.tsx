@@ -72,7 +72,7 @@ export function ProducerProfileForm() {
       <ScrollView style={styles.containerScroll} showsVerticalScrollIndicator={false}>
         <View style={styles.formContent}>
           {/* ─── Meu Nome ─── */}
-          <Text style={styles.editLabel}>Meu nome</Text>
+          <Text style={styles.editLabel}>Nome Completo</Text>
           <TextInput
             style={[styles.photoInput, styles.inputReadOnly]}
             placeholder="Seu nome"

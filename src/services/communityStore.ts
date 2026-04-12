@@ -39,6 +39,8 @@ type CommunityProfile = {
   locationValidatedAt?: string;
   bio: string;
   avatarUri?: string;
+  phone?: string;
+  gender?: string;
   farmPhotos: string[];
   reviews: Review[];
   listings: Array<{ id: string; title: string; type: 'venda' | 'doacao'; price?: string }>;
@@ -716,6 +718,8 @@ export const initCommunityStore = async () => {
         locationValidatedAt: undefined,
         bio: 'Produtor cadastrado na comunidade Terra Nova.',
         avatarUri: undefined,
+        phone: undefined,
+        gender: undefined,
         farmPhotos: [],
         reviews: [],
         listings: [],
@@ -749,6 +753,8 @@ export const initCommunityStore = async () => {
             : current.locationValidatedAt,
         bio: value.bio ?? current.bio,
         avatarUri: value.avatarUri ?? current.avatarUri,
+        phone: value.phone ?? current.phone,
+        gender: value.gender ?? current.gender,
         farmPhotos: Array.isArray(value.farmPhotos) ? value.farmPhotos : current.farmPhotos,
         reviews: Array.isArray(value.reviews) ? value.reviews : current.reviews,
         listings: Array.isArray(value.listings) ? value.listings : current.listings,
@@ -795,6 +801,8 @@ export const refreshCommunityStore = async () => {
         locationValidatedAt: undefined,
         bio: 'Produtor cadastrado na comunidade Terra Nova.',
         avatarUri: undefined,
+        phone: undefined,
+        gender: undefined,
         farmPhotos: [],
         reviews: [],
         listings: [],
@@ -828,6 +836,8 @@ export const refreshCommunityStore = async () => {
             : current.locationValidatedAt,
         bio: value.bio ?? current.bio,
         avatarUri: value.avatarUri ?? current.avatarUri,
+        phone: value.phone ?? current.phone,
+        gender: value.gender ?? current.gender,
         farmPhotos: Array.isArray(value.farmPhotos) ? value.farmPhotos : current.farmPhotos,
         reviews: Array.isArray(value.reviews) ? value.reviews : current.reviews,
         listings: Array.isArray(value.listings) ? value.listings : current.listings,
@@ -917,39 +927,13 @@ export const getProfileSummary = (name: string): CommunityProfile => {
 
 export const updateProfileSummary = async (
   name: string,
-  payload: {
-    displayName: string;
-    farmName: string;
-    producerRole: string;
-    farmAddress: string;
-    farmAddressNumber: string;
-    farmAddressReference: string;
-    farmCep: string;
-    gateLatitude?: number;
-    gateLongitude?: number;
-    isCepValidated: boolean;
-    isGatePinConfirmed: boolean;
-    locationValidatedAt?: string;
-    bio: string;
-  },
+  payload: Partial<CommunityProfile>,
 ) => {
   const profile = getProfile(name);
-  profile.displayName = payload.displayName;
-  profile.farmName = payload.farmName;
-  profile.producerRole = payload.producerRole;
-  profile.farmAddress = payload.farmAddress;
-  profile.farmAddressNumber = payload.farmAddressNumber;
-  profile.farmAddressReference = payload.farmAddressReference;
-  profile.farmCep = payload.farmCep;
-  profile.gateLatitude = payload.gateLatitude;
-  profile.gateLongitude = payload.gateLongitude;
-  profile.isCepValidated = payload.isCepValidated;
-  profile.isGatePinConfirmed = payload.isGatePinConfirmed;
-  profile.locationValidatedAt = payload.locationValidatedAt;
-  profile.bio = payload.bio;
-  
-  await persistCommunityStore();
+  Object.assign(profile, payload);
+  void persistCommunityStore();
 };
+
 
 export const setProfileAvatar = async (name: string, uri: string) => {
   const profile = getProfile(name);

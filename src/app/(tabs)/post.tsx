@@ -291,12 +291,6 @@ export default function PostScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.formContainer}>
-            <View style={styles.viewTabRow}>
-              <View style={[styles.viewTabButton, styles.viewTabButtonActive]}>
-                <Text style={[styles.viewTabText, styles.viewTabTextActive]}>Criar Novo Anúncio</Text>
-              </View>
-            </View>
-
             {activeTab === "create" ? (
               <>
                 {/* Foto do Produto */}
@@ -779,32 +773,6 @@ const styles = StyleSheet.create({
 
   // Formulário
   formContainer: { paddingHorizontal: 20 },
-  viewTabRow: {
-    flexDirection: "row",
-    backgroundColor: theme.colors.white,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: theme.colors.gray_300,
-    padding: 4,
-    marginBottom: 16,
-  },
-  viewTabButton: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  viewTabButtonActive: {
-    backgroundColor: theme.colors.primary,
-  },
-  viewTabText: {
-    color: theme.colors.gray_500,
-    fontWeight: "700",
-    fontSize: 13,
-  },
-  viewTabTextActive: {
-    color: theme.colors.white,
-  },
   label: {
     fontSize: 14,
     fontWeight: "bold",

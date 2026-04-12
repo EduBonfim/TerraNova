@@ -14,23 +14,33 @@ import { useRouter } from "expo-router";
 import { AppHeader } from "@/components/AppHeader";
 import { useAccountLogic } from "@/features/account/hooks/useAccountLogic";
 import { appTheme as theme } from "@/theme/appTheme";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function MyOrdersScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { 
     myOrders, 
     selectedOrderTab, 
     setSelectedOrderTab 
   } = useAccountLogic();
 
+  const isBuyer = user?.role === "buyer";
   const ordersList = myOrders[selectedOrderTab] || [];
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
       <AppHeader
-        title="Minhas Vendas"
-        onBackPress={() => router.back()}
+        title={isBuyer ? "Meus Pedidos" : "Minhas Vendas"}
+        onBackPress={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace(isBuyer ? "/(buyer)/account" : "/(tabs)/home");
+          }
+        }}
+        showBackButton={true}
         backgroundColor={theme.colors.primary}
         textColor={theme.colors.white}
         borderColor={theme.colors.primary}
@@ -94,10 +104,10 @@ export default function MyOrdersScreen() {
 
               <View style={styles.orderCardFooter}>
                 <Text style={styles.orderBuyer}>
-                  {selectedOrderTab === "transporte" ? "Transportadora: " : "Comprador: "}
+                  {selectedOrderTab === "transporte" ? "Transportadora: " : (isBuyer ? "Vendedor: " : "Comprador: ")}
                   {selectedOrderTab === "transporte" && "transportadora" in order 
                     ? (order as any).transportadora 
-                    : (order as any).comprador}
+                    : (isBuyer ? (order as any).vendedorUsername : (order as any).comprador)}
                 </Text>
               </View>
             </View>
@@ -106,8 +116,14 @@ export default function MyOrdersScreen() {
           {ordersList.length === 0 && (
             <View style={styles.emptyState}>
               <Ionicons name="bag-outline" size={64} color={theme.colors.gray_300} />
-              <Text style={styles.emptyStateText}>Nenhuma venda nesta categoria</Text>
-              <Text style={styles.emptyStateSubtext}>Suas vendas aparecerão aqui assim que forem realizadas.</Text>
+              <Text style={styles.emptyStateText}>
+                {isBuyer ? "Nenhum pedido nesta categoria" : "Nenhuma venda nesta categoria"}
+              </Text>
+              <Text style={styles.emptyStateSubtext}>
+                {isBuyer 
+                  ? "Seus pedidos aparecerão aqui assim que forem realizados." 
+                  : "Suas vendas aparecerão aqui assim que forem realizadas."}
+              </Text>
             </View>
           )}
           

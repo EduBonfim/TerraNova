@@ -15,6 +15,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
+import { maskEmail } from "@/services/authStore";
 import { useAccountLogic } from "@/features/account/hooks/useAccountLogic";
 import { appTheme as theme } from "@/theme/appTheme";
 
@@ -23,20 +24,22 @@ const genderOptions = [
   { label: "Feminino", value: "female" },
   { label: "Outro", value: "other" },
   { label: "Preferir não informar", value: "prefer_not" },
-];
+] as const;
 
 export function BuyerProfileForm() {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
-  
-  const [phone, setPhone] = useState(user?.phone || "");
-  const [bio, setBio] = useState(user?.bio || "");
-  const [gender, setGender] = useState(user?.gender || "");
   const [showGenderPicker, setShowGenderPicker] = useState(false);
-
+  
   const {
     draftDisplayName,
     profilePhotoUri,
+    draftProfileBio,
+    setDraftProfileBio,
+    draftPhone,
+    setDraftPhone,
+    draftGender,
+    setDraftGender,
     onPickProfilePhoto,
     onTakeProfilePhoto,
     onSaveProfile,
@@ -48,7 +51,8 @@ export function BuyerProfileForm() {
     router.back();
   };
 
-  const formatPhone = (text: string) => {
+  const formatPhone = (text: string | null | undefined) => {
+    if (typeof text !== "string") return "";
     const cleaned = text.replace(/\D/g, "");
     if (cleaned.length <= 2) return cleaned;
     if (cleaned.length <= 7) return `(${cleaned.slice(0, 2)})${cleaned.slice(2)}`;
@@ -80,14 +84,14 @@ export function BuyerProfileForm() {
               <TouchableOpacity
                 style={[
                   styles.modalOption,
-                  gender === item.value && styles.modalOptionSelected,
+                  draftGender === item.value && styles.modalOptionSelected,
                 ]}
                 onPress={() => {
-                  setGender(item.value);
+                  setDraftGender(item.value);
                   setShowGenderPicker(false);
                 }}
               >
-                {gender === item.value && (
+                {draftGender === item.value && (
                   <Ionicons
                     name="checkmark-circle"
                     size={20}
@@ -98,7 +102,7 @@ export function BuyerProfileForm() {
                 <Text
                   style={[
                     styles.modalOptionText,
-                    gender === item.value && styles.modalOptionTextSelected,
+                    draftGender === item.value && styles.modalOptionTextSelected,
                   ]}
                 >
                   {item.label}
@@ -142,12 +146,18 @@ export function BuyerProfileForm() {
           </View>
 
           {/* Nome Completo */}
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Nome Completo</Text>
-            <View style={styles.infoValueRow}>
-              <Text style={styles.infoValue}>{draftDisplayName}</Text>
-              <Ionicons name="chevron-forward" size={18} color={theme.colors.gray_500} />
-            </View>
+          <View style={styles.fieldSection}>
+            <Text style={styles.fieldLabel}>Nome Completo</Text>
+            <TextInput
+              style={[styles.input, styles.inputReadOnly]}
+              value={draftDisplayName}
+              editable={false}
+              placeholder="Seu nome"
+              placeholderTextColor={theme.colors.gray_500}
+            />
+            <Text style={styles.readOnlyHint}>
+              🔒 O nome não pode ser editado após o cadastro.
+            </Text>
           </View>
 
           {/* Bio */}
@@ -157,14 +167,14 @@ export function BuyerProfileForm() {
               style={[styles.bioInput]}
               placeholder="Defina sua bio agora"
               placeholderTextColor={theme.colors.gray_500}
-              value={bio}
-              onChangeText={setBio}
+              value={draftProfileBio}
+              onChangeText={setDraftProfileBio}
               multiline
               numberOfLines={2}
               textAlignVertical="top"
               maxLength={160}
             />
-            <Text style={styles.charCounter}>{bio.length}/160</Text>
+            <Text style={styles.charCounter}>{draftProfileBio.length}/160</Text>
           </View>
 
           {/* Gênero */}
@@ -177,25 +187,32 @@ export function BuyerProfileForm() {
               <Text
                 style={[
                   styles.selectButtonText,
-                  !gender && styles.selectButtonPlaceholder,
+                  !draftGender && styles.selectButtonPlaceholder,
                 ]}
               >
-                {gender ? getGenderLabel(gender) : "Selecionar"}
+                {draftGender ? getGenderLabel(draftGender) : "Selecionar"}
               </Text>
               <Ionicons name="chevron-forward" size={18} color={theme.colors.gray_500} />
             </TouchableOpacity>
           </View>
 
-          {/* Informações de Identidade */}
-          <View style={styles.infoRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.infoLabel}>Informações de identidade</Text>
-              <Text style={styles.infoLabelSmall}>Nome, CPF, Data de nascimento</Text>
-            </View>
-            <View style={styles.verifiedBadge}>
-              <Ionicons name="checkmark-circle" size={16} color={theme.colors.primary} />
-              <Text style={styles.verifiedText}>Verificado</Text>
-            </View>
+          {/* Informações de Identidade - Somente Leitura */}
+          <View style={styles.fieldSection}>
+             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <Text style={styles.fieldLabel}>Identidade e Verificação</Text>
+                <View style={styles.verifiedBadge}>
+                  <Ionicons name="checkmark-circle" size={14} color={theme.colors.primary} />
+                  <Text style={styles.verifiedText}>Conta Verificada</Text>
+                </View>
+             </View>
+             <TextInput
+                style={[styles.input, styles.inputReadOnly]}
+                value="Dados verificados (CPF, Nome, Nascimento)"
+                editable={false}
+              />
+              <Text style={styles.readOnlyHint}>
+                🔒 Dados de identidade não podem ser alterados por segurança.
+              </Text>
           </View>
 
           {/* Celular */}
@@ -205,8 +222,8 @@ export function BuyerProfileForm() {
               style={styles.input}
               placeholder="Número de celular"
               placeholderTextColor={theme.colors.gray_500}
-              value={phone}
-              onChangeText={(text) => setPhone(formatPhone(text))}
+              value={draftPhone}
+              onChangeText={(text) => setDraftPhone(formatPhone(text))}
               keyboardType="phone-pad"
             />
           </View>
@@ -214,10 +231,14 @@ export function BuyerProfileForm() {
           {/* Email */}
           <View style={styles.fieldSection}>
             <Text style={styles.fieldLabel}>Email</Text>
-            <View style={styles.emailContainer}>
-              <Text style={styles.emailText}>{user?.email || "N/A"}</Text>
-              <Ionicons name="chevron-forward" size={18} color={theme.colors.gray_500} />
-            </View>
+            <TextInput
+              style={[styles.input, styles.inputReadOnly]}
+              value={maskEmail(user?.email)}
+              editable={false}
+            />
+            <Text style={styles.readOnlyHint}>
+              📧 O e-mail é usado para sua segurança e login.
+            </Text>
           </View>
 
           {/* Salvar Alterações */}
@@ -346,6 +367,17 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     color: theme.colors.gray_800,
     fontSize: 14,
+  },
+  inputReadOnly: {
+    backgroundColor: theme.colors.gray_100,
+    color: theme.colors.gray_500,
+    borderColor: theme.colors.gray_200,
+  },
+  readOnlyHint: {
+    fontSize: 11,
+    color: theme.colors.gray_500,
+    marginTop: 4,
+    marginBottom: 10,
   },
   bioInput: {
     backgroundColor: theme.colors.white,

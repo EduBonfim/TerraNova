@@ -63,116 +63,115 @@ export default function SalesMetricsScreen() {
           </View>
 
           {/* Total Sales Card */}
-          <View style={styles.totalSalesContainer}>
-            <Text style={styles.totalSalesLabel}>Total de Vendas</Text>
-            <Text style={styles.totalSalesNumber}>{salesData.total}</Text>
-            <Text style={styles.totalSalesDescription}>vendas efetuadas neste período</Text>
+          <View style={[styles.card, styles.totalSalesCard]}>
+            <View style={styles.cardHeader}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="trending-up" size={24} color={theme.colors.white} />
+              </View>
+              <View>
+                <Text style={styles.cardLabel}>Faturamento Total Estimado</Text>
+                <Text style={styles.cardSubValue}>Balanço do Período</Text>
+              </View>
+            </View>
+            <Text style={styles.totalSalesNumber}>R$ 104.775,00</Text>
+            <View style={styles.badge}>
+              <Ionicons name="caret-up" size={12} color="#10B981" />
+              <Text style={styles.badgeText}>+12.4% vs anterior</Text>
+            </View>
+          </View>
+
+          {/* Key KPIs Row */}
+          <View style={styles.statRow}>
+            <View style={[styles.statBox, { borderLeftColor: "#10B981", borderLeftWidth: 4 }]}>
+              <Text style={styles.statBoxLabel}>Total Pedidos</Text>
+              <Text style={styles.statBoxValue}>{salesData.total}</Text>
+            </View>
+            <View style={[styles.statBox, { borderLeftColor: theme.colors.primary, borderLeftWidth: 4 }]}>
+              <Text style={styles.statBoxLabel}>Ticket Médio</Text>
+              <Text style={styles.statBoxValue}>R$ 425</Text>
+            </View>
           </View>
 
           {/* Sales Breakdown */}
-          <View style={styles.salesBreakdownContainer}>
-            <Text style={styles.breakdownTitle}>Vendas por Categoria</Text>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Vendas por Categoria</Text>
             
             <View style={styles.chartContainer}>
-              <View style={styles.chartBar}>
-                <View style={styles.chartBarLabel}>
-                  <View style={[styles.chartBarColor, { backgroundColor: "#10B981" }]} />
-                  <View style={styles.chartBarInfo}>
-                    <Text style={styles.chartBarName}>Alimentos</Text>
-                    <Text style={styles.chartBarStats}>
-                      {salesData.alimentos} vendas ({Math.round((salesData.alimentos / salesData.total) * 100) || 0}%)
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.barFillContainer}>
-                  <View
-                    style={[
-                      styles.barFill,
-                      { width: `${Math.round((salesData.alimentos / salesData.total) * 100) || 0}%`, backgroundColor: "#10B981" },
-                    ]}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.chartBar}>
-                <View style={styles.chartBarLabel}>
-                  <View style={[styles.chartBarColor, { backgroundColor: "#F59E0B" }]} />
-                  <View style={styles.chartBarInfo}>
-                    <Text style={styles.chartBarName}>Insumos</Text>
-                    <Text style={styles.chartBarStats}>
-                      {salesData.insumos} vendas ({Math.round((salesData.insumos / salesData.total) * 100) || 0}%)
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.barFillContainer}>
-                  <View
-                    style={[
-                      styles.barFill,
-                      { width: `${Math.round((salesData.insumos / salesData.total) * 100) || 0}%`, backgroundColor: "#F59E0B" },
-                    ]}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.chartBar}>
-                <View style={styles.chartBarLabel}>
-                  <View style={[styles.chartBarColor, { backgroundColor: "#3B82F6" }]} />
-                  <View style={styles.chartBarInfo}>
-                    <Text style={styles.chartBarName}>Sementes</Text>
-                    <Text style={styles.chartBarStats}>
-                      {salesData.sementes} vendas ({Math.round((salesData.sementes / salesData.total) * 100) || 0}%)
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.barFillContainer}>
-                  <View
-                    style={[
-                      styles.barFill,
-                      { width: `${Math.round((salesData.sementes / salesData.total) * 100) || 0}%`, backgroundColor: "#3B82F6" },
-                    ]}
-                  />
-                </View>
-              </View>
+              <CategoryBar 
+                label="Alimentos" 
+                value={salesData.alimentos} 
+                total={salesData.total} 
+                color="#10B981" 
+              />
+              <CategoryBar 
+                label="Insumos" 
+                value={salesData.insumos} 
+                total={salesData.total} 
+                color="#F59E0B" 
+              />
+              <CategoryBar 
+                label="Sementes" 
+                value={salesData.sementes} 
+                total={salesData.total} 
+                color="#3B82F6" 
+              />
             </View>
           </View>
 
-          {/* Stats Grid */}
-          <View style={styles.salesStats}>
-            <Text style={styles.statsTitle}>Estatísticas Adicionais</Text>
+          {/* Recent Activity Section */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Atividades Recentes</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAllText}>Ver tudo</Text>
+            </TouchableOpacity>
+          </View>
 
-            <View style={styles.statRow}>
-              <View style={styles.statBox}>
-                <Text style={styles.statBoxLabel}>Ticket Médio</Text>
-                <Text style={styles.statBoxValue}>R$ 425,00</Text>
+          <View style={styles.activitiesContainer}>
+            {/* Exibindo os últimos 3 pedidos como exemplo de atividade */}
+            {[
+              { id: "1", client: "João Silva", value: "R$ 1.250,00", time: "Há 2 horas" },
+              { id: "2", client: "Maria Souza", value: "R$ 450,00", time: "Há 5 horas" },
+              { id: "3", client: "Fazenda Sol", value: "R$ 2.100,00", time: "Ontem" },
+            ].map((activity) => (
+              <View key={activity.id} style={styles.activityItem}>
+                <View style={styles.activityIcon}>
+                  <Ionicons name="cart-outline" size={20} color={theme.colors.primary} />
+                </View>
+                <View style={styles.activityInfo}>
+                  <Text style={styles.activityClient}>{activity.client}</Text>
+                  <Text style={styles.activityTime}>{activity.time}</Text>
+                </View>
+                <Text style={styles.activityValue}>{activity.value}</Text>
               </View>
-              <View style={styles.statBox}>
-                <Text style={styles.statBoxLabel}>Maior Venda</Text>
-                <Text style={styles.statBoxValue}>R$ 2.100,00</Text>
-              </View>
-            </View>
-
-            <View style={styles.statRow}>
-              <View style={styles.statBox}>
-                <Text style={styles.statBoxLabel}>Menor Venda</Text>
-                <Text style={styles.statBoxValue}>R$ 150,00</Text>
-              </View>
-              <View style={styles.statBox}>
-                <Text style={styles.statBoxLabel}>Faturamento Estimado</Text>
-                <Text style={styles.statBoxValue}>R$ 104.775</Text>
-              </View>
-            </View>
+            ))}
           </View>
 
           {/* Export Button */}
           <TouchableOpacity style={styles.exportButton} onPress={exportToCSV}>
-            <Ionicons name="document-text-outline" size={20} color={theme.colors.white} />
-            <Text style={styles.exportButtonText}>Exportar Relatório completo (CSV)</Text>
+            <Ionicons name="cloud-download-outline" size={20} color={theme.colors.white} />
+            <Text style={styles.exportButtonText}>Gerar Relatório Analítico (CSV)</Text>
           </TouchableOpacity>
           
           <View style={{ height: 40 }} />
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+// Helper Component for Bars
+function CategoryBar({ label, value, total, color }: any) {
+  const percentage = Math.round((value / total) * 100) || 0;
+  return (
+    <View style={styles.chartBar}>
+      <View style={styles.chartBarLabel}>
+        <Text style={styles.chartBarName}>{label}</Text>
+        <Text style={styles.chartBarStats}>{value} de {total} ({percentage}%)</Text>
+      </View>
+      <View style={styles.barFillContainer}>
+        <View style={[styles.barFill, { width: `${percentage}%`, backgroundColor: color }]} />
+      </View>
+    </View>
   );
 }
 
@@ -189,155 +188,211 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   periodSelector: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   periodButton: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
     backgroundColor: theme.colors.white,
     borderWidth: 1,
     borderColor: theme.colors.gray_300,
-    marginRight: 8,
+    marginRight: 10,
   },
   periodButtonActive: {
     backgroundColor: theme.colors.primary,
     borderColor: theme.colors.primary,
   },
   periodButtonText: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: theme.colors.gray_500,
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.colors.gray_600,
   },
   periodButtonTextActive: {
     color: theme.colors.white,
   },
-  totalSalesContainer: {
+  card: {
     backgroundColor: theme.colors.white,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 20,
-    alignItems: "center",
     marginBottom: 16,
-    elevation: 1,
+    elevation: 2,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
   },
-  totalSalesLabel: {
-    fontSize: 14,
-    color: theme.colors.gray_500,
-    marginBottom: 4,
+  totalSalesCard: {
+    backgroundColor: theme.colors.primary,
   },
-  totalSalesNumber: {
-    fontSize: 48,
-    fontWeight: "bold",
-    color: theme.colors.primary,
-  },
-  totalSalesDescription: {
-    fontSize: 12,
-    color: theme.colors.gray_500,
-    marginTop: 4,
-  },
-  salesBreakdownContainer: {
-    backgroundColor: theme.colors.white,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  breakdownTitle: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: theme.colors.gray_800,
-    marginBottom: 16,
-  },
-  chartContainer: {
-    marginTop: 4,
-  },
-  chartBar: {
-    marginBottom: 16,
-  },
-  chartBarLabel: {
+  cardHeader: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 16,
+    gap: 12,
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cardLabel: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.8)",
+    fontWeight: "500",
+  },
+  cardSubValue: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.6)",
+  },
+  totalSalesNumber: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: theme.colors.white,
     marginBottom: 8,
   },
-  chartBarColor: {
-    width: 12,
-    height: 12,
-    borderRadius: 2,
-    marginRight: 10,
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+    gap: 4,
   },
-  chartBarInfo: {
-    flex: 1,
-  },
-  chartBarName: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: theme.colors.gray_800,
-  },
-  chartBarStats: {
+  badgeText: {
     fontSize: 11,
-    color: theme.colors.gray_500,
-  },
-  barFillContainer: {
-    height: 12,
-    backgroundColor: theme.colors.gray_200,
-    borderRadius: 6,
-    overflow: "hidden",
-  },
-  barFill: {
-    height: "100%",
-    borderRadius: 6,
-  },
-  salesStats: {
-    backgroundColor: theme.colors.white,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  statsTitle: {
-    fontSize: 15,
+    color: theme.colors.white,
     fontWeight: "bold",
-    color: theme.colors.gray_800,
-    marginBottom: 12,
   },
   statRow: {
     flexDirection: "row",
     gap: 12,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   statBox: {
     flex: 1,
-    backgroundColor: theme.colors.background,
-    borderRadius: 10,
-    padding: 12,
-    alignItems: "center",
+    backgroundColor: theme.colors.white,
+    borderRadius: 12,
+    padding: 16,
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   statBoxLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.gray_500,
     marginBottom: 4,
   },
   statBoxValue: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+    marginBottom: 20,
+  },
+  chartContainer: {
+    gap: 16,
+  },
+  chartBar: {
+    marginBottom: 4,
+  },
+  chartBarLabel: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  chartBarName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.colors.gray_700,
+  },
+  chartBarStats: {
+    fontSize: 12,
+    color: theme.colors.gray_500,
+  },
+  barFillContainer: {
+    height: 10,
+    backgroundColor: theme.colors.gray_100,
+    borderRadius: 5,
+    overflow: "hidden",
+  },
+  barFill: {
+    height: "100%",
+    borderRadius: 5,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+  },
+  seeAllText: {
+    fontSize: 14,
+    color: theme.colors.primary,
+    fontWeight: "600",
+  },
+  activitiesContainer: {
+    backgroundColor: theme.colors.white,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 24,
+  },
+  activityItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.gray_500,
+  },
+  activityIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.background,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  activityInfo: {
+    flex: 1,
+  },
+  activityClient: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+  },
+  activityTime: {
+    fontSize: 12,
+    color: theme.colors.gray_500,
+    marginTop: 2,
+  },
+  activityValue: {
     fontSize: 14,
     fontWeight: "bold",
     color: theme.colors.primary,
   },
   exportButton: {
     backgroundColor: theme.colors.gray_800,
-    borderRadius: 10,
-    paddingVertical: 14,
+    borderRadius: 12,
+    paddingVertical: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -345,7 +400,7 @@ const styles = StyleSheet.create({
   },
   exportButtonText: {
     color: theme.colors.white,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "bold",
   },
 });

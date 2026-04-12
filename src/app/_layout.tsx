@@ -12,9 +12,7 @@ import { initMarketplaceStore, checkAndCleanupExpiredAds } from "@/services/mark
 import { initListingService } from "@/services/listingService";
 import { useEffect } from "react";
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+
 
 export default function RootLayout() {
   return (

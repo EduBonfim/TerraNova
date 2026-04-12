@@ -422,7 +422,16 @@ const styles = StyleSheet.create({
   listContainer: { padding: 6, paddingBottom: 20 },
   cardWrapper: { flex: 1, height: 280, marginHorizontal: 4, marginBottom: 8 },
   card: { flex: 1, backgroundColor: theme.colors.white, borderRadius: 8, overflow: "hidden", elevation: 2, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3 },
-  cardHighlighted: { borderWidth: 2, borderColor: theme.colors.orange_500 },
+  cardHighlighted: { 
+    borderWidth: 2, 
+    borderColor: theme.colors.orange_500,
+    backgroundColor: "#FFF7ED", // Light orange tint
+    shadowColor: theme.colors.orange_500,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
   imageContainer: { width: "100%", height: 120, backgroundColor: theme.colors.background },
   productImage: { width: "100%", height: "100%" },
   productTitle: { fontSize: 13, fontWeight: "600", color: theme.colors.gray_900, paddingHorizontal: 8, paddingTop: 8, paddingBottom: 4, lineHeight: 15 },

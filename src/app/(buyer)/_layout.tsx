@@ -81,7 +81,7 @@ export default function BuyerLayout() {
                 marginLeft: -5,
               }}
             >
-              <Ionicons name="cart" size={60} color={color} />
+              <Ionicons name="cart" size={50} color={color} />
               {totalItems > 0 && (
                 <View 
                   style={{

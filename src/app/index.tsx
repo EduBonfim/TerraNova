@@ -1,17 +1,17 @@
+import { useAuth } from "@/contexts/AuthContext";
+import { appTheme as theme } from "@/theme/appTheme";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useRouter } from "expo-router";
 import React from "react";
 import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  Platform,
-  Image,
+    Image,
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useFocusEffect } from "expo-router";
-import { appTheme as theme } from "@/theme/appTheme";
-import { useAuth } from "@/contexts/AuthContext";
 
 // 🎨 PALETA OFICIAL TERRA NOVA já importada do theme
 
@@ -35,7 +35,10 @@ export default function WelcomeScreen() {
       if (!isLoading && user) {
         if (user.role === "admin") {
           if (user.pendingLgpdReacceptance) {
-            router.replace({ pathname: "/privacy-lgpd", params: { forceConsent: "1" } });
+            router.replace({
+              pathname: "/privacy-lgpd",
+              params: { forceConsent: "1" },
+            });
             return;
           }
           router.replace("/(admin)/home");
@@ -45,7 +48,7 @@ export default function WelcomeScreen() {
           router.replace("/(tabs)/home");
         }
       }
-    }, [user, isLoading, router])
+    }, [user, isLoading, router]),
   );
 
   return (
@@ -114,7 +117,7 @@ export default function WelcomeScreen() {
 
           <TouchableOpacity
             style={styles.secondaryButton}
-            onPress={() => router.push("/register")}
+            onPress={() => router.push("/register-type")}
           >
             <Text style={styles.secondaryButtonText}>Criar nova conta</Text>
           </TouchableOpacity>

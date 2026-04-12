@@ -70,7 +70,7 @@ export default function AdminHomeScreen() {
       
       Alert.alert(
         "Sucesso ✓",
-        `Arquivo ${filename} exportado com sucesso! Copie os dados do console do desenvolvedor.`,
+        `O arquivo ${filename} foi gerado e está pronto! Escolha onde deseja salvar ou com quem compartilhar.`,
         [{ text: "OK", onPress: () => {} }]
       );
     } catch (error) {
@@ -113,20 +113,26 @@ export default function AdminHomeScreen() {
 
   useEffect(() => {
     const loadData = async () => {
-      setIsLoading(true);
-      const [usersData, marketData, ordersData, reportsData, kpisData] = await Promise.all([
-        getAdminUserSummaries(),
-        getMarketplaceItems(),
-        getAllOrders(),
-        getReports(),
-        getAdminKPIs(),
-      ]);
-      setUserSummaries(usersData);
-      setMarketplaceItems(marketData);
-      setOrders(ordersData);
-      setReports(reportsData);
-      setKpis(kpisData);
-      setIsLoading(false);
+      try {
+        setIsLoading(true);
+        const [usersData, marketData, ordersData, reportsData, kpisData] = await Promise.all([
+          getAdminUserSummaries(),
+          getMarketplaceItems(),
+          getAllOrders(),
+          getReports(),
+          getAdminKPIs(),
+        ]);
+        setUserSummaries(usersData);
+        setMarketplaceItems(marketData);
+        setOrders(ordersData);
+        setReports(reportsData);
+        setKpis(kpisData);
+      } catch (error) {
+        console.error("Admin Home Load Error:", error);
+        Alert.alert("Erro de Sincronização", "Não foi possível carregar os dados administrativos.");
+      } finally {
+        setIsLoading(false);
+      }
     };
     loadData();
   }, []);
@@ -153,222 +159,140 @@ export default function AdminHomeScreen() {
       />
 
       <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-        {/* ===== DASHBOARD KPIs ===== */}
-        <SurfaceCard style={styles.dashboardCard}>
-          <Text style={styles.dashboardTitle}>📊 Dashboard de KPIs</Text>
+        {/* ===== DASHBOARD SUMMARY ===== */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Resumo Executivo</Text>
+          <Text style={styles.sectionSubtitle}>Atualizado hoje às {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</Text>
+        </View>
+
+        <View style={styles.kpiGrid}>
+          {/* Faturamento Total */}
+          <SurfaceCard style={[styles.kpiCard, { borderTopColor: theme.colors.primary }]}>
+            <View style={styles.kpiIconBox}>
+              <Ionicons name="trending-up" size={20} color={theme.colors.primary} />
+            </View>
+            <Text style={styles.kpiLabel}>Faturamento Total</Text>
+            <Text style={styles.kpiValue}>R$ {kpis?.totalSales?.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) || "0,00"}</Text>
+            <View style={styles.growthBadge}>
+              <Ionicons name="caret-up" size={12} color="#10B981" />
+              <Text style={styles.growthText}>+{kpis?.growthRate}%</Text>
+            </View>
+          </SurfaceCard>
+
+          {/* Ticket Médio */}
+          <SurfaceCard style={[styles.kpiCard, { borderTopColor: "#3B82F6" }]}>
+            <View style={styles.kpiIconBox}>
+              <Ionicons name="receipt" size={20} color="#3B82F6" />
+            </View>
+            <Text style={styles.kpiLabel}>Ticket Médio</Text>
+            <Text style={styles.kpiValue}>R$ {kpis?.averageOrderValue?.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) || "0,00"}</Text>
+            <Text style={styles.kpiSubDetail}>Base: {orders.length} pedidos</Text>
+          </SurfaceCard>
+
+          {/* Taxa de Conversão */}
+          <SurfaceCard style={[styles.kpiCard, { borderTopColor: "#F59E0B" }]}>
+            <View style={styles.kpiIconBox}>
+              <Ionicons name="stats-chart" size={20} color="#F59E0B" />
+            </View>
+            <Text style={styles.kpiLabel}>Conversão</Text>
+            <Text style={styles.kpiValue}>{kpis?.conversionRate}%</Text>
+            <View style={styles.progressBarBg}>
+              <View style={[styles.progressBarFill, { width: `${kpis?.conversionRate || 0}%`, backgroundColor: "#F59E0B" }]} />
+            </View>
+          </SurfaceCard>
+
+          {/* Base de Usuários */}
+          <SurfaceCard style={[styles.kpiCard, { borderTopColor: "#8B5CF6" }]}>
+            <View style={styles.kpiIconBox}>
+              <Ionicons name="people" size={20} color="#8B5CF6" />
+            </View>
+            <Text style={styles.kpiLabel}>Usuarios Ativos</Text>
+            <Text style={styles.kpiValue}>{kpis?.totalUsers || 0}</Text>
+            <Text style={styles.kpiSubDetail}>{kpis?.totalProducers} Produtores</Text>
+            <Text style={[styles.kpiSubDetail, { marginTop: 2 }]}>{kpis?.totalBuyers} Consumidor</Text>
+          </SurfaceCard>
+        </View>
+
+        {/* ===== INSIGHTS & PERFORMANCE ===== */}
+        <SurfaceCard style={styles.insightsCard}>
+          <Text style={styles.cardHeaderTitle}>🎯 Insights de Performance</Text>
           
-          {/* Linha 1 */}
-          <View style={styles.kpiRow}>
-            <View style={styles.kpiItem}>
-              <Text style={styles.kpiLabel}>Usuários</Text>
-              <Text style={styles.kpiValue}>{kpis?.totalUsers || 0}</Text>
-              <Text style={styles.kpiDetail}>
-                👥 {kpis?.totalProducers || 0} prod. / {kpis?.totalBuyers || 0} comp.
-              </Text>
+          <View style={styles.insightRow}>
+            <View style={styles.insightIcon}>
+              <Ionicons name="star" size={24} color="#FFD700" />
             </View>
-
-            <View style={styles.kpiItem}>
-              <Text style={styles.kpiLabel}>Produtos</Text>
-              <Text style={styles.kpiValue}>{kpis?.totalProducts || 0}</Text>
-              <Text style={styles.kpiDetail}>
-                ✓ {kpis?.productsInStock || 0} / ✗ {kpis?.productsOutOfStock || 0}
+            <View style={styles.insightContent}>
+              <Text style={styles.insightTitle}>Produto Estrela</Text>
+              <Text style={styles.insightText}>
+                <Text style={{ fontWeight: "bold", color: theme.colors.primary }}>{kpis?.topPerformingProduct?.name || "..."}</Text> lidera o faturamento com R$ {kpis?.topPerformingProduct?.sales.toFixed(2) || "0,00"}.
               </Text>
             </View>
           </View>
 
-          {/* Linha 2 */}
-          <View style={styles.kpiRow}>
-            <View style={styles.kpiItem}>
-              <Text style={styles.kpiLabel}>Faturamento</Text>
-              <Text style={styles.kpiValue}>R$ {kpis?.totalSales?.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) || "0,00"}</Text>
-              <Text style={styles.kpiDetail}>
-                {kpis?.totalSales ? `${kpis.totalSales > 0 ? "↑ Ativo" : "→ Estável"}` : "→ Sem dados"}
-              </Text>
+          <View style={styles.insightRow}>
+            <View style={styles.insightIcon}>
+              <Ionicons name="leaf" size={24} color="#10B981" />
             </View>
-
-            <View style={styles.kpiItem}>
-              <Text style={styles.kpiLabel}>Negociações</Text>
-              <Text style={styles.kpiValue}>{kpis?.totalSales || 0}</Text>
-              <Text style={styles.kpiDetail}>
-                💰 P: R$ {kpis?.producerSalesTotal?.toFixed(2) || "0"} / C: R$ {kpis?.buyerPurchasesTotal?.toFixed(2) || "0"}
+            <View style={styles.insightContent}>
+              <Text style={styles.insightTitle}>Categoria em Alta</Text>
+              <Text style={styles.insightText}>
+                A categoria <Text style={{ fontWeight: "bold", color: theme.colors.primary }}>{kpis?.topCategory}</Text> é a mais procurada atualmente.
               </Text>
             </View>
           </View>
 
-          <View style={styles.kpiStats}>
-            <View style={styles.kpiStatRow}>
-              <Text style={styles.kpiStatLabel}>Preço Médio:</Text>
-              <Text style={styles.kpiStatValue}>R$ {kpis?.averageProductPrice?.toFixed(2) || "0"}</Text>
+          <View style={styles.insightRow}>
+            <View style={styles.insightIcon}>
+              <Ionicons name="alert-circle" size={24} color="#EF4444" />
             </View>
-            <View style={styles.kpiStatRow}>
-              <Text style={styles.kpiStatLabel}>Top Categoria:</Text>
-              <Text style={styles.kpiStatValue}>{kpis?.topCategory || "N/A"}</Text>
+            <View style={styles.insightContent}>
+              <Text style={styles.insightTitle}>Atenção ao Estoque</Text>
+              <Text style={styles.insightText}>
+                Existem <Text style={{ fontWeight: "bold", color: "#EF4444" }}>{kpis?.productsOutOfStock}</Text> produtos sem estoque que podem estar gerando perda de vendas.
+              </Text>
             </View>
           </View>
         </SurfaceCard>
 
-        {/* ===== EXPORTAR DADOS ===== */}
-        <SurfaceCard style={styles.exportCard}>
-          <Text style={styles.exportTitle}>📥 Exportar Dados para CSV</Text>
+        {/* ===== REPORT CENTER (EXPORTS) ===== */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Central de Relatórios</Text>
+          <Text style={styles.sectionSubtitle}>Exporte dados ricos para Power BI ou Excel</Text>
+        </View>
 
-          {/* Produtores */}
-          <TouchableOpacity
-            style={styles.exportButton}
-            disabled={isExporting === "producers"}
-            onPress={() =>
-              handleExport(
-                "producers",
-                `produtores_${new Date().toISOString().split("T")[0]}.csv`
-              )
-            }
-          >
-            {isExporting === "producers" ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Ionicons name="people-outline" size={20} color={theme.colors.primary} />
-            )}
-            <View style={styles.exportButtonContent}>
-              <Text style={styles.exportButtonLabel}>Exportar Produtores</Text>
-              <Text style={styles.exportButtonDetail}>
-                {kpis?.totalProducers || 0} de {kpis?.totalUsers || 0} usuários
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={theme.colors.gray_400}
-            />
-          </TouchableOpacity>
-
-          {/* Compradores */}
-          <TouchableOpacity
-            style={styles.exportButton}
-            disabled={isExporting === "buyers"}
-            onPress={() =>
-              handleExport(
-                "buyers",
-                `compradores_${new Date().toISOString().split("T")[0]}.csv`
-              )
-            }
-          >
-            {isExporting === "buyers" ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Ionicons name="cart-outline" size={20} color={theme.colors.primary} />
-            )}
-            <View style={styles.exportButtonContent}>
-              <Text style={styles.exportButtonLabel}>Exportar Compradores</Text>
-              <Text style={styles.exportButtonDetail}>
-                {kpis?.totalBuyers || 0} de {kpis?.totalUsers || 0} usuários
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={theme.colors.gray_400}
-            />
-          </TouchableOpacity>
-
-          {/* Produtos */}
-          <TouchableOpacity
-            style={styles.exportButton}
-            disabled={isExporting === "products"}
-            onPress={() =>
-              handleExport(
-                "products",
-                `produtos_${new Date().toISOString().split("T")[0]}.csv`
-              )
-            }
-          >
-            {isExporting === "products" ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Ionicons name="pricetags-outline" size={20} color={theme.colors.primary} />
-            )}
-            <View style={styles.exportButtonContent}>
-              <Text style={styles.exportButtonLabel}>Exportar Produtos</Text>
-              <Text style={styles.exportButtonDetail}>
-                {kpis?.totalProducts || 0} produtos ativos
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={theme.colors.gray_400}
-            />
-          </TouchableOpacity>
-
-          {/* Vendas/Compras */}
-          <TouchableOpacity
-            style={styles.exportButton}
-            disabled={isExporting === "sales"}
-            onPress={() =>
-              handleExport(
-                "sales",
-                `vendas_${new Date().toISOString().split("T")[0]}.csv`
-              )
-            }
-          >
-            {isExporting === "sales" ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Ionicons name="bar-chart-outline" size={20} color={theme.colors.primary} />
-            )}
-            <View style={styles.exportButtonContent}>
-              <Text style={styles.exportButtonLabel}>Exportar Vendas & Compras</Text>
-              <Text style={styles.exportButtonDetail}>
-                {orders.length} transações registradas
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={theme.colors.gray_400}
-            />
-          </TouchableOpacity>
-
-          {/* Relatórios */}
-          <TouchableOpacity
-            style={styles.exportButton}
-            disabled={isExporting === "reports"}
-            onPress={() =>
-              handleExport(
-                "reports",
-                `relatorios_${new Date().toISOString().split("T")[0]}.csv`
-              )
-            }
-          >
-            {isExporting === "reports" ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Ionicons name="flag-outline" size={20} color={theme.colors.primary} />
-            )}
-            <View style={styles.exportButtonContent}>
-              <Text style={styles.exportButtonLabel}>Exportar Relatórios</Text>
-              <Text style={styles.exportButtonDetail}>
-                {reports.length} denúncias
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={theme.colors.gray_400}
-            />
-          </TouchableOpacity>
+        <SurfaceCard style={styles.reportGrid}>
+          <View style={styles.exportList}>
+            {[
+              { id: "producers", label: "Relatório de Produtores", detail: "Dados cadastrais, faturamento e logística", icon: "business" },
+              { id: "buyers", label: "Gestão de Compradores", detail: "Perfil de consumo, ticket médio e localidade", icon: "cart" },
+              { id: "products", label: "Catálogo & Performance", detail: "Giro de estoque e conversão por item", icon: "cube" },
+              { id: "sales", label: "Histórico de Transações", detail: "Fluxo de caixa e status de entregas", icon: "list" },
+              { id: "reports", label: "Ocorrências & Qualidade", detail: "Denúncias, feedbacks e moderação", icon: "warning" },
+            ].map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.exportItem}
+                onPress={() => handleExport(item.id as any, `${item.id}_full_${new Date().toISOString().split("T")[0]}.csv`)}
+                disabled={isExporting === item.id}
+              >
+                <View style={styles.exportIconBox}>
+                  {isExporting === item.id ? (
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                  ) : (
+                    <Ionicons name={item.icon as any} size={22} color={theme.colors.primary} />
+                  )}
+                </View>
+                <View style={styles.exportTextContent}>
+                  <Text style={styles.exportLabelText}>{item.label}</Text>
+                  <Text style={styles.exportDetailText}>{item.detail}</Text>
+                </View>
+                <Ionicons name="download-outline" size={20} color={theme.colors.gray_400} />
+              </TouchableOpacity>
+            ))}
+          </View>
         </SurfaceCard>
 
-        {/* ===== AÇÕES RÁPIDAS ===== */}
-        <SurfaceCard style={styles.actionCard}>
-          <Text style={styles.cardTitle}>⚡ Ações Rápidas</Text>
-          <TouchableOpacity style={styles.actionButton} onPress={() => router.push("../sales")}>
-            <Ionicons name="cart-outline" size={20} color={theme.colors.primary} />
-            <Text style={styles.actionButtonText}>Ver Todas as Vendas</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={() => router.push("../reports")}>
-            <Ionicons name="flag-outline" size={20} color={theme.colors.red_500} />
-            <Text style={[styles.actionButtonText, { color: theme.colors.red_500 }]}>Resolver Denúncias</Text>
-          </TouchableOpacity>
-        </SurfaceCard>
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -381,143 +305,219 @@ const styles = StyleSheet.create({
   },
   container: { 
     flex: 1, 
-    backgroundColor: theme.colors.background 
+    backgroundColor: "#F8FAFC" 
   },
   scrollContent: { 
-    padding: 16,
+    padding: 20,
     paddingBottom: 40,
   },
   loadingContainer: { 
     flex: 1, 
     justifyContent: "center", 
-    alignItems: "center" 
-  },
-
-  // ===== DASHBOARD KPIs =====
-  dashboardCard: { 
-    padding: 16, 
-    marginBottom: 16,
-    borderRadius: 12,
-  },
-  dashboardTitle: { 
-    fontSize: 16, 
-    fontWeight: "bold", 
-    color: theme.colors.gray_900, 
-    marginBottom: 16,
-  },
-  kpiRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 12,
-  },
-  kpiItem: {
-    flex: 1,
-    backgroundColor: theme.colors.gray_100,
-    padding: 12,
-    borderRadius: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primary,
-  },
-  kpiLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: theme.colors.gray_600,
-    textTransform: "uppercase",
-    marginBottom: 6,
-  },
-  kpiValue: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: theme.colors.primary,
-    marginBottom: 4,
-  },
-  kpiDetail: {
-    fontSize: 10,
-    color: theme.colors.gray_500,
-    fontWeight: "500",
-  },
-  kpiStats: {
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.gray_200,
-    paddingTop: 12,
-    gap: 8,
-  },
-  kpiStatRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-  },
-  kpiStatLabel: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: theme.colors.gray_700,
-  },
-  kpiStatValue: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: theme.colors.primary,
+    backgroundColor: "#F8FAFC"
   },
 
-  // ===== EXPORTAR DADOS =====
-  exportCard: {
+  // Headers
+  sectionHeader: {
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#1E293B",
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 2,
+  },
+
+  // KPI Grid
+  kpiGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginBottom: 24,
+  },
+  kpiCard: {
+    width: "48%",
     padding: 16,
     marginBottom: 16,
+    borderRadius: 16,
+    borderTopWidth: 4,
+    backgroundColor: "white",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 15,
   },
-  exportTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: theme.colors.gray_900,
+  kpiIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 12,
   },
-  exportButton: {
+  kpiLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#64748B",
+    marginBottom: 4,
+  },
+  kpiValue: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+  kpiSubDetail: {
+    fontSize: 10,
+    color: "#94A3B8",
+    marginTop: 6,
+  },
+  growthBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: theme.colors.gray_100,
-    marginBottom: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primary,
+    backgroundColor: "#D1FAE5",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    alignSelf: "flex-start",
+    marginTop: 8,
   },
-  exportButtonContent: {
-    flex: 1,
-    marginHorizontal: 12,
-    justifyContent: "center",
-  },
-  exportButtonLabel: {
-    fontSize: 13,
+  growthText: {
+    fontSize: 10,
     fontWeight: "700",
-    color: theme.colors.gray_900,
-    marginBottom: 2,
+    color: "#065F46",
+    marginLeft: 2,
   },
-  exportButtonDetail: {
-    fontSize: 11,
-    color: theme.colors.gray_600,
+  progressBarBg: {
+    height: 6,
+    backgroundColor: "#F1F5F9",
+    borderRadius: 3,
+    marginTop: 12,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    borderRadius: 3,
   },
 
-  // ===== AÇÕES RÁPIDAS =====
-  actionCard: { 
-    padding: 16, 
-    marginBottom: 16 
+  // Insights
+  insightsCard: {
+    padding: 20,
+    borderRadius: 20,
+    marginBottom: 24,
+    backgroundColor: "white",
   },
-  cardTitle: { 
-    fontSize: 16, 
-    fontWeight: "bold", 
-    color: theme.colors.gray_900, 
-    marginBottom: 12 
+  cardHeaderTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1E293B",
+    marginBottom: 16,
   },
-  actionButton: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    paddingVertical: 12, 
-    borderBottomWidth: 1, 
-    borderBottomColor: theme.colors.gray_100 
+  insightRow: {
+    flexDirection: "row",
+    marginBottom: 16,
   },
-  actionButtonText: { 
-    fontSize: 14, 
-    color: theme.colors.gray_800, 
-    marginLeft: 12, 
-    fontWeight: "500" 
+  insightIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#F8FAFC",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  insightContent: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  insightTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#334155",
+    marginBottom: 2,
+  },
+  insightText: {
+    fontSize: 13,
+    color: "#64748B",
+    lineHeight: 18,
+  },
+
+  // Report Center
+  reportGrid: {
+    padding: 0,
+    borderRadius: 20,
+    overflow: "hidden",
+    marginBottom: 24,
+  },
+  exportList: {
+    padding: 8,
+  },
+  exportItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 4,
+  },
+  exportIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  exportTextContent: {
+    flex: 1,
+  },
+  exportLabelText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#1E293B",
+  },
+  exportDetailText: {
+    fontSize: 11,
+    color: "#64748B",
+    marginTop: 2,
+  },
+
+  // Quick Actions
+  quickActionsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 40,
+  },
+  quickActionButton: {
+    width: "22%",
+    alignItems: "center",
+  },
+  actionBadge: {
+    width: 50,
+    height: 50,
+    borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+  },
+  actionText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#475569",
+  },
+  bottomSpacer: {
+    height: 60,
   },
 });

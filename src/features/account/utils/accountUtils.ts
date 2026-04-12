@@ -12,13 +12,16 @@ export const DEFAULT_PIN_REGION = {
 
 export const PROFILE_BIO_MAX = 220;
 
-export const normalizeCep = (value: string) => value.replace(/\D/g, "").slice(0, 8);
-
-export const formatCep = (value: string) => {
-  const digits = normalizeCep(value);
-  if (digits.length <= 5) return digits;
-  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+ export const normalizeCep = (value: string | null | undefined) => {
+  if (typeof value !== "string") return "";
+  return value.replace(/\D/g, "").slice(0, 8);
 };
+ 
+ export const formatCep = (value: string | null | undefined) => {
+   const digits = normalizeCep(value);
+   if (digits.length <= 5) return digits;
+   return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+ };
 
 export const formatValidationTimestamp = (value?: string | null) => {
   if (!value) return "Nao validado";

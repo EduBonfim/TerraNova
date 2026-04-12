@@ -11,38 +11,45 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
 import { getReports, deleteReport, type AppReport } from "@/services/reportsStore";
 import { appTheme as theme } from "@/theme/appTheme";
 
 export default function AdminReportsScreen() {
+  const router = useRouter();
   const [reports, setReports] = useState<AppReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadData = async () => {
-    setIsLoading(true);
-    const reportsData = await getReports();
-    setReports(reportsData);
-    setIsLoading(false);
+    try {
+      setIsLoading(true);
+      const reportsData = await getReports();
+      setReports(reportsData);
+    } catch (error) {
+      console.error("Admin Reports Load Error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const handleResolve = async (id: string) => {
+  const handleResolve = async (id: string, reporter: string) => {
     Alert.alert(
-      "Resolver Denúncia",
-      "Deseja marcar esta denúncia como resolvida?",
+      "Moderação de Conteúdo",
+      `Deseja arquivar esta denúncia de ${reporter}? O caso será marcado como resolvido.`,
       [
-        { text: "Cancelar", style: "cancel" },
+        { text: "Manter Aberto", style: "cancel" },
         {
-          text: "Resolver",
+          text: "Resolver Caso",
           style: "default",
           onPress: async () => {
              await deleteReport(id);
-             Alert.alert("Sucesso", "Denúncia arquivada.");
+             Alert.alert("Sucesso ✓", "Caso resolvido e arquivado com sucesso.");
              loadData();
           }
         }
@@ -54,6 +61,7 @@ export default function AdminReportsScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={styles.loadingText}>Acessando Fila de Moderação...</Text>
       </View>
     );
   }
@@ -62,43 +70,66 @@ export default function AdminReportsScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
       <AppHeader
-        title="Moderação"
-        subtitle="Denúncias e Suporte"
-        onBackPress={() => {}}
-        showBackButton={false}
+        title="Escudo & Moderação"
+        subtitle="Qualidade da Comunidade"
+        onBackPress={() => router.back()}
+        showBackButton={true}
         backgroundColor={theme.colors.primary}
         textColor={theme.colors.white}
       />
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.headerInfo}>
+          <Text style={styles.sectionTitle}>Incidentes Pendentes ({reports.length})</Text>
+          <Text style={styles.sectionSubtitle}>Verifique e resolva conflitos para manter a saúde da plataforma.</Text>
+        </View>
+
         {reports.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="shield-checkmark" size={64} color={theme.colors.primary} />
-            <Text style={styles.emptyTitle}>Sem denúncias pendentes</Text>
-            <Text style={styles.emptyText}>Tudo certo com a comunidade!</Text>
+            <View style={styles.emptyIconCircle}>
+              <Ionicons name="shield-checkmark" size={48} color={theme.colors.primary} />
+            </View>
+            <Text style={styles.emptyTitle}>Ambiente Seguro</Text>
+            <Text style={styles.emptyText}>Não há denúncias pendentes no momento. Bom trabalho!</Text>
           </View>
         ) : (
-          reports.map((report) => (
+          reports.map((report, index) => (
             <SurfaceCard key={report.id} style={styles.reportCard}>
-              <View style={styles.reportHeader}>
-                <View style={styles.reportBadge}>
-                  <Text style={styles.reportBadgeText}>{report.reason}</Text>
+              <View style={styles.statusRow}>
+                <View style={[styles.severityBadge, { backgroundColor: index % 2 === 0 ? "#FEE2E2" : "#FEF3C7" }]}>
+                  <View style={[styles.dot, { backgroundColor: index % 2 === 0 ? "#EF4444" : "#F59E0B" }]} />
+                  <Text style={[styles.severityText, { color: index % 2 === 0 ? "#EF4444" : "#D97706" }]}>
+                    {report.reason || "DENÚNCIA"}
+                  </Text>
                 </View>
-                <Text style={styles.reportDate}>{report.data || "Hoje"}</Text>
+                <Text style={styles.reportId}>#Ocor-{(1000 + index)}</Text>
               </View>
               
-              <Text style={styles.reportContent}>{report.description || "Sem detalhes adicionais."}</Text>
+              <Text style={styles.reportTitle}>Denunciado: {report.reportedUser || "Inconsistente"}</Text>
+              <Text style={styles.reportDescription}>{report.description || "O usuário não forneceu detalhes adicionais sobre o incidente."}</Text>
               
-              <View style={styles.reportFooter}>
-                <Text style={styles.reportedUser}>Por: {report.reporter || "Anônimo"}</Text>
-                <TouchableOpacity style={styles.resolveButton} onPress={() => handleResolve(report.id)}>
-                   <Text style={styles.resolveButtonText}>Resolver</Text>
-                   <Ionicons name="checkmark-done" size={16} color={theme.colors.white} style={{ marginLeft: 6 }} />
-                </TouchableOpacity>
+              <View style={styles.reportMetadata}>
+                <View style={styles.metaRow}>
+                  <Ionicons name="person-outline" size={14} color="#64748B" />
+                  <Text style={styles.metaText}>Autor: {report.reporter || "Anônimo"}</Text>
+                </View>
+                <View style={styles.metaRow}>
+                  <Ionicons name="calendar-outline" size={14} color="#64748B" />
+                  <Text style={styles.metaText}>{report.data || "Hoje"}</Text>
+                </View>
               </View>
+
+              <TouchableOpacity 
+                style={styles.resolveButton} 
+                onPress={() => handleResolve(report.id, report.reporter || "Anônimo")}
+              >
+                <Text style={styles.resolveButtonText}>Marcar como Resolvido</Text>
+                <Ionicons name="arrow-forward" size={16} color="white" />
+              </TouchableOpacity>
             </SurfaceCard>
           ))
         )}
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -106,20 +137,36 @@ export default function AdminReportsScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: theme.colors.primary },
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  scrollContent: { padding: 16 },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  scrollContent: { padding: 20 },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F8FAFC" },
+  loadingText: { marginTop: 16, color: "#64748B", fontWeight: "600" },
+
+  headerInfo: { marginBottom: 24 },
+  sectionTitle: { fontSize: 20, fontWeight: "800", color: "#1E293B" },
+  sectionSubtitle: { fontSize: 13, color: "#64748B", marginTop: 4, lineHeight: 18 },
+
   emptyContainer: { flex: 1, alignItems: "center", justifyContent: "center", marginTop: 80 },
-  emptyTitle: { fontSize: 18, fontWeight: "bold", color: theme.colors.gray_900, marginTop: 16 },
-  emptyText: { fontSize: 14, color: theme.colors.gray_500, marginTop: 4 },
-  reportCard: { padding: 16, marginBottom: 16 },
-  reportHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  reportBadge: { backgroundColor: theme.colors.red_500, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6 },
-  reportBadgeText: { color: theme.colors.white, fontSize: 10, fontWeight: "bold" },
-  reportDate: { fontSize: 12, color: theme.colors.gray_400 },
-  reportContent: { fontSize: 14, color: theme.colors.gray_800, marginBottom: 16, lineHeight: 20 },
-  reportFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, borderTopColor: theme.colors.gray_100, paddingTop: 12 },
-  reportedUser: { fontSize: 12, color: theme.colors.gray_500 },
-  resolveButton: { flexDirection: "row", alignItems: "center", backgroundColor: theme.colors.primary, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 },
-  resolveButtonText: { color: theme.colors.white, fontSize: 12, fontWeight: "bold" },
+  emptyIconCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: "#ECFDF5", justifyContent: "center", alignItems: "center", marginBottom: 20 },
+  emptyTitle: { fontSize: 18, fontWeight: "bold", color: "#1E293B" },
+  emptyText: { fontSize: 14, color: "#64748B", textAlign: "center", marginTop: 8, paddingHorizontal: 40 },
+
+  reportCard: { padding: 20, borderRadius: 20, marginBottom: 16, elevation: 3 },
+  statusRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
+  severityBadge: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  dot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  severityText: { fontSize: 11, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.5 },
+  reportId: { fontSize: 12, fontWeight: "600", color: "#94A3B8" },
+
+  reportTitle: { fontSize: 16, fontWeight: "700", color: "#1E293B", marginBottom: 8 },
+  reportDescription: { fontSize: 14, color: "#475569", lineHeight: 22, marginBottom: 20 },
+  
+  reportMetadata: { backgroundColor: "#F1F5F9", padding: 12, borderRadius: 12, marginBottom: 20 },
+  metaRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
+  metaText: { fontSize: 12, color: "#64748B", marginLeft: 8 },
+
+  resolveButton: { backgroundColor: theme.colors.primary, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 14, borderRadius: 12, gap: 10 },
+  resolveButtonText: { color: "white", fontSize: 14, fontWeight: "bold" },
+
+  bottomSpacer: { height: 40 },
 });

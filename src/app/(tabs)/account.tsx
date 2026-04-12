@@ -34,6 +34,7 @@ export default function AccountScreen() {
     hasNewMessages,
     // Functions
     logout,
+    refreshProfileData,
   } = useAccountLogic();
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -41,11 +42,12 @@ export default function AccountScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
 
-  // Refresh profile photo when screen gains focus
+  // Refresh profile photo and data when screen gains focus
   useFocusEffect(
     React.useCallback(() => {
       refreshUser();
-    }, [refreshUser])
+      refreshProfileData();
+    }, [refreshUser, refreshProfileData])
   );
 
   const loadOrdersByStatus = useCallback(async (status: "pagar" | "preparando" | "caminho" | "avaliar") => {

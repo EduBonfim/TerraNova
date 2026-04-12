@@ -49,7 +49,17 @@ export async function getOrdersByUser(username: string): Promise<Order[]> {
   const raw = await AsyncStorage.getItem(ORDERS_STORAGE_KEY);
   if (!raw) return [];
   const all: Order[] = JSON.parse(raw);
+  // Se for produtor, buscamos onde ele é o vendedor
   return all.filter(o => o.vendedorUsername === username);
+}
+
+export async function getOrdersByBuyer(username: string): Promise<Order[]> {
+  const raw = await AsyncStorage.getItem(ORDERS_STORAGE_KEY);
+  if (!raw) return [];
+  const all: Order[] = JSON.parse(raw);
+  // Se for comprador, buscamos onde ele é o comprador
+  // Normalizamos para comparação minúscula para evitar erros de case
+  return all.filter(o => o.comprador.toLowerCase() === username.toLowerCase());
 }
 
 export async function getAllOrders(): Promise<Order[]> {

@@ -73,9 +73,9 @@ const DEFAULT_USERS: AppUser[] = [
     username: "Consumidor",
     password: "1234",
     role: "buyer",
-    fullName: "Consumidor Teste",
-    email: "consumidor@terranowa.com",
-    cpf: "00000000000",
+    fullName: "Consumidor Terra Nova",
+    email: "Consumidor@terranova.com",
+    cpf: "09239945806",
     lgpdAcceptedAt: new Date().toISOString(),
     lgpdTermsVersion: LGPD_TERMS_VERSION,
     pendingLgpdReacceptance: false,
@@ -105,11 +105,25 @@ const normalizeDocument = (value: string) => value.replace(/\D/g, "");
 
 export const maskDocument = (value?: string, visibleDigits: number = 4) => {
   const digits = normalizeDocument(value || "");
-  if (!digits) return "Nao informado";
+  if (!digits) return "Não informado";
 
   const keep = Math.max(1, Math.min(visibleDigits, digits.length));
   const hidden = "*".repeat(Math.max(0, digits.length - keep));
   return `${hidden}${digits.slice(-keep)}`;
+};
+
+export const maskEmail = (email?: string) => {
+  if (!email || !email.includes("@")) return "Não informado";
+  const [user, domain] = email.split("@");
+  if (user.length <= 2) return `**@${domain}`;
+  return `${user.slice(0, 2)}${"*".repeat(user.length - 2)}@${domain}`;
+};
+
+export const maskPhone = (phone?: string) => {
+  const digits = normalizeDocument(phone || "");
+  if (!digits) return "Não informado";
+  if (digits.length <= 4) return "****";
+  return `(${digits.slice(0, 2)}) *****-${digits.slice(-4)}`;
 };
 
 const persistUsers = async () => {
@@ -223,63 +237,37 @@ export const getAdminUserSummaries = async (): Promise<AdminUserSummary[]> => {
     farmName: item.farmName,
     farmDocumentMasked: maskDocument(item.farmDocument, 4),
     farmDocumentType: item.farmDocumentType,
-    cpf: item.cpf,
+    cpf: maskDocument(item.cpf, 4),
   }));
 };
 
+
 /**
- * Detecta o tipo do identificador digitado pelo usuário.
- *
- * Sistemas como Gov.br, iFood e bancos brasileiros usam esta estratégia:
- * detectar o FORMATO do input antes de buscar, para nunca comparar campos
- * de tipos diferentes (evita falsos positivos como "" === "").
+ * Autentica um usuário procurando por username, e-mail ou documento.
  */
-type IdentifierType = "email" | "cpf" | "username";
-
-function detectIdentifierType(identifier: string): IdentifierType {
-  const trimmed = identifier.trim();
-
-  // E-mail: contém "@" e pelo menos um "." após o @
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return "email";
-
-  // CPF: exatamente 11 dígitos após remover formatação
-  if (normalizeDocument(trimmed).length === 11) return "cpf";
-
-  // Fallback: username livre
-  return "username";
-}
 
 export const authenticateUser = (
   usernameOrEmail: string,
   password: string,
 ): AppUser | null => {
-  const identifier = usernameOrEmail.trim();
+  const identifier = usernameOrEmail.trim().toLowerCase();
   const secret = password.trim();
-  const type = detectIdentifierType(identifier);
 
   const match = usersState.find((user) => {
     if (user.password !== secret) return false;
 
-    switch (type) {
-      case "email":
-        // Compara com e-mail armazenado OU com username que seja e-mail
-        return (
-          (user.email?.toLowerCase() === identifier.toLowerCase()) ||
-          (user.username.toLowerCase() === identifier.toLowerCase())
-        );
+    // Tentativa 1: Compatibilidade total com username
+    const usernameMatch = user.username.toLowerCase() === identifier;
+    
+    // Tentativa 2: Compatibilidade com o campo e-mail (se existir)
+    const emailMatch = user.email && user.email.toLowerCase() === identifier;
 
-      case "cpf": {
-        // Compara com CPF do comprador OU com documento da propriedade do produtor
-        const digits = normalizeDocument(identifier);
-        const cpfMatch = user.cpf && normalizeDocument(user.cpf) === digits;
-        const farmMatch = user.farmDocument && normalizeDocument(user.farmDocument) === digits;
-        return Boolean(cpfMatch || farmMatch);
-      }
+    // Tentativa 3: Compatibilidade com CPF/Documento (caso o usuário digite o documento)
+    const digits = normalizeDocument(usernameOrEmail);
+    const docMatch = (user.cpf && normalizeDocument(user.cpf) === digits) ||
+                    (user.farmDocument && normalizeDocument(user.farmDocument) === digits);
 
-      case "username":
-        // Somente username — sem ambiguidade com documentos
-        return user.username === identifier;
-    }
+    return usernameMatch || emailMatch || docMatch;
   });
 
   return match ?? null;
@@ -464,6 +452,7 @@ export const exportUserPersonalData = async (
     farmName: user.farmName,
     farmDocument: user.farmDocument,
     farmDocumentType: user.farmDocumentType,
+    cpf: user.cpf,
     address: user.address,
     lgpdAcceptedAt: user.lgpdAcceptedAt,
     lgpdTermsVersion: user.lgpdTermsVersion,
@@ -517,7 +506,33 @@ export const updateUserAvatarUri = async (
   return { ...usersState[index] };
 };
 
-// ─── UPDATE USER ADDRESS ───────────────────────────────────────────────────────
+// ─── UPDATE USER BUYER PROFILE ────────────────────────────────────────────────
+ 
+ export const updateUserBuyerProfile = async (
+   username: string,
+   payload: {
+     fullName?: string;
+     phone?: string;
+     gender?: "male" | "female" | "other" | "prefer_not";
+   },
+ ): Promise<AppUser | null> => {
+   await initAuthStore();
+   const normalized = username.trim().toLowerCase();
+   const index = usersState.findIndex((item) => item.username.trim().toLowerCase() === normalized);
+   if (index === -1) return null;
+ 
+   usersState[index] = {
+     ...usersState[index],
+     fullName: payload.fullName ?? usersState[index].fullName,
+     phone: payload.phone ?? usersState[index].phone,
+     gender: (payload.gender as any) ?? usersState[index].gender,
+   };
+ 
+   await persistUsers();
+   return { ...usersState[index] };
+ };
+ 
+ // ─── UPDATE USER ADDRESS ───────────────────────────────────────────────────────
 
 export const updateUserAddress = async (
   username: string,

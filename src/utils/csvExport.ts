@@ -1,3 +1,14 @@
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
+import { Alert } from "react-native";
+import {
+  getProducersCSVData,
+  getBuyersCSVData,
+  getProductsCSVData,
+  getSalesCSVData,
+  getReportsCSVData,
+} from "./adminAnalytics";
+
 /**
  * Converte um array de objetos em uma string CSV formatada para Power BI.
  * @param data Array de objetos contendo os dados.
@@ -15,47 +26,52 @@ export function convertToCSV(data: any[]): string {
         // Trata valores nulos ou indefinidos
         if (val === null || val === undefined) val = "";
         
-        // Trata strings com virgulas ou quebras de linha (envolve em aspas)
+        // Trata strings com ponto-e-virgula ou quebras de linha (envolve em aspas)
         if (typeof val === "string") {
           val = `"${val.replace(/"/g, '""').replace(/\n/g, " ")}"`;
         }
         
         return val;
       })
-      .join(",");
+      .join(";");
   });
 
-  return [headers.join(","), ...rows].join("\n");
+  // Adicionamos o BOM (Byte Order Mark) para que Excel/Numbers identifiquem como UTF-8
+  // Usamos ponto-e-vírgula (;) pois é o padrão do Excel em português (Brasil)
+  return "\ufeff" + [headers.join(";"), ...rows].join("\n");
 }
 
 /**
- * Simula o download ou gera um log para copia do CSV.
- * Em React Native puro, poderiamos usar Expo-FileSystem e Sharing.
+ * Gera o arquivo CSV e abre o seletor de compartilhamento nativo (iOS/Android)
  */
 export async function exportToPlatform(filename: string, csvData: string) {
-  // Para demonstração, faremos um log limpo
-  console.log(`--- [EXPORT: ${filename}] ---`);
-  console.log(csvData);
-  console.log(`--- [FIM EXPORT] ---`);
-  
-  // Em um ambiente real com Expo:
-  // const fileUri = FileSystem.cacheDirectory + filename;
-  // await FileSystem.writeAsStringAsync(fileUri, csvData, { encoding: FileSystem.EncodingType.UTF8 });
-  // await Sharing.shareAsync(fileUri);
+  try {
+    const fileUri = FileSystem.cacheDirectory + filename;
+    
+    // Usando a API legada com codificação explícita
+    await FileSystem.writeAsStringAsync(fileUri, csvData, { encoding: "utf8" });
+
+    // Compartilhar
+    const isAvailable = await Sharing.isAvailableAsync();
+    if (isAvailable) {
+      await Sharing.shareAsync(fileUri, {
+        mimeType: "text/csv",
+        dialogTitle: `Exportar ${filename}`,
+        UTI: "public.comma-separated-values-text", // Melhor suporte no iOS/Numbers
+      });
+    } else {
+      Alert.alert("Erro", "O compartilhamento não está disponível no seu dispositivo.");
+    }
+  } catch (error) {
+    console.error("Erro ao exportar arquivo:", error);
+    throw error;
+  }
 }
 
 /**
  * ===== ADMIN EXPORTS =====
  * Exportações diferenciadas por role de usuário
  */
-
-import {
-  getProducersCSVData,
-  getBuyersCSVData,
-  getProductsCSVData,
-  getSalesCSVData,
-  getReportsCSVData,
-} from "./adminAnalytics";
 
 export async function exportProducersToCSV(): Promise<string> {
   const data = await getProducersCSVData();

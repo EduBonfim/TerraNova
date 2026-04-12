@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Alert, Share, Platform } from "react-native";
+import { useEffect, useState, useCallback } from "react";
+import { Alert, Platform } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { type MapPressEvent } from "react-native-maps";
@@ -14,7 +14,7 @@ import {
   setProfileAvatar,
   updateProfileSummary,
 } from "@/services/communityStore";
-import { updateUserAvatarUri } from "@/services/authStore";
+import { updateUserAvatarUri, updateUserBuyerProfile, AppUser } from "@/services/authStore";
 import {
   type GateCoordinate,
   DEFAULT_PIN_REGION,
@@ -22,7 +22,8 @@ import {
   formatCep,
   normalizeCep,
 } from "@/features/account/utils/accountUtils";
-import { initOrdersStore, getOrdersByUser, Order } from "@/services/ordersStore";
+import { initOrdersStore, getOrdersByUser, getOrdersByBuyer, Order } from "@/services/ordersStore";
+import { exportToPlatform } from "@/utils/csvExport";
 
 export type OrderTab = "aguardando" | "transporte" | "finalizado";
 export type SalesPeriod = "dias" | "semanas" | "meses" | "total";
@@ -81,6 +82,8 @@ export function useAccountLogic() {
     locationValidatedAt,
   );
   const [draftProfileBio, setDraftProfileBio] = useState(profileBio);
+  const [draftPhone, setDraftPhone] = useState(user?.phone || "");
+  const [draftGender, setDraftGender] = useState<AppUser["gender"]>(user?.gender);
 
   // -- REAL ORDERS LOGIC --
   const myOrders = {
@@ -103,44 +106,64 @@ export function useAccountLogic() {
 
   const salesData = getSalesDataByPeriod();
 
+  const refreshProfileData = useCallback(async () => {
+    await initCommunityStore();
+    await initOrdersStore();
+    
+    // Refresh user from store to get latest phone/gender
+    const nextSummary = getProfileSummary(profileName);
+    setDisplayName(nextSummary.displayName);
+    setFarmName(nextSummary.farmName);
+    setProducerRole(nextSummary.producerRole);
+    setFarmAddress(nextSummary.farmAddress);
+    setFarmAddressNumber(nextSummary.farmAddressNumber || "");
+    setFarmAddressReference(nextSummary.farmAddressReference || "");
+    setFarmCep(nextSummary.farmCep);
+    
+    const nextCoords =
+      nextSummary.gateLatitude != null && nextSummary.gateLongitude != null
+        ? { latitude: nextSummary.gateLatitude, longitude: nextSummary.gateLongitude }
+        : null;
+    
+    setGateCoords(nextCoords);
+    setIsCepValidated(nextSummary.isCepValidated);
+    setIsGatePinConfirmed(nextSummary.isGatePinConfirmed);
+    setLocationValidatedAt(nextSummary.locationValidatedAt ?? null);
+    setProfileBio(nextSummary.bio || "");
+    setFarmPhotos(getFarmPhotos(profileName));
+    setProfilePhotoUri(nextSummary.avatarUri ?? getProfileAvatar(profileName) ?? null);
+
+    // Drafts update
+    setDraftDisplayName(nextSummary.displayName);
+    setDraftFarmName(nextSummary.farmName);
+    setDraftProducerRole(nextSummary.producerRole);
+    setDraftFarmAddress(nextSummary.farmAddress);
+    setDraftFarmAddressNumber(nextSummary.farmAddressNumber || "");
+    setDraftFarmAddressReference(nextSummary.farmAddressReference || "");
+    setDraftFarmCep(formatCep(nextSummary.farmCep));
+    setDraftGateCoords(nextCoords);
+    setDraftIsCepValidated(nextSummary.isCepValidated);
+    setDraftIsGatePinConfirmed(nextSummary.isGatePinConfirmed);
+    setDraftLocationValidatedAt(nextSummary.locationValidatedAt ?? null);
+    setDraftProfileBio(nextSummary.bio || "");
+    setDraftPhone(user?.phone || "");
+    setDraftGender(user?.gender as AppUser["gender"]);
+
+    let userOrders: Order[] = [];
+    const userSearchName = user?.fullName || profileName;
+    
+    if (user?.role === "buyer") {
+      userOrders = await getOrdersByBuyer(userSearchName);
+    } else {
+      userOrders = await getOrdersByUser(profileName);
+    }
+    setOrders(userOrders);
+  }, [profileName, user?.fullName, user?.role, user?.phone, user?.gender]);
+
   // -- EFFECTS --
   useEffect(() => {
-    let isMounted = true;
-
-    const loadData = async () => {
-      await initCommunityStore();
-      await initOrdersStore();
-      
-      if (!isMounted) return;
-
-      const nextSummary = getProfileSummary(profileName);
-      setDisplayName(nextSummary.displayName);
-      setFarmName(nextSummary.farmName);
-      setProducerRole(nextSummary.producerRole);
-      setFarmAddress(nextSummary.farmAddress);
-      setFarmCep(nextSummary.farmCep);
-      const nextCoords =
-        nextSummary.gateLatitude != null && nextSummary.gateLongitude != null
-          ? { latitude: nextSummary.gateLatitude, longitude: nextSummary.gateLongitude }
-          : null;
-      setGateCoords(nextCoords);
-      setIsCepValidated(nextSummary.isCepValidated);
-      setIsGatePinConfirmed(nextSummary.isGatePinConfirmed);
-      setLocationValidatedAt(nextSummary.locationValidatedAt ?? null);
-      setProfileBio(nextSummary.bio);
-      setFarmPhotos(getFarmPhotos(profileName));
-      setProfilePhotoUri(nextSummary.avatarUri ?? getProfileAvatar(profileName) ?? null);
-
-      const userOrders = await getOrdersByUser(profileName);
-      setOrders(userOrders);
-    };
-
-    loadData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    refreshProfileData();
+  }, [refreshProfileData]);
 
   // -- ACTIONS --
   const exportToCSV = async () => {
@@ -155,43 +178,48 @@ export function useAccountLogic() {
         total: "Total acumulado"
       };
 
-      const csvData = [
-        ["🌾 TERRA NOVA - CONECTANDO FAZENDAS 🌾"],
-        [""],
-        ["RELATÓRIO DE VENDAS"],
-        [""],
-        ["Fazenda:", farmName],
-        ["Produtor:", displayName],
-        ["Endereço:", `${farmAddress}, CEP ${farmCep}`],
-        [""],
-        ["Período:", periodLabels[salesPeriod as keyof typeof periodLabels]],
-        ["Data do Relatório:", `${currentDate} às ${currentTime}`],
-        [""],
-        ["─────────────────────────────────────────"],
-        ["RESUMO DE VENDAS"],
-        ["─────────────────────────────────────────"],
-        [""],
-        ["Categoria", "Valor Total (R$)"],
-        ["Alimentos", `R$ ${salesData.alimentos.toFixed(2)}`],
-        ["Insumos", `R$ ${salesData.insumos.toFixed(2)}`],
-        ["Sementes", `R$ ${salesData.sementes.toFixed(2)}`],
-        [""],
-        ["─────────────────────────────────────────"],
-        ["TOTAL GERAL", `R$ ${salesData.total.toFixed(2)}`],
-        ["─────────────────────────────────────────"],
-        [""],
-        ["Relatório gerado automaticamente pelo app Terra Nova"],
-        ["Conectando Fazendas - Marketplace Agrícola"],
-      ]
-        .map((row) => row.join(","))
-        .join("\n");
+      // Seção de Detalhamento de Pedidos
+      const orderDetails = orders.map(o => 
+        `${o.id};${o.data};${o.produto};${o.categoria};${o.quantidade};R$ ${o.valorNumerico.toFixed(2)};${o.status}`
+      ).join("\n");
 
-      await Share.share({
-        message: csvData,
-        title: "Relatório de Vendas - Terra Nova",
-      });
+      // Formatação profissional para Excel (Ponto-e-vírgula e BOM)
+      const csvContent = [
+        ["TERRA NOVA - RELATÓRIO EXECUTIVO DE VENDAS"],
+        [""],
+        ["INFO DA PROPRIEDADE"],
+        [`Fazenda:;${farmName}`],
+        [`Produtor:;${displayName}`],
+        [`Endereço:;${farmAddress};CEP:;${farmCep}`],
+        [`Período:;${periodLabels[salesPeriod as keyof typeof periodLabels]}`],
+        [`Data de Geração:;${currentDate} às ${currentTime}`],
+        [""],
+        ["RESUMO POR CATEGORIA"],
+        ["Categoria;Faturamento Total"],
+        [`Alimentos;R$ ${salesData.alimentos.toFixed(2)}`],
+        [`Insumos;R$ ${salesData.insumos.toFixed(2)}`],
+        [`Sementes;R$ ${salesData.sementes.toFixed(2)}`],
+        [""],
+        [`VALOR TOTAL ACUMULADO;R$ ${salesData.total.toFixed(2)}`],
+        [""],
+        ["──────────────────────────────────────────"],
+        ["LISTA DETALHADA DE TRANSAÇÕES"],
+        ["──────────────────────────────────────────"],
+        ["ID Pedido;Data;Produto;Categoria;Qtd;Valor Unit.;Status"],
+        orderDetails,
+        [""],
+        ["Relatório gerado automaticamente pelo App Terra Nova"],
+        ["Marketplace de Pequenos Produtores"],
+      ].join("\n");
+
+      // Adiciona o BOM para suporte a acentos no Excel
+      const finalCsv = "\ufeff" + csvContent;
+      const filename = `vendas_detalhado_${salesPeriod}_${new Date().getTime()}.csv`;
+
+      await exportToPlatform(filename, finalCsv);
     } catch (error) {
-      Alert.alert("Erro", "Não foi possível exportar o relatório");
+      console.error("Erro ao exportar relatório do produtor:", error);
+      Alert.alert("Erro", "Não foi possível exportar o relatório de vendas.");
     }
   };
 
@@ -355,7 +383,6 @@ export function useAccountLogic() {
     setDraftGateCoords({ latitude, longitude });
   };
 
-
   const onSaveProfile = async () => {
     const nextName = draftDisplayName.trim();
     const nextFarm = draftFarmName.trim();
@@ -366,20 +393,32 @@ export function useAccountLogic() {
     const nextCep = normalizeCep(draftFarmCep);
     const nextBio = draftProfileBio.trim();
 
-    if (!nextName || !nextFarm || !nextRole || !nextAddress || !nextNumber || !nextBio || !nextCep) {
-      Alert.alert("Campos obrigatórios", "Preencha todos os campos.");
-      return;
+    const isBuyer = user?.role === "buyer";
+    
+    // Validação de Campos Obrigatórios de acordo com o Perfil
+    if (isBuyer) {
+      if (!nextName) {
+        Alert.alert("Campo obrigatório", "O nome não pode estar vazio.");
+        return;
+      }
+    } else {
+      // Regras para Produtor (Sítio)
+      if (!nextName || !nextFarm || !nextRole || !nextAddress || !nextNumber || !nextCep) {
+        Alert.alert("Campos obrigatórios", "Para produtores, todos os dados da fazenda e endereço são necessários.");
+        return;
+      }
+      
+      if (nextCep.length !== 8) {
+        Alert.alert("CEP inválido", "O CEP deve ter 8 dígitos.");
+        return;
+      }
+
+      if (!draftGateCoords || !draftIsCepValidated || !draftIsGatePinConfirmed) {
+        Alert.alert("Validação pendente", "Valide o CEP e confirme a localização da porteira no mapa.");
+        return;
+      }
     }
 
-    if (nextCep.length !== 8) {
-      Alert.alert("CEP invalido", "O CEP deve ter 8 digitos.");
-      return;
-    }
-
-    if (!draftGateCoords || !draftIsCepValidated || !draftIsGatePinConfirmed) {
-      Alert.alert("Validacao pendente", "Valide o CEP e confirme a porteira.");
-      return;
-    }
 
     if (nextBio.length > PROFILE_BIO_MAX) {
       Alert.alert("Bio muito longa", `Máximo ${PROFILE_BIO_MAX} caracteres.`);
@@ -400,29 +439,57 @@ export function useAccountLogic() {
     setProfileBio(nextBio);
 
     // Wait for profile to be saved to AsyncStorage
-    await updateProfileSummary(profileName, {
-      displayName: nextName,
-      farmName: nextFarm,
-      producerRole: nextRole,
-      farmAddress: nextAddress,
-      farmAddressNumber: nextNumber,
-      farmAddressReference: nextReference,
-      farmCep: nextCep,
-      gateLatitude: draftGateCoords.latitude,
-      gateLongitude: draftGateCoords.longitude,
-      isCepValidated: draftIsCepValidated,
-      isGatePinConfirmed: draftIsGatePinConfirmed,
-      locationValidatedAt: draftLocationValidatedAt ?? undefined,
-      bio: nextBio,
-    });
-
     // Persist profile photo if user picked a new one
     if (profilePhotoUri) {
       await setProfileAvatar(profileName, profilePhotoUri);
+    }
+
+    // Para Compradores, atualizar campos extras
+    if (isBuyer) {
+      await updateProfileSummary(profileName, {
+        displayName: nextName,
+        bio: nextBio,
+        phone: draftPhone,
+        gender: draftGender,
+        avatarUri: profilePhotoUri ?? undefined,
+      });
+
+      // Persistir no authStore para que as telas (como a Central) atualizem
+      await updateUserBuyerProfile(profileName, {
+        fullName: nextName,
+        phone: draftPhone,
+        gender: draftGender,
+      });
       
-      // For buyers, also update avatarUri in authStore
-      if (user?.role === "buyer") {
-        updateUserAvatarUri(profileName, profilePhotoUri);
+      // Update avatarUri in authStore
+      if (profilePhotoUri) {
+          await updateUserAvatarUri(profileName, profilePhotoUri);
+      }
+    } else {
+      // Para Produtores, atualizar campos de sítio
+      await updateProfileSummary(profileName, {
+        displayName: nextName,
+        farmName: nextFarm,
+        producerRole: nextRole,
+        farmAddress: nextAddress,
+        farmAddressNumber: nextNumber,
+        farmAddressReference: nextReference,
+        farmCep: nextCep,
+        gateLatitude: draftGateCoords?.latitude,
+        gateLongitude: draftGateCoords?.longitude,
+        isCepValidated: draftIsCepValidated,
+        isGatePinConfirmed: draftIsGatePinConfirmed,
+        locationValidatedAt: draftLocationValidatedAt ?? undefined,
+        bio: nextBio,
+      });
+
+      // Sync with authStore for Central screen consistency
+      await updateUserBuyerProfile(profileName, {
+        fullName: nextName,
+      });
+
+      if (profilePhotoUri) {
+        await updateUserAvatarUri(profileName, profilePhotoUri);
       }
     }
   };
@@ -461,6 +528,8 @@ export function useAccountLogic() {
     draftFarmAddressReference,
     draftFarmCep,
     draftProfileBio,
+    draftPhone,
+    draftGender,
     isCepResolving,
     draftGateCoords,
     
@@ -474,6 +543,8 @@ export function useAccountLogic() {
     setDraftFarmAddressNumber,
     setDraftFarmAddressReference,
     setDraftProfileBio,
+    setDraftPhone,
+    setDraftGender,
     setPreviewPhoto,
     
     // Functions
@@ -490,5 +561,6 @@ export function useAccountLogic() {
     onMapPressSetGate,
     onConfirmPin,
     onClosePinModal,
+    refreshProfileData,
   };
 }

@@ -19,10 +19,16 @@ export interface AdminKPI {
   productsInStock: number;
   productsOutOfStock: number;
   topCategory: string;
+  averageOrderValue: number;
+  conversionRate: number; // Placeholder/Simulation
+  growthRate: number; // Placeholder/Simulation
+  topPerformingProduct: { name: string; sales: number };
 }
 
+import { getUsers } from "@/services/authStore";
+
 export async function getAdminKPIs(): Promise<AdminKPI> {
-  const users = await getAdminUserSummaries();
+  const users = await getUsers();
   const products = await getMarketplaceItems();
   const orders = await getAllOrders();
 
@@ -31,14 +37,16 @@ export async function getAdminKPIs(): Promise<AdminKPI> {
 
   const totalSales = orders.reduce((acc, o) => acc + o.valorNumerico, 0);
   const producerSales = orders
-    .filter((o) => o.vendedorUsername) // Qualquer venda tem vendedor
+    .filter((o) => o.vendedorUsername)
     .reduce((acc, o) => acc + o.valorNumerico, 0);
   const buyerPurchases = orders
-    .filter((o) => o.comprador) // Qualquer compra tem comprador
+    .filter((o) => o.comprador)
     .reduce((acc, o) => acc + o.valorNumerico, 0);
 
+  const avgOrderValue = orders.length > 0 ? totalSales / orders.length : 0;
+
   const validPrices = products
-    .map((p) => parseFloat(p.preco.replace("R$ ", "")))
+    .map((p) => parseFloat(p.preco.replace("R$ ", "").replace(".", "").replace(",", ".")))
     .filter((price) => !isNaN(price));
   const avgPrice = validPrices.length > 0 ? validPrices.reduce((a, b) => a + b) / validPrices.length : 0;
 
@@ -59,6 +67,15 @@ export async function getAdminKPIs(): Promise<AdminKPI> {
         )
       : "N/A";
 
+  // Top Performing Product
+  const productSalesMap: { [key: string]: number } = {};
+  orders.forEach((o) => {
+    productSalesMap[o.produto] = (productSalesMap[o.produto] || 0) + o.valorNumerico;
+  });
+  const topProduct = Object.keys(productSalesMap).length > 0 
+    ? Object.keys(productSalesMap).reduce((a, b) => productSalesMap[a] > productSalesMap[b] ? a : b)
+    : "Nenhum";
+
   return {
     totalUsers: users.length,
     totalProducers: producers.length,
@@ -71,16 +88,20 @@ export async function getAdminKPIs(): Promise<AdminKPI> {
     productsInStock: inStock,
     productsOutOfStock: outOfStock,
     topCategory,
+    averageOrderValue: Math.round(avgOrderValue * 100) / 100,
+    conversionRate: 12.5, // Simulado
+    growthRate: 15.2, // Simulado
+    topPerformingProduct: { name: topProduct, sales: productSalesMap[topProduct] || 0 }
   };
 }
 
 /**
  * ===== CSV EXPORT DATA =====
- * Exportações diferenciadas por role
+ * Exportações enriquecidas com todos os detalhes disponíveis
  */
 
 export async function getProducersCSVData() {
-  const users = await getAdminUserSummaries();
+  const users = await getUsers();
   const producers = users.filter((u) => u.role === "user");
   const orders = await getAllOrders();
 
@@ -90,43 +111,51 @@ export async function getProducersCSVData() {
     const quantidadeVendas = producerOrders.length;
 
     return {
-      username: p.username,
-      farmName: p.farmName || "N/A",
-      email: "N/A", // Campo não disponível no tipo
-      telefone: "N/A", // Campo não disponível no tipo
-      role: "Producer (Produtor)",
-      dataRegistro: "N/A", // Campo não disponível no tipo
-      totalVendas: `R$ ${totalVendas.toFixed(2)}`,
-      quantidadeVendas,
-      ultimaVenda: producerOrders.length > 0 ? producerOrders[0].data : "N/A",
-      status: "Ativo",
+      "ID do Usuário": p.username,
+      "Nome Completo": p.fullName || "Não informado",
+      "Nome da Fazenda": p.farmName || "N/A",
+      "Documento": p.farmDocument || "N/A",
+      "Tipo de Doc": p.farmDocumentType?.toUpperCase() || "N/A",
+      "E-mail": p.email || "N/A",
+      "Telefone": p.phone || "N/A",
+      "Cidade": p.address?.city || "N/A",
+      "Estado": p.address?.state || "N/A",
+      "CEP": p.address?.cep || "N/A",
+      "LGPD Aceito Em": p.lgpdAcceptedAt || "N/A",
+      "Total Faturado": `R$ ${totalVendas.toFixed(2)}`,
+      "Quantidade de Pedidos": quantidadeVendas,
+      "Ticket Médio": `R$ ${quantidadeVendas > 0 ? (totalVendas / quantidadeVendas).toFixed(2) : "0.00"}`,
+      "Última Venda": producerOrders.length > 0 ? producerOrders[0].data : "Nunca",
+      "Status": "Ativo",
     };
   });
 }
 
 export async function getBuyersCSVData() {
-  const users = await getAdminUserSummaries();
+  const users = await getUsers();
   const buyers = users.filter((u) => u.role === "buyer");
   const orders = await getAllOrders();
 
   return buyers.map((b) => {
-    const buyerOrders = orders.filter((o) => o.comprador === b.username);
+    const buyerOrders = orders.filter((o) => o.comprador.toLowerCase() === b.username.toLowerCase());
     const totalGasto = buyerOrders.reduce((acc, o) => acc + o.valorNumerico, 0);
     const quantidadeCompras = buyerOrders.length;
 
     return {
-      username: b.username,
-      nomeCompleto: b.fullName || "N/A",
-      email: "N/A", // Campo não disponível no tipo
-      telefone: "N/A", // Campo não disponível no tipo
-      role: "Buyer (Comprador)",
-      cidade: "N/A", // Campo não disponível no tipo
-      estado: "N/A", // Campo não disponível no tipo
-      dataRegistro: "N/A", // Campo não disponível no tipo
-      totalGasto: `R$ ${totalGasto.toFixed(2)}`,
-      quantidadeCompras,
-      ultimaCompra: buyerOrders.length > 0 ? buyerOrders[0].data : "N/A",
-      status: "Ativo",
+      "ID do Comprador": b.username,
+      "Nome Completo": b.fullName || "Não informado",
+      "CPF": b.cpf || "N/A",
+      "E-mail": b.email || "N/A",
+      "Telefone": b.phone || "N/A",
+      "Cidade": b.address?.city || "N/A",
+      "Estado": b.address?.state || "N/A",
+      "CEP": b.address?.cep || "N/A",
+      "LGPD Aceito Em": b.lgpdAcceptedAt || "N/A",
+      "Total Consumido": `R$ ${totalGasto.toFixed(2)}`,
+      "Quantidade de Itens": quantidadeCompras,
+      "Ticket Médio": `R$ ${quantidadeCompras > 0 ? (totalGasto / quantidadeCompras).toFixed(2) : "0.00"}`,
+      "Última Compra": buyerOrders.length > 0 ? buyerOrders[0].data : "Nunca",
+      "Status": "Ativo",
     };
   });
 }
@@ -141,18 +170,19 @@ export async function getProductsCSVData() {
     const faturamento = productOrders.reduce((acc, o) => acc + o.valorNumerico, 0);
 
     return {
-      produtoId: p.id,
-      nome: p.produto,
-      produtor: p.vendedor,
-      role: "Producer (De Produtor)",
-      categoria: p.categoria,
-      subcategoria: p.subcategoria || "N/A",
-      preco: p.preco,
-      estoque: p.estoqueValor,
-      certificacao: p.tipoCertificacao,
-      vendas,
-      faturamento: `R$ ${faturamento.toFixed(2)}`,
-      dataPublicacao: p.loteCodigo || "N/A",
+      "ID do Produto": p.id,
+      "Nome do Produto": p.produto,
+      "Produtor Vendedor": p.vendedor,
+      "Categoria": p.categoria,
+      "Subcategoria": p.subcategoria || "N/A",
+      "Preço Base": p.preco,
+      "Unidade": p.unidade || "N/A",
+      "Estoque Atual": p.estoqueValor,
+      "Certificação": p.tipoCertificacao,
+      "Total Vendas (Qtd)": vendas,
+      "Faturamento Total": `R$ ${faturamento.toFixed(2)}`,
+      "Eficiência de Estoque": p.estoqueValor > 0 ? `${((vendas / (vendas + p.estoqueValor)) * 100).toFixed(1)}%` : "100%",
+      "Lote": p.loteCodigo || "N/A",
     };
   });
 }
@@ -162,33 +192,35 @@ export async function getSalesCSVData() {
 
   return orders.map((o) => {
     return {
-      pedidoId: o.id,
-      tipo: o.vendedorUsername ? "Venda (Producer)" : "Compra (Buyer)",
-      origem: o.vendedorUsername ? "Producer (Produtor)" : "Buyer (Comprador)",
-      produtor: o.vendedorUsername || "N/A",
-      comprador: o.comprador || "N/A",
-      produto: o.produto,
-      categoria: o.categoria,
-      valor: o.valor,
-      quantidade: o.quantidade,
-      status: o.status,
-      data: o.data,
+      "ID do Pedido": o.id,
+      "Data da Transação": o.data,
+      "ID do Vendedor": o.vendedorUsername || "N/A",
+      "ID do Comprador": o.comprador || "N/A",
+      "Nome do Produto": o.produto,
+      "Categoria": o.categoria,
+      "Preço Unitário": o.valor,
+      "Quantidade": o.quantidade,
+      "Valor Total": `R$ ${o.valorNumerico.toFixed(2)}`,
+      "Status Logístico": o.status,
+      "Transportadora": o.transportadora || "Própria/Não informada",
     };
   });
 }
 
 export async function getReportsCSVData() {
-  const users = await getAdminUserSummaries();
+  const users = await getUsers();
 
-  // Simulando dados de relatórios
-  return users.slice(0, 5).map((u, idx) => ({
-    reportId: `REP-${idx + 1}`,
-    usuario: u.username,
-    role: u.role === "user" ? "Producer (Produtor)" : "Buyer (Comprador)",
-    tipo: "Comportamento Suspeito",
-    descricao: `Possível atividade irregular em ${u.username}`,
-    dataRelatorio: new Date().toISOString().split("T")[0],
-    status: "Pendente",
-    prioridade: "Media",
+  // Simulando dados de relatórios enriquecidos
+  return users.slice(0, 10).map((u, idx) => ({
+    "ID da Ocorrência": `REP-${2025}${idx.toString().padStart(3, "0")}`,
+    "Data de Aberura": new Date().toISOString().split("T")[0],
+    "Usuário Envolvido": u.username,
+    "Perfil": u.role === "user" ? "Produtor" : "Comprador",
+    "Motivo da Denúncia": idx % 2 === 0 ? "Qualidade do Lote" : "Atraso na Entrega",
+    "Severidade": idx % 3 === 0 ? "Alta" : "Média",
+    "Evidências Anexadas": idx % 2 === 0 ? "Sim" : "Não",
+    "Descrição": `Investigação automática de rotina para o usuário ${u.fullName || u.username}`,
+    "Status de Resolução": "Em Análise",
   }));
 }
+

@@ -14,6 +14,7 @@ export type MarketplaceOpportunity = {
   loteCodigo: string; // Ex: TN-LOTE-2024-001 (Rastreabilidade INC 02/2018)
   tipoCertificacao: "Organico" | "Transicao" | "Convencional";
   numeroRegistro?: string; // Numero do selo ou registro no MAPA/SDA
+  unidade?: string; // Ex: kg, unidade, maço, caixa
 };
 
 export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
