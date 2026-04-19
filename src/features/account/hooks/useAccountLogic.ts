@@ -1,29 +1,29 @@
-import { useEffect, useState, useCallback } from "react";
-import { Alert, Platform } from "react-native";
-import * as ImagePicker from "expo-image-picker";
-import * as Location from "expo-location";
-import { type MapPressEvent } from "react-native-maps";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  addFarmPhoto,
-  getFarmPhotos,
-  getProfileAvatar,
-  getProfileSummary,
-  initCommunityStore,
-  removeFarmPhoto,
-  setProfileAvatar,
-  updateProfileSummary,
-} from "@/services/communityStore";
-import { updateUserAvatarUri, updateUserBuyerProfile, AppUser } from "@/services/authStore";
-import {
-  type GateCoordinate,
-  DEFAULT_PIN_REGION,
-  PROFILE_BIO_MAX,
-  formatCep,
-  normalizeCep,
+    type GateCoordinate,
+    DEFAULT_PIN_REGION,
+    formatCep,
+    normalizeCep,
+    PROFILE_BIO_MAX,
 } from "@/features/account/utils/accountUtils";
-import { initOrdersStore, getOrdersByUser, getOrdersByBuyer, Order } from "@/services/ordersStore";
+import { AppUser, updateUserAvatarUri, updateUserBuyerProfile } from "@/services/authStore";
+import {
+    addFarmPhoto,
+    getFarmPhotos,
+    getProfileAvatar,
+    getProfileSummary,
+    initCommunityStore,
+    removeFarmPhoto,
+    setProfileAvatar,
+    updateProfileSummary,
+} from "@/services/communityStore";
+import { getOrdersByBuyer, getOrdersByUser, initOrdersStore, Order } from "@/services/ordersStore";
 import { exportToPlatform } from "@/utils/csvExport";
+import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
+import { useCallback, useEffect, useState } from "react";
+import { Alert, Platform } from "react-native";
+import { type MapPressEvent } from "react-native-maps";
 
 export type OrderTab = "aguardando" | "transporte" | "finalizado";
 export type SalesPeriod = "dias" | "semanas" | "meses" | "total";

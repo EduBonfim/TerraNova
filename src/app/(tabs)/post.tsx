@@ -1,34 +1,33 @@
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  Image,
-  Modal,
-  ActivityIndicator,
-  StatusBar,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import * as ImagePicker from "expo-image-picker";
 import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMarketplaceLogic } from "@/features/marketplace/hooks/useMarketplaceLogic";
-import { 
-  hasOutOfStockItems,
-  type MarketplaceOpportunity 
-} from "../../services/marketplaceStore";
-import { createListing } from "../../services/listingService";
+import { createListing } from "@/services/listingService";
+import {
+    type MarketplaceOpportunity
+} from "@/services/marketplaceStore";
+import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
+import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    Image,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { appTheme as theme } from "../../theme/appTheme";
+import { appTheme as theme } from "@/theme/appTheme";
 
 const IOS_VISUAL = {
   keyboardBehavior: "padding" as const,

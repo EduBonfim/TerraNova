@@ -1,7 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { appTheme as theme } from '@/theme/appTheme';
+import { Ionicons } from '@expo/vector-icons';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export type OrderTab = "aguardando" | "transporte" | "finalizado";
 

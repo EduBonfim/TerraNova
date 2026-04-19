@@ -1,9 +1,8 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Modal, StyleSheet, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import MapView, { Marker, MapPressEvent } from 'react-native-maps';
-import { appTheme as theme } from '@/theme/appTheme';
 import { DEFAULT_PIN_REGION } from '@/features/account/utils/accountUtils';
+import { appTheme as theme } from '@/theme/appTheme';
+import { Ionicons } from '@expo/vector-icons';
+import { Alert, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import MapView, { MapPressEvent, Marker } from 'react-native-maps';
 
 interface PinModalProps {
   visible: boolean;

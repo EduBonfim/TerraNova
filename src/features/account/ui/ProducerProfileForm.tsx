@@ -1,24 +1,23 @@
-import React from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Modal,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useAuth } from "@/contexts/AuthContext";
 import { PinModal } from "@/features/account/components/modals/PinModal";
 import { useAccountLogic } from "@/features/account/hooks/useAccountLogic";
-import { useAuth } from "@/contexts/AuthContext";
-import { appTheme as theme } from "@/theme/appTheme";
 import { PROFILE_BIO_MAX } from "@/features/account/utils/accountUtils";
+import { appTheme as theme } from "@/theme/appTheme";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import {
+    ActivityIndicator,
+    Image,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 export function ProducerProfileForm() {
   const router = useRouter();

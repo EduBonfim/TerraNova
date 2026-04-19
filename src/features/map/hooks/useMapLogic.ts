@@ -1,13 +1,13 @@
-import { useState, useEffect, useRef, useMemo } from "react";
-import { Platform, Keyboard, Dimensions } from "react-native";
-import MapView from "react-native-maps";
+import { getUsers } from "@/services/authStore";
+import { getProfileSummary, initCommunityStore } from "@/services/communityStore";
+import { MARKETPLACE_OPPORTUNITIES } from "@/services/marketplaceStore";
+import { getDistanceScore } from "@/utils/geoUtils";
+import { SEARCH_STOPWORDS as CONTEXT_STOPWORDS, normalizeText, tokenize } from "@/utils/textUtils";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
-import { getProfileSummary, initCommunityStore } from "@/services/communityStore";
-import { getUsers } from "@/services/authStore";
-import { MARKETPLACE_OPPORTUNITIES } from "@/services/marketplaceStore";
-import { normalizeText, tokenize, SEARCH_STOPWORDS as CONTEXT_STOPWORDS } from "@/utils/textUtils";
-import { getDistanceKm, getDistanceScore } from "@/utils/geoUtils";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Dimensions, Keyboard, Platform } from "react-native";
+import MapView from "react-native-maps";
 
 // 📍 DADOS REAIS TERRA Nova (Foco em Bioinsumos e Compostagem)
 export const PONTOS_LOGISTICOS = [

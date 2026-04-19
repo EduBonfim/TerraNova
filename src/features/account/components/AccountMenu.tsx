@@ -1,8 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { appTheme as theme, platformMetrics } from '@/theme/appTheme';
+import { platformMetrics, appTheme as theme } from "@/theme/appTheme";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 interface AccountMenuProps {
   hasNewMessages: boolean;
@@ -20,21 +27,30 @@ interface MenuCardProps {
 
 function MenuCard({ icon, label, onPress, badge }: MenuCardProps) {
   return (
-    <TouchableOpacity style={styles.menuCard} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.menuCard}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View style={styles.menuCardIconContainer}>
-        <Ionicons name={icon as never} size={18} color={theme.colors.gray_800} />
+        <Ionicons
+          name={icon as never}
+          size={18}
+          color={theme.colors.gray_800}
+        />
         {badge && <View style={styles.menuCardNotificationDot} />}
       </View>
       <Text style={styles.menuCardLabel}>{label}</Text>
-      <Ionicons name="chevron-forward" size={18} color={theme.colors.gray_400} />
+      <Ionicons
+        name="chevron-forward"
+        size={18}
+        color={theme.colors.gray_400}
+      />
     </TouchableOpacity>
   );
 }
 
-export function AccountMenu({
-  hasNewMessages,
-  onLogout,
-}: AccountMenuProps) {
+export function AccountMenu({ hasNewMessages, onLogout }: AccountMenuProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   return (
@@ -54,9 +70,19 @@ export function AccountMenu({
             onPress={() => router.push("/my-orders")}
           />
           <MenuCard
+            icon="bag-outline"
+            label="Minhas Compras"
+            onPress={() => router.push("/my-orders")}
+          />
+          <MenuCard
             icon="pricetags-outline"
             label="Meus Anúncios"
-            onPress={() => Alert.alert("Meus Anúncios", "Gerencie seus anúncios ativos e esgotados nesta área.")}
+            onPress={() =>
+              Alert.alert(
+                "Meus Anúncios",
+                "Gerencie seus anúncios ativos e esgotados nesta área.",
+              )
+            }
           />
           <MenuCard
             icon="chatbubble-outline"
@@ -116,8 +142,8 @@ export function AccountMenu({
         </View>
       </View>
 
-      <TouchableOpacity 
-        style={[styles.logoutButton, isLoggingOut && { opacity: 0.8 }]} 
+      <TouchableOpacity
+        style={[styles.logoutButton, isLoggingOut && { opacity: 0.8 }]}
         disabled={isLoggingOut}
         onPress={() => {
           Alert.alert(
@@ -129,7 +155,7 @@ export function AccountMenu({
                 text: "Sair",
                 onPress: async () => {
                   setIsLoggingOut(true);
-                  await new Promise(resolve => setTimeout(resolve, 3000));
+                  await new Promise((resolve) => setTimeout(resolve, 3000));
                   await onLogout();
                   router.replace("/");
                 },
@@ -142,7 +168,11 @@ export function AccountMenu({
         {isLoggingOut ? (
           <ActivityIndicator size="small" color={theme.colors.red_500} />
         ) : (
-          <Ionicons name="log-out-outline" size={20} color={theme.colors.red_500} />
+          <Ionicons
+            name="log-out-outline"
+            size={20}
+            color={theme.colors.red_500}
+          />
         )}
         <Text style={styles.logoutText}>
           {isLoggingOut ? "Saindo..." : "Sair da Conta"}

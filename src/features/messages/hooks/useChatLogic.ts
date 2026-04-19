@@ -1,16 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, BackHandler, Keyboard, Platform } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
 import {
-  addReview,
-  getAverageRating,
-  getFarmPhotos,
-  getProfileAvatar,
-  getReviews,
-  initCommunityStore,
+    addReview,
+    getAverageRating,
+    getFarmPhotos,
+    getProfileAvatar,
+    getReviews
 } from "@/services/communityStore";
 import { normalizeText } from "@/utils/textUtils";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Keyboard } from "react-native";
 
 export type ChatMessage = {
   id: string;

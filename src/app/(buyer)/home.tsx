@@ -1,33 +1,33 @@
-import React, { useEffect, useState, useCallback } from "react";
+import { SurfaceCard } from "@/components/SurfaceCard";
+import { useAuth } from "@/contexts/AuthContext";
+import { MARKETPLACE_OPPORTUNITIES } from "@/services/marketplaceStore";
+import { Ionicons } from "@expo/vector-icons";
+import { useIsFocused } from "@react-navigation/native";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
-  StyleSheet,
-  View,
-  Text,
-  Image,
-  ScrollView,
-  TouchableOpacity,
-  Platform,
-  StatusBar,
-  Modal,
-  Pressable,
-  RefreshControl,
-  BackHandler,
-  Alert,
-  Dimensions,
+    Alert,
+    BackHandler,
+    Dimensions,
+    Image,
+    Modal,
+    Platform,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useFocusEffect } from "expo-router";
-import { useIsFocused } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@/contexts/AuthContext";
-import { SurfaceCard } from "@/components/SurfaceCard";
 import {
-  getNotificationsByRole,
-  markAllNotificationsAsRead,
-  markNotificationAsRead,
-  type AppNotification,
+    getNotificationsByRole,
+    markAllNotificationsAsRead,
+    markNotificationAsRead,
+    type AppNotification,
 } from "../../services/notificationsStore";
-import { MARKETPLACE_OPPORTUNITIES } from "@/services/marketplaceStore";
 import { appTheme as theme } from "../../theme/appTheme";
 
 const IOS_VISUAL = {

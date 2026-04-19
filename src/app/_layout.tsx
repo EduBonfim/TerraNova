@@ -1,16 +1,15 @@
-import React from "react";
-import { Stack } from "expo-router";
-import { View, ActivityIndicator, StatusBar, Platform, UIManager } from "react-native";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { appTheme as theme } from "@/theme/appTheme";
 import { initAuthStore } from "@/services/authStore";
 import { initCommunityStore } from "@/services/communityStore";
+import { initListingService } from "@/services/listingService";
+import { checkAndCleanupExpiredAds, initMarketplaceStore } from "@/services/marketplaceStore";
 import { initOrdersStore } from "@/services/ordersStore";
 import { initSoilReportsStore } from "@/services/soilReportsStore";
-import { initMarketplaceStore, checkAndCleanupExpiredAds } from "@/services/marketplaceStore";
-import { initListingService } from "@/services/listingService";
+import { appTheme as theme } from "@/theme/appTheme";
+import { Stack } from "expo-router";
 import { useEffect } from "react";
+import { ActivityIndicator, Platform, StatusBar, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 
 

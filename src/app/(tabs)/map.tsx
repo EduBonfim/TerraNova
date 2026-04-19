@@ -1,21 +1,19 @@
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  ActivityIndicator,
-  TextInput,
-  Platform,
-  Keyboard,
-} from "react-native";
-import MapView, { Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
-import { Ionicons } from "@expo/vector-icons";
 import { SurfaceCard } from "@/components/SurfaceCard";
+import { useMapLogic } from "@/features/map/hooks/useMapLogic";
 import { getProfileSummary } from "@/services/communityStore";
 import { appTheme as theme } from "@/theme/appTheme";
 import { formatDistanceLabel, getDistanceKm } from "@/utils/geoUtils";
-import { useMapLogic } from "@/features/map/hooks/useMapLogic";
+import { Ionicons } from "@expo/vector-icons";
+import {
+    ActivityIndicator,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from "react-native";
+import MapView, { Callout, Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
 export default function MapScreen() {
   const {

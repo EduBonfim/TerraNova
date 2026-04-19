@@ -1,23 +1,23 @@
-import React, { useMemo, useState } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  Alert,
-  StatusBar,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useMemo, useState } from "react";
 import {
-  addCertificate,
-  CertificateStatus,
-  getCertificates,
+    Alert,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+    addCertificate,
+    CertificateStatus,
+    getCertificates,
 } from "../services/communityStore";
 
 type ViewStatus = "create" | CertificateStatus;

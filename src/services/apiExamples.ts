@@ -4,7 +4,7 @@
  * Use este arquivo como referência para integrar o backend
  */
 
-import { get, post, put, httpDelete } from "./api";
+import { get, httpDelete, post, put } from "./api";
 
 /**
  * Exemplo 1: Buscar lista de itens

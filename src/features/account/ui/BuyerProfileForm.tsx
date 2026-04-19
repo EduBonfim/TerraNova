@@ -1,23 +1,23 @@
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  Modal,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAccountLogic } from "@/features/account/hooks/useAccountLogic";
+import { maskEmail } from "@/services/authStore";
+import { appTheme as theme } from "@/theme/appTheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useAuth } from "@/contexts/AuthContext";
-import { maskEmail } from "@/services/authStore";
-import { useAccountLogic } from "@/features/account/hooks/useAccountLogic";
-import { appTheme as theme } from "@/theme/appTheme";
+import { useState } from "react";
+import {
+    FlatList,
+    Image,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 const genderOptions = [
   { label: "Masculino", value: "male" },

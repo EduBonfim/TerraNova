@@ -1,21 +1,21 @@
-import React, { useMemo, useState } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  StatusBar,
-  Image,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
-import { getCertificates, getProfile } from "@/services/communityStore";
 import { getUsers } from "@/services/authStore";
+import { getCertificates, getProfile } from "@/services/communityStore";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useMemo, useState } from "react";
+import {
+    Image,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const theme = {
   colors: {

@@ -1,43 +1,95 @@
-import React from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-  StatusBar,
-  TouchableOpacity,
-  Platform,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { AppHeader } from "@/components/AppHeader";
+import { StatusBadge } from "@/components/StatusBadge";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAccountLogic } from "@/features/account/hooks/useAccountLogic";
+import { ordersStyles as styles } from "@/styles/ordersAndMetricsStyles";
+import { appTheme as theme } from "@/theme/appTheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { AppHeader } from "@/components/AppHeader";
-import { useAccountLogic } from "@/features/account/hooks/useAccountLogic";
-import { appTheme as theme } from "@/theme/appTheme";
-import { useAuth } from "@/contexts/AuthContext";
+import { useMemo, useState } from "react";
+import {
+    ActivityIndicator,
+    ScrollView,
+    StatusBar,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function MyOrdersScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { 
-    myOrders, 
-    selectedOrderTab, 
-    setSelectedOrderTab 
-  } = useAccountLogic();
+  const { myOrders, selectedOrderTab, setSelectedOrderTab } = useAccountLogic();
 
-  const isBuyer = user?.role === "buyer";
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+
+  if (!user) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: theme.colors.primary,
+          justifyContent: "center",
+        }}
+      >
+        <ActivityIndicator color={theme.colors.white} />
+      </View>
+    );
+  }
+
+  const isBuyer = user.role === "buyer";
   const ordersList = myOrders[selectedOrderTab] || [];
+
+  const groupedOrders = useMemo(() => {
+    const groups: Record<string, typeof ordersList> = {};
+    ordersList.forEach((order) => {
+      const party = isBuyer ? order.vendedorUsername : order.comprador;
+      const key = `${order.data}_${party}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(order);
+    });
+
+    return Object.entries(groups).map(([key, items], index) => {
+      const party = isBuyer ? items[0].vendedorUsername : items[0].comprador;
+      const data = items[0].data;
+      const totalValue = items.reduce(
+        (acc, current) => acc + current.valorNumerico,
+        0,
+      );
+      const transportadora = items.find(
+        (i) => i.transportadora,
+      )?.transportadora;
+
+      return {
+        id: `COMPRA_${index + 1}_${key}`,
+        displayId: index + 1,
+        data,
+        party,
+        items,
+        totalValue,
+        transportadora,
+      };
+    });
+  }, [ordersList, isBuyer]);
+
+  const toggleExpand = (id: string) => {
+    setExpandedOrderId((prev) => (prev === id ? null : id));
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={theme.colors.primary}
+      />
       <AppHeader
         title={isBuyer ? "Meus Pedidos" : "Minhas Vendas"}
         onBackPress={() => {
           if (router.canGoBack()) {
             router.back();
           } else {
-            router.replace(isBuyer ? "/(buyer)/account" : "/(tabs)/home");
+            router.navigate(isBuyer ? "/(buyer)/account" : "/(tabs)/account");
           }
         }}
         showBackButton={true}
@@ -58,14 +110,18 @@ export default function MyOrdersScreen() {
           >
             <Ionicons
               name={
-                tab === "aguardando" 
-                  ? "time-outline" 
-                  : tab === "transporte" 
-                  ? "car-outline" 
+                tab === "aguardando"
+                  ? "time-outline"
+                  : tab === "transporte"
+                  ? "car-outline"
                   : "checkmark-circle-outline"
               }
-              size={18}
-              color={selectedOrderTab === tab ? theme.colors.white : theme.colors.gray_500}
+              size={16}
+              color={
+                selectedOrderTab === tab
+                  ? theme.colors.primary
+                  : theme.colors.gray_500
+              }
             />
             <Text
               style={[
@@ -81,179 +137,156 @@ export default function MyOrdersScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
         <View style={styles.ordersListContainer}>
-          {ordersList.map((order) => (
-            <View key={order.id} style={styles.orderCard}>
-              <View style={styles.orderCardHeader}>
-                <View>
-                  <Text style={styles.orderCardId}>Pedido #{order.id}</Text>
-                  <Text style={styles.orderCardProduct}>{order.produto}</Text>
-                </View>
-                <Text style={styles.orderCardValue}>{order.valor}</Text>
-              </View>
+          {groupedOrders.map((group) => {
+            const isExpanded = expandedOrderId === group.id;
+            const formattedTotal = `R$ ${group.totalValue
+              .toFixed(2)
+              .replace(".", ",")}`;
 
-              <View style={styles.orderCardDetails}>
-                <View style={styles.orderDetail}>
-                  <Ionicons name="cube-outline" size={16} color={theme.colors.primary} />
-                  <Text style={styles.orderDetailText}>{order.quantidade}</Text>
+            return (
+              <TouchableOpacity
+                key={group.id}
+                style={[
+                  styles.orderCard,
+                  isExpanded && styles.orderCardExpanded,
+                ]}
+                onPress={() => toggleExpand(group.id)}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={[
+                    styles.orderCardHeader,
+                    isExpanded && styles.orderCardHeaderExpanded,
+                  ]}
+                >
+                  <View style={styles.orderLeftCol}>
+                    <Text style={styles.orderCardId}>
+                      {isBuyer ? "COMPRA" : "VENDA"} #{group.displayId}
+                    </Text>
+                    <Text style={styles.orderCardProduct} numberOfLines={1}>
+                      {isBuyer ? "Pedido com" : "Para"} {group.party}
+                    </Text>
+                    <View style={{ marginTop: 8 }}>
+                      <StatusBadge status={selectedOrderTab} size="sm" />
+                    </View>
+                  </View>
+                  <View style={styles.orderRightCol}>
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text style={styles.orderCardValue}>
+                        {formattedTotal}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          color: theme.colors.gray_500,
+                          marginTop: 2,
+                        }}
+                      >
+                        {group.items.length} item(ns)
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name={isExpanded ? "chevron-up" : "chevron-down"}
+                      size={20}
+                      color={theme.colors.primary}
+                    />
+                  </View>
                 </View>
-                <View style={styles.orderDetail}>
-                  <Ionicons name="calendar-outline" size={16} color={theme.colors.primary} />
-                  <Text style={styles.orderDetailText}>{order.data}</Text>
-                </View>
-              </View>
 
-              <View style={styles.orderCardFooter}>
-                <Text style={styles.orderBuyer}>
-                  {selectedOrderTab === "transporte" ? "Transportadora: " : (isBuyer ? "Vendedor: " : "Comprador: ")}
-                  {selectedOrderTab === "transporte" && "transportadora" in order 
-                    ? (order as any).transportadora 
-                    : (isBuyer ? (order as any).vendedorUsername : (order as any).comprador)}
-                </Text>
-              </View>
-            </View>
-          ))}
+                {isExpanded && (
+                  <View style={styles.expandedContent}>
+                    <View style={styles.orderCardDetails}>
+                      <View style={styles.orderDetail}>
+                        <Ionicons
+                          name="cube-outline"
+                          size={14}
+                          color={theme.colors.primary}
+                        />
+                        <Text style={styles.orderDetailText}>
+                          {group.items.length} item(ns)
+                        </Text>
+                      </View>
+                      <View style={styles.orderDetail}>
+                        <Ionicons
+                          name="calendar-outline"
+                          size={14}
+                          color={theme.colors.primary}
+                        />
+                        <Text style={styles.orderDetailText}>{group.data}</Text>
+                      </View>
+                    </View>
 
-          {ordersList.length === 0 && (
+                    <View style={styles.groupedItemsList}>
+                      {group.items.map((item, index) => (
+                        <View
+                          key={item.id}
+                          style={[
+                            styles.groupedItemRow,
+                            index === group.items.length - 1 && {
+                              borderBottomWidth: 0,
+                            },
+                          ]}
+                        >
+                          <Text style={styles.groupedItemQtd}>
+                            {item.quantidade}
+                          </Text>
+                          <Text
+                            style={styles.groupedItemName}
+                            numberOfLines={2}
+                          >
+                            {item.produto}
+                          </Text>
+                          <Text style={styles.groupedItemValue}>
+                            {item.valor}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    <View style={styles.orderCardFooter}>
+                      <Text style={styles.orderBuyer}>
+                        {selectedOrderTab === "transporte"
+                          ? "Transportadora: "
+                          : isBuyer
+                          ? "Vendedor: "
+                          : "Comprador: "}
+                        <Text style={styles.orderBuyerBold}>
+                          {selectedOrderTab === "transporte" &&
+                          group.transportadora
+                            ? group.transportadora
+                            : group.party}
+                        </Text>
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+
+          {groupedOrders.length === 0 && (
             <View style={styles.emptyState}>
-              <Ionicons name="bag-outline" size={64} color={theme.colors.gray_300} />
+              <Ionicons
+                name="bag-outline"
+                size={64}
+                color={theme.colors.gray_300}
+              />
               <Text style={styles.emptyStateText}>
-                {isBuyer ? "Nenhum pedido nesta categoria" : "Nenhuma venda nesta categoria"}
+                {isBuyer
+                  ? "Nenhum pedido nesta categoria"
+                  : "Nenhuma venda nesta categoria"}
               </Text>
               <Text style={styles.emptyStateSubtext}>
-                {isBuyer 
-                  ? "Seus pedidos aparecerão aqui assim que forem realizados." 
+                {isBuyer
+                  ? "Seus pedidos aparecerão aqui assim que forem realizados."
                   : "Suas vendas aparecerão aqui assim que forem realizadas."}
               </Text>
             </View>
           )}
-          
+
           <View style={{ height: 40 }} />
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.primary,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  orderTabsContainer: {
-    flexDirection: "row",
-    backgroundColor: theme.colors.white,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.gray_200,
-    gap: 8,
-  },
-  orderTab: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: theme.colors.background,
-  },
-  orderTabActive: {
-    backgroundColor: theme.colors.primary,
-  },
-  orderTabText: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: theme.colors.gray_500,
-  },
-  orderTabTextActive: {
-    color: theme.colors.white,
-  },
-  ordersListContainer: {
-    padding: 16,
-  },
-  orderCard: {
-    backgroundColor: theme.colors.white,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    borderWidth: 1,
-    borderColor: theme.colors.gray_200,
-  },
-  orderCardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  orderCardId: {
-    fontSize: 11,
-    color: theme.colors.gray_500,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-  },
-  orderCardProduct: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: theme.colors.gray_800,
-    marginTop: 2,
-  },
-  orderCardValue: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: theme.colors.primary,
-  },
-  orderCardDetails: {
-    flexDirection: "row",
-    gap: 16,
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.gray_100,
-  },
-  orderDetail: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  orderDetailText: {
-    fontSize: 13,
-    color: theme.colors.gray_500,
-  },
-  orderCardFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  orderBuyer: {
-    fontSize: 13,
-    color: theme.colors.gray_500,
-    fontStyle: "italic",
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
-  },
-  emptyStateText: {
-    marginTop: 16,
-    fontSize: 16,
-    fontWeight: "bold",
-    color: theme.colors.gray_800,
-  },
-  emptyStateSubtext: {
-    marginTop: 8,
-    fontSize: 13,
-    color: theme.colors.gray_500,
-    textAlign: "center",
-    paddingHorizontal: 40,
-  },
-});

@@ -1,21 +1,21 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-  FlatList,
-  Animated,
-  Dimensions,
-  TouchableOpacity,
-  StatusBar,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { AppHeader } from "@/components/AppHeader";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { AppHeader } from "@/components/AppHeader";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+    Animated,
+    Dimensions,
+    FlatList,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const theme = {
   colors: {

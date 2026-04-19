@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Platform, InteractionManager, Keyboard, FlatList, TextInput } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useIsFocused } from "@react-navigation/native";
+import { useAuth } from "@/contexts/AuthContext";
 import { getAverageRating, getProfileSummary, getReviews, initCommunityStore } from "@/services/communityStore";
 import { getMarketplaceItems, MarketplaceOpportunity } from "@/services/marketplaceStore";
 import { normalizeText } from "@/utils/textUtils";
-import { useAuth } from "@/contexts/AuthContext";
+import { useIsFocused } from "@react-navigation/native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { TextInput } from "react-native";
 
 const ESTIMATED_CARD_HEIGHT = 320;
 

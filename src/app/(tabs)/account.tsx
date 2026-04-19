@@ -1,27 +1,26 @@
-import React, { useState, useCallback } from "react";
-import {
-  StyleSheet,
-  ScrollView,
-  StatusBar,
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  FlatList,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { Platform } from "react-native";
-import { useAuth } from "@/contexts/AuthContext";
 import { AppHeader } from "@/components/AppHeader";
+import { useAuth } from "@/contexts/AuthContext";
+import { AccountMenu } from "@/features/account/components/AccountMenu";
 import { ProfileHeader } from "@/features/account/components/ProfileHeader";
 import { QuickStats } from "@/features/account/components/QuickStats";
-import { AccountMenu } from "@/features/account/components/AccountMenu";
 import { useAccountLogic } from "@/features/account/hooks/useAccountLogic";
 import { getOrdersByUser, type Order } from "@/services/ordersStore";
 import { appTheme as theme } from "@/theme/appTheme";
-import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useState } from "react";
+import {
+    FlatList,
+    Modal,
+    Platform,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AccountScreen() {
   const { user, refreshUser } = useAuth();

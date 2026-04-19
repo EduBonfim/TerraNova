@@ -6,9 +6,7 @@
  */
 
 import { getProfileSummary } from "@/services/communityStore";
-import { getAllOrders } from "@/services/ordersStore";
 import { MARKETPLACE_OPPORTUNITIES } from "@/services/marketplaceStore";
-import { Order } from "@/services/ordersStore";
 
 export interface RecentSale {
   id: string;

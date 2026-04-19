@@ -1,12 +1,11 @@
-import React from "react";
-import { StyleSheet, StatusBar } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
 import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
-import { appTheme as theme } from "@/theme/appTheme";
 import { BuyerProfileForm } from "@/features/account/ui/BuyerProfileForm";
 import { ProducerProfileForm } from "@/features/account/ui/ProducerProfileForm";
+import { appTheme as theme } from "@/theme/appTheme";
+import { useRouter } from "expo-router";
+import { StatusBar, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function EditProfileScreen() {
   const router = useRouter();

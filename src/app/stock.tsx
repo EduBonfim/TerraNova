@@ -1,26 +1,25 @@
-import React, { useState, useEffect } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StatusBar,
-  Platform,
-  Modal,
-  TextInput,
-  Pressable,
-  Image,
-  Alert,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@/contexts/AuthContext";
 import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
+import { useAuth } from "@/contexts/AuthContext";
 import { MARKETPLACE_OPPORTUNITIES } from "@/services/marketplaceStore";
 import { appTheme as theme } from "@/theme/appTheme";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+    Alert,
+    Image,
+    Modal,
+    Pressable,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function StockControlScreen() {
   const router = useRouter();

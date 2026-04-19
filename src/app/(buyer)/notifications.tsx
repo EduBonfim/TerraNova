@@ -2,26 +2,26 @@
  * Buyer Notifications Screen
  * Customized for buyer with purchase, order, and product notifications
  */
-import React, { useState, useEffect } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-  StatusBar,
-  TouchableOpacity,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
 import {
-  getNotificationsByRole,
-  markNotificationAsRead,
-  type AppNotification,
+    getNotificationsByRole,
+    markNotificationAsRead,
+    type AppNotification,
 } from "@/services/notificationsStore";
 import { appTheme as theme } from "@/theme/appTheme";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function BuyerNotificationsScreen() {
   const router = useRouter();

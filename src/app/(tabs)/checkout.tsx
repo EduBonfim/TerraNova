@@ -1,14 +1,14 @@
-import React, { useState } from "react";
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Image, StatusBar, Alert, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
-import { appTheme as theme } from "@/theme/appTheme";
-import { useProducerCart, removeFromProducerCart, clearProducerCart, updateProducerCartQuantity } from "@/services/producerCartStore";
-import { createOrder } from "@/services/ordersStore";
 import { useAuth } from "@/contexts/AuthContext";
+import { createOrder } from "@/services/ordersStore";
+import { clearProducerCart, removeFromProducerCart, updateProducerCartQuantity, useProducerCart } from "@/services/producerCartStore";
+import { appTheme as theme } from "@/theme/appTheme";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { ActivityIndicator, Alert, Image, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProducerCheckoutScreen() {
   const router = useRouter();

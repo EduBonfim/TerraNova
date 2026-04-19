@@ -1,18 +1,18 @@
-import React, { useCallback, useMemo, type ReactNode } from "react";
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  Platform,
-  PanResponder,
-  BackHandler,
-  type StyleProp,
-  type TextStyle,
-  type ViewStyle,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useMemo, type ReactNode } from "react";
+import {
+    BackHandler,
+    PanResponder,
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+    type StyleProp,
+    type TextStyle,
+    type ViewStyle,
+} from "react-native";
 
 // Cabecalho reutilizavel para telas do app com acessorios opcionais e controle de alinhamento.
 export type AppHeaderProps = {

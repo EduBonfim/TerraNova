@@ -1,0 +1,31 @@
+import React from "react";
+import { View, Text } from "react-native";
+import { profileStyles as styles } from "../styles/user-profile.styles";
+import { SurfaceCard } from "@/components/SurfaceCard";
+
+interface RecentReviewsProps {
+  reviews: { id: string; author: string; date: string; stars: number; comment: string }[];
+}
+
+export function RecentReviews({ reviews }: RecentReviewsProps) {
+  return (
+    <SurfaceCard style={styles.card}>
+      <Text style={styles.sectionTitle}>Avaliações recentes</Text>
+      {reviews.length === 0 ? (
+        <Text style={styles.emptyText}>Ainda sem avaliações.</Text>
+      ) : null}
+      {reviews.slice(0, 5).map((review) => (
+        <View key={review.id} style={styles.reviewItem}>
+          <Text style={styles.reviewMeta}>
+            {review.author} • {review.date}
+          </Text>
+          <Text style={styles.reviewStars}>
+            {"★".repeat(review.stars)}
+            {"☆".repeat(5 - review.stars)}
+          </Text>
+          <Text style={styles.reviewComment}>{review.comment}</Text>
+        </View>
+      ))}
+    </SurfaceCard>
+  );
+}

@@ -1,10 +1,9 @@
-import React from "react";
-import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { Platform, View, Text } from "react-native";
-import { appTheme as theme } from "@/theme/appTheme";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCart } from "@/services/cartStore";
+import { appTheme as theme } from "@/theme/appTheme";
+import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
+import { Platform, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const IOS_TAB_BAR_HEIGHT = 40;
 const ANDROID_TAB_BAR_HEIGHT = 45;

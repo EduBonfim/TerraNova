@@ -1,5 +1,5 @@
-import { StyleSheet } from 'react-native';
 import { appTheme } from '@/theme/appTheme';
+import { StyleSheet } from 'react-native';
 
 export const commonStyles = StyleSheet.create({
   sectionTitlePrimary: {

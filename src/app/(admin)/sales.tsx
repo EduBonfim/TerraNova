@@ -1,29 +1,26 @@
-import React, { useEffect, useState } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StatusBar,
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
-import { useAuth } from "@/contexts/AuthContext";
 import { getMarketplaceItems, type MarketplaceOpportunity } from "@/services/marketplaceStore";
 import { getAllOrders, type Order } from "@/services/ordersStore";
-import { convertToCSV, exportToPlatform } from "@/utils/csvExport";
 import { appTheme as theme } from "@/theme/appTheme";
+import { convertToCSV, exportToPlatform } from "@/utils/csvExport";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AdminSalesScreen() {
   const router = useRouter();
-  const { user } = useAuth();
   const [marketplaceItems, setMarketplaceItems] = useState<MarketplaceOpportunity[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);

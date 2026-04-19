@@ -1,16 +1,14 @@
-import React from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  StatusBar,
-  Platform,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { AppHeader } from "@/components/AppHeader";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { AppHeader } from "@/components/AppHeader";
+import {
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // 🎨 PALETA OFICIAL TERRA NOVA
 const theme = {

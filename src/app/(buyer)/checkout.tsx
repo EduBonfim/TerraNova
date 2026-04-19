@@ -1,14 +1,14 @@
-import React, { useState } from "react";
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Image, StatusBar, Alert, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
-import { appTheme as theme } from "@/theme/appTheme";
-import { useCart, removeFromCart, clearCart, updateCartQuantity } from "@/services/cartStore";
-import { createOrder } from "@/services/ordersStore";
 import { useAuth } from "@/contexts/AuthContext";
+import { clearCart, removeFromCart, updateCartQuantity, useCart } from "@/services/cartStore";
+import { createOrder } from "@/services/ordersStore";
+import { appTheme as theme } from "@/theme/appTheme";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { ActivityIndicator, Alert, Image, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function CheckoutScreen() {
   const router = useRouter();
@@ -39,7 +39,7 @@ export default function CheckoutScreen() {
 
       await clearCart();
       Alert.alert("Pedido Finalizado!", "Seus pedidos foram enviados ao produtor para aprovação.", [
-        { text: "Ver Meus Pedidos", onPress: () => router.replace("/my-orders") }
+        { text: "Ver Meus Pedidos", onPress: () => router.push("/my-orders") }
       ]);
     } catch (e) {
       Alert.alert("Erro", "Ocorreu um erro ao processar seu pedido.");

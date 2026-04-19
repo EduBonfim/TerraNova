@@ -1,25 +1,24 @@
-import React, { useState, useCallback } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  StatusBar,
-  Image,
-  Modal,
-  FlatList,
-  Platform,
-  ActivityIndicator,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { appTheme as theme } from "@/theme/appTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { getOrdersByUser, type Order } from "@/services/ordersStore";
+import { appTheme as theme } from "@/theme/appTheme";
+import { Ionicons } from "@expo/vector-icons";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Image,
+    Modal,
+    Platform,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // ─── MenuItem component ────────────────────────────────────────────────────────
 

@@ -1,18 +1,15 @@
-import React from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-  StatusBar,
-  TouchableOpacity,
-  Platform,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { AppHeader } from "@/components/AppHeader";
 import { appTheme as theme } from "@/theme/appTheme";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import {
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    View
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RatingsScreen() {
   const router = useRouter();

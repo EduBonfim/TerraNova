@@ -1,27 +1,27 @@
 // my-app/src/components/ScanLaudoSolo.tsx
 // Componente para capturar e processar laudo de solo com OCR
 
-import React, { useState } from "react";
-import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Text,
-  Image,
-  Modal,
-  ActivityIndicator,
-  Alert,
-  Platform,
-  StyleSheet,
-} from "react-native";
-import * as ImagePicker from "expo-image-picker";
-import { Ionicons } from "@expo/vector-icons";
 import { SurfaceCard } from "@/components/SurfaceCard";
 import {
-  extrairTextoDoLaudo,
-  AnaliseSoloExtraida,
-  formularDadosPraAPI,
+    AnaliseSoloExtraida,
+    extrairTextoDoLaudo,
+    formularDadosPraAPI,
 } from "@/features/soil-analysis/services/ocrService";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    Image,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 interface ScanLaudoSoloProps {
   onAnaliseCompleta?: (analise: AnaliseSoloExtraida) => void;

@@ -1,20 +1,18 @@
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StatusBar,
-  LayoutAnimation,
-  Platform,
-  UIManager,
-  Linking,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { AppHeader } from "@/components/AppHeader";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { AppHeader } from "@/components/AppHeader";
+import { useState } from "react";
+import {
+    LayoutAnimation,
+    Linking,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 
 

@@ -1,7 +1,7 @@
-import React from "react";
-import { StyleSheet, View, Text, TouchableOpacity, Platform } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { appTheme as theme } from "@/theme/appTheme";
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export type AdminTab = "home" | "sales" | "metrics" | "reports";
 

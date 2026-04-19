@@ -1,32 +1,32 @@
-import React, { useEffect, useState, useCallback } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  Platform,
-  Image,
-  Modal,
-  Pressable,
-  StatusBar,
-  RefreshControl,
-  ScrollView,
-  TextInput,
-  Keyboard,
-  Alert,
-  BackHandler,
-  Animated,
-  LayoutAnimation,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "expo-router";
 import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
-import { appTheme as theme } from "@/theme/appTheme";
 import { useMarketplaceLogic } from "@/features/marketplace/hooks/useMarketplaceLogic";
-import { addToCart, clearCart, useCart, updateCartQuantity } from "@/services/cartStore";
+import { addToCart, clearCart, updateCartQuantity, useCart } from "@/services/cartStore";
+import { appTheme as theme } from "@/theme/appTheme";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import {
+    Alert,
+    Animated,
+    BackHandler,
+    FlatList,
+    Image,
+    Keyboard,
+    LayoutAnimation,
+    Modal,
+    Platform,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function BuyerMarketplaceScreen() {
   const { cartItems, totalItems, vendorName: cartVendorName } = useCart();

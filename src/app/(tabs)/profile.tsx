@@ -1,30 +1,30 @@
-import React, { useEffect, useState, useCallback } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  Platform,
-  Image,
-  Modal,
-  Pressable,
-  StatusBar,
-  RefreshControl,
-  ScrollView,
-  TextInput,
-  Keyboard,
-  Alert,
-  Animated,
-  LayoutAnimation,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
-import { appTheme as theme } from "@/theme/appTheme";
 import { useMarketplaceLogic } from "@/features/marketplace/hooks/useMarketplaceLogic";
-import { addToProducerCart, clearProducerCart, useProducerCart, updateProducerCartQuantity } from "@/services/producerCartStore";
+import { addToProducerCart, clearProducerCart, updateProducerCartQuantity, useProducerCart } from "@/services/producerCartStore";
+import { appTheme as theme } from "@/theme/appTheme";
+import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useState } from "react";
+import {
+    Alert,
+    Animated,
+    FlatList,
+    Image,
+    Keyboard,
+    LayoutAnimation,
+    Modal,
+    Platform,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProducerMarketplaceScreen() {
   const { cartItems, totalItems, vendorName: cartVendorName } = useProducerCart();

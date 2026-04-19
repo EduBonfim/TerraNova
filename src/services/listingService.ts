@@ -9,7 +9,6 @@
  */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { MarketplaceOpportunity } from "./marketplaceStore";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TIPOS E INTERFACES

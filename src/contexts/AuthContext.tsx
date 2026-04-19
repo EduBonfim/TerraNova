@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authenticateUser, getUserByUsername, initAuthStore, type AppUser } from "@/services/authStore";
 import { clearCart } from "@/services/cartStore";
 import { clearProducerCart } from "@/services/producerCartStore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 const AUTH_STORAGE_KEY = "@terra_nova/current_user";
 
