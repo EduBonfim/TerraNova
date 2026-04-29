@@ -1,9 +1,9 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/services/cartStore";
 import {
-    getAverageRating,
-    getProfile,
-    getReviews,
+  getAverageRating,
+  getProfile,
+  getReviews,
 } from "@/services/communityStore";
 import { MARKETPLACE_OPPORTUNITIES } from "@/services/marketplaceStore";
 import { addReport } from "@/services/reportsStore";
@@ -12,26 +12,26 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StatusBar,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { profileStyles as styles } from "@/features/user-profile/styles/user-profile.styles";
+import { FertilizersList } from "@/features/user-profile/components/FertilizersList";
 import { HeroBanner } from "@/features/user-profile/components/HeroBanner";
+import { ImagePreviewModal } from "@/features/user-profile/components/ImagePreviewModal";
+import { MarketListings } from "@/features/user-profile/components/MarketListings";
+import { PhotoGallery } from "@/features/user-profile/components/PhotoGallery";
+import { ProductDetailsModal } from "@/features/user-profile/components/ProductDetailsModal";
 import { ProfileMainInfo } from "@/features/user-profile/components/ProfileMainInfo";
 import { ProfileQuickActions } from "@/features/user-profile/components/ProfileQuickActions";
 import { ProfileTrustStats } from "@/features/user-profile/components/ProfileTrustStats";
-import { PhotoGallery } from "@/features/user-profile/components/PhotoGallery";
-import { MarketListings } from "@/features/user-profile/components/MarketListings";
-import { FertilizersList } from "@/features/user-profile/components/FertilizersList";
 import { RecentReviews } from "@/features/user-profile/components/RecentReviews";
-import { ImagePreviewModal } from "@/features/user-profile/components/ImagePreviewModal";
-import { ProductDetailsModal } from "@/features/user-profile/components/ProductDetailsModal";
+import { profileStyles as styles } from "@/features/user-profile/styles/user-profile.styles";
 
 function normalizeText(value: string): string {
   return value
@@ -45,7 +45,10 @@ export default function UserProfileScreen() {
   const router = useRouter();
   const { cartItems, vendorName: cartVendorName, totalItems } = useCart();
   const { user: currentUser } = useAuth();
-  const params = useLocalSearchParams<{ name?: string; filterByVendor?: string }>();
+  const params = useLocalSearchParams<{
+    name?: string;
+    filterByVendor?: string;
+  }>();
   const name = params.filterByVendor || params.name || "Fazenda São João";
 
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
@@ -56,7 +59,7 @@ export default function UserProfileScreen() {
   const reviews = getReviews(name);
 
   const userListings = MARKETPLACE_OPPORTUNITIES.filter(
-    (item) => normalizeText(item.vendedor) === normalizeText(name)
+    (item) => normalizeText(item.vendedor) === normalizeText(name),
   );
 
   const handleReport = () => {
@@ -65,26 +68,33 @@ export default function UserProfileScreen() {
       `Deseja abrir uma denúncia formal contra ${profile.displayName} para análise administrativa?`,
       [
         { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Confirmar Denúncia", 
+        {
+          text: "Confirmar Denúncia",
           style: "destructive",
           onPress: async () => {
-             await addReport({
-               reportedUser: name,
-               reporter: currentUser?.username || "Anônimo",
-               reason: "Denúncia via perfil público",
-               description: "Ação iniciada pelo usuário através do botão de denúncia no perfil."
-             });
-             Alert.alert("Sucesso", "Denúncia enviada com sucesso. Nossa equipe analisará o caso.");
-          }
-        }
-      ]
+            await addReport({
+              reportedUser: name,
+              reporter: currentUser?.username || "Anônimo",
+              reason: "Denúncia via perfil público",
+              description:
+                "Ação iniciada pelo usuário através do botão de denúncia no perfil.",
+            });
+            Alert.alert(
+              "Sucesso",
+              "Denúncia enviada com sucesso. Nossa equipe analisará o caso.",
+            );
+          },
+        },
+      ],
     );
   };
 
   const navigateToMarket = (prod: any) => {
     setSelectedProduct(null);
-    const targetPath = currentUser?.role === "buyer" ? "/(buyer)/marketplace" : "/(tabs)/profile";
+    const targetPath =
+      currentUser?.role === "buyer"
+        ? "/(buyer)/marketplace"
+        : "/(producer)/profile";
     router.push({
       pathname: targetPath as any,
       params: { filterByVendor: prod.vendedor, highlight: prod.id },
@@ -99,8 +109,8 @@ export default function UserProfileScreen() {
         backgroundColor="transparent"
       />
 
-      <ScrollView 
-        style={styles.container} 
+      <ScrollView
+        style={styles.container}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: 0 }}
       >
@@ -118,10 +128,15 @@ export default function UserProfileScreen() {
         />
 
         <ProfileQuickActions
-          onNegotiate={() => router.push({
-            pathname: "/messages",
-            params: { sellerName: profile.displayName, productName: "Conversa Direta" },
-          })}
+          onNegotiate={() =>
+            router.push({
+              pathname: "/messages",
+              params: {
+                sellerName: profile.displayName,
+                productName: "Conversa Direta",
+              },
+            })
+          }
           farmAddress={profile.farmAddress}
           latitude={profile.gateLatitude}
           longitude={profile.gateLongitude}
@@ -152,8 +167,14 @@ export default function UserProfileScreen() {
         <RecentReviews reviews={reviews} />
 
         <TouchableOpacity style={styles.reportButton} onPress={handleReport}>
-          <Ionicons name="flag-outline" size={16} color={theme.colors.red_500} />
-          <Text style={styles.reportButtonText}>Denunciar Perfil ou Anúncio Irregular</Text>
+          <Ionicons
+            name="flag-outline"
+            size={16}
+            color={theme.colors.red_500}
+          />
+          <Text style={styles.reportButtonText}>
+            Denunciar Perfil ou Anúncio Irregular
+          </Text>
         </TouchableOpacity>
 
         <View style={styles.bottomSpacer} />

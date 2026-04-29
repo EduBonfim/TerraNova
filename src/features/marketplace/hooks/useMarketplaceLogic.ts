@@ -1,6 +1,14 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { getAverageRating, getProfileSummary, getReviews, initCommunityStore } from "@/services/communityStore";
-import { getMarketplaceItems, MarketplaceOpportunity } from "@/services/marketplaceStore";
+import {
+    getAverageRating,
+    getProfileSummary,
+    getReviews,
+    initCommunityStore,
+} from "@/services/communityStore";
+import {
+    getMarketplaceItems,
+    MarketplaceOpportunity,
+} from "@/services/marketplaceStore";
 import { normalizeText } from "@/utils/textUtils";
 import { useIsFocused } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -13,19 +21,35 @@ export function useMarketplaceLogic(cartVendorName?: string | null) {
   const router = useRouter();
   const { user } = useAuth();
   const isFocused = useIsFocused();
-  const params = useLocalSearchParams<{ highlight?: string; filterByVendor?: string; subcategory?: string }>();
-  
-  const highlight = Array.isArray(params.highlight) ? params.highlight[0] : params.highlight;
-  const filterByVendor = Array.isArray(params.filterByVendor) ? params.filterByVendor[0] : params.filterByVendor;
-  const paramSubcat = Array.isArray(params.subcategory) ? params.subcategory[0] : params.subcategory;
+  const params = useLocalSearchParams<{
+    highlight?: string;
+    filterByVendor?: string;
+    subcategory?: string;
+  }>();
+
+  const highlight = Array.isArray(params.highlight)
+    ? params.highlight[0]
+    : params.highlight;
+  const filterByVendor = Array.isArray(params.filterByVendor)
+    ? params.filterByVendor[0]
+    : params.filterByVendor;
+  const paramSubcat = Array.isArray(params.subcategory)
+    ? params.subcategory[0]
+    : params.subcategory;
   const highlightedItemId = highlight;
 
-  const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
-  const [internalHighlightId, setInternalHighlightId] = useState<string | null>(null);
+  const [activeHighlightId, setActiveHighlightId] = useState<string | null>(
+    null,
+  );
+  const [internalHighlightId, setInternalHighlightId] = useState<string | null>(
+    null,
+  );
   const [imageModalUri, setImageModalUri] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [storeVersion, setStoreVersion] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(paramSubcat || null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(
+    paramSubcat || null,
+  );
 
   useEffect(() => {
     if (paramSubcat) {
@@ -35,9 +59,11 @@ export function useMarketplaceLogic(cartVendorName?: string | null) {
   }, [paramSubcat, router]);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [marketplaceItems, setMarketplaceItems] = useState<MarketplaceOpportunity[]>([]);
+  const [marketplaceItems, setMarketplaceItems] = useState<
+    MarketplaceOpportunity[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const searchInputRef = useRef<TextInput>(null);
 
   const handleRefresh = async () => {
@@ -83,17 +109,19 @@ export function useMarketplaceLogic(cartVendorName?: string | null) {
 
   const filteredMarketplaceItems = useMemo(() => {
     let items = marketplaceItems;
-    
+
     // Filter Cultivo out for buyers
     if (user?.role === "buyer") {
-      items = items.filter(item => item.categoria === "Mercado");
+      items = items.filter((item) => item.categoria === "Mercado");
     }
-    
+
     const effectiveVendorFilter = cartVendorName || filterByVendor;
 
     if (effectiveVendorFilter) {
       const normalizedFilter = normalizeText(effectiveVendorFilter);
-      items = items.filter((item) => normalizeText(item.vendedor) === normalizedFilter);
+      items = items.filter(
+        (item) => normalizeText(item.vendedor) === normalizedFilter,
+      );
     }
 
     if (selectedCategory && selectedCategory !== "Todos") {
@@ -102,16 +130,19 @@ export function useMarketplaceLogic(cartVendorName?: string | null) {
 
     if (searchQuery.trim()) {
       const normalizedSearch = normalizeText(searchQuery);
-      items = items.filter((item) =>
-        normalizeText(item.produto).includes(normalizedSearch) ||
-        normalizeText(item.vendedor).includes(normalizedSearch) ||
-        normalizeText(item.subcategoria || "").includes(normalizedSearch)
+      items = items.filter(
+        (item) =>
+          normalizeText(item.produto).includes(normalizedSearch) ||
+          normalizeText(item.vendedor).includes(normalizedSearch) ||
+          normalizeText(item.subcategoria || "").includes(normalizedSearch),
       );
     }
 
     // Sort highlighted item to the very top to bypass complex async offset math
     if (internalHighlightId) {
-      const targetIndex = items.findIndex(item => item.id === internalHighlightId);
+      const targetIndex = items.findIndex(
+        (item) => item.id === internalHighlightId,
+      );
       if (targetIndex > 0) {
         const item = items[targetIndex];
         items = [...items];
@@ -121,7 +152,14 @@ export function useMarketplaceLogic(cartVendorName?: string | null) {
     }
 
     return items;
-  }, [marketplaceItems, filterByVendor, cartVendorName, selectedCategory, searchQuery, internalHighlightId]);
+  }, [
+    marketplaceItems,
+    filterByVendor,
+    cartVendorName,
+    selectedCategory,
+    searchQuery,
+    internalHighlightId,
+  ]);
 
   useEffect(() => {
     if (highlightedItemId) {
@@ -131,15 +169,19 @@ export function useMarketplaceLogic(cartVendorName?: string | null) {
   }, [highlightedItemId, router]);
 
   useEffect(() => {
-    if (!isFocused || !internalHighlightId || filteredMarketplaceItems.length === 0) return;
-    
+    if (
+      !isFocused ||
+      !internalHighlightId ||
+      filteredMarketplaceItems.length === 0
+    )
+      return;
+
     setActiveHighlightId(internalHighlightId);
-    
+
     const clearGlowTemp = setTimeout(() => {
-      setActiveHighlightId(null);
-      setInternalHighlightId(null);
+      setActiveHighlightId(null); // Remove only the highlight effect, keep product at top
     }, 4000);
-    
+
     return () => clearTimeout(clearGlowTemp);
   }, [internalHighlightId, isFocused, filteredMarketplaceItems.length]);
 
@@ -161,7 +203,9 @@ export function useMarketplaceLogic(cartVendorName?: string | null) {
       }
     };
     loadMarketplace();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [isFocused, isRefreshing]);
 
   useEffect(() => {
@@ -171,7 +215,9 @@ export function useMarketplaceLogic(cartVendorName?: string | null) {
       if (mounted) setStoreVersion((prev) => prev + 1);
     };
     ensureStoreReady();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return {

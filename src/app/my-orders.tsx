@@ -8,12 +8,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StatusBar,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -50,27 +50,36 @@ export default function MyOrdersScreen() {
       groups[key].push(order);
     });
 
-    return Object.entries(groups).map(([key, items], index) => {
-      const party = isBuyer ? items[0].vendedorUsername : items[0].comprador;
-      const data = items[0].data;
-      const totalValue = items.reduce(
-        (acc, current) => acc + current.valorNumerico,
-        0,
-      );
-      const transportadora = items.find(
-        (i) => i.transportadora,
-      )?.transportadora;
+    // Converter data DD/MM/YYYY para Date para ordenação correta
+    const parseDate = (dateStr: string) => {
+      const [day, month, year] = dateStr.split("/").map(Number);
+      return new Date(year, month - 1, day);
+    };
 
-      return {
-        id: `COMPRA_${index + 1}_${key}`,
-        displayId: index + 1,
-        data,
-        party,
-        items,
-        totalValue,
-        transportadora,
-      };
-    });
+    return Object.entries(groups)
+      .map(([key, items]) => {
+        const party = isBuyer ? items[0].vendedorUsername : items[0].comprador;
+        const data = items[0].data;
+        const totalValue = items.reduce(
+          (acc, current) => acc + current.valorNumerico,
+          0,
+        );
+        const transportadora = items.find(
+          (i) => i.transportadora,
+        )?.transportadora;
+
+        return {
+          id: `COMPRA_${key}`,
+          displayId: data, // Usar data em vez de número
+          data,
+          party,
+          items,
+          totalValue,
+          transportadora,
+          dateObj: parseDate(data), // Para ordenação
+        };
+      })
+      .sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime()); // Do mais recente para mais antigo
   }, [ordersList, isBuyer]);
 
   const toggleExpand = (id: string) => {
@@ -89,7 +98,9 @@ export default function MyOrdersScreen() {
           if (router.canGoBack()) {
             router.back();
           } else {
-            router.navigate(isBuyer ? "/(buyer)/account" : "/(tabs)/account");
+            router.navigate(
+              isBuyer ? "/(buyer)/account" : "/(producer)/account",
+            );
           }
         }}
         showBackButton={true}
@@ -161,10 +172,10 @@ export default function MyOrdersScreen() {
                 >
                   <View style={styles.orderLeftCol}>
                     <Text style={styles.orderCardId}>
-                      {isBuyer ? "COMPRA" : "VENDA"} #{group.displayId}
+                      {isBuyer ? "COMPRA" : "VENDA"} - {group.displayId}
                     </Text>
                     <Text style={styles.orderCardProduct} numberOfLines={1}>
-                      {isBuyer ? "Pedido com" : "Para"} {group.party}
+                      {group.party}
                     </Text>
                     <View style={{ marginTop: 8 }}>
                       <StatusBadge status={selectedOrderTab} size="sm" />

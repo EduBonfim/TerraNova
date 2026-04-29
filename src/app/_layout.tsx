@@ -2,7 +2,10 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { initAuthStore } from "@/services/authStore";
 import { initCommunityStore } from "@/services/communityStore";
 import { initListingService } from "@/services/listingService";
-import { checkAndCleanupExpiredAds, initMarketplaceStore } from "@/services/marketplaceStore";
+import {
+  checkAndCleanupExpiredAds,
+  initMarketplaceStore,
+} from "@/services/marketplaceStore";
 import { initOrdersStore } from "@/services/ordersStore";
 import { initSoilReportsStore } from "@/services/soilReportsStore";
 import { appTheme as theme } from "@/theme/appTheme";
@@ -11,13 +14,14 @@ import { useEffect } from "react";
 import { ActivityIndicator, Platform, StatusBar, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-
-
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor={theme.colors.primary}
+        />
         <AppLayoutContent />
       </AuthProvider>
     </SafeAreaProvider>
@@ -46,7 +50,14 @@ function AppLayoutContent() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: theme.colors.white }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: theme.colors.white,
+        }}
+      >
         <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
@@ -66,59 +77,50 @@ function AppLayoutContent() {
       <Stack.Screen name="index" />
 
       {/* 2. AUTENTICAÇÃO */}
-      <Stack.Screen 
-        name="login" 
-        options={{ animation: "fade" }}
-      />
-      <Stack.Screen 
-        name="register" 
+      <Stack.Screen name="login" options={{ animation: "fade" }} />
+      <Stack.Screen
+        name="register"
         options={{ animation: "slide_from_right" }}
       />
-      <Stack.Screen 
-        name="register-type" 
+      <Stack.Screen
+        name="register-type"
         options={{ animation: "slide_from_right" }}
       />
-      <Stack.Screen 
-        name="register-buyer" 
+      <Stack.Screen
+        name="register-buyer"
         options={{ animation: "slide_from_right" }}
       />
 
-      <Stack.Screen 
-        name="(tabs)" 
-        options={{ animation: "fade", gestureEnabled: false }} 
+      <Stack.Screen
+        name="(producer)"
+        options={{ animation: "fade", gestureEnabled: false }}
       />
 
       {/* 5. O GRUPO DE COMPRADORES */}
-      <Stack.Screen 
-        name="(buyer)" 
-        options={{ animation: "fade", gestureEnabled: false }} 
+      <Stack.Screen
+        name="(buyer)"
+        options={{ animation: "fade", gestureEnabled: false }}
       />
-      <Stack.Screen 
-        name="buyer-certificates" 
-        options={{ animation: "slide_from_right" }} 
+      <Stack.Screen
+        name="buyer-certificates"
+        options={{ animation: "slide_from_right" }}
       />
-      <Stack.Screen 
-        name="(admin)" 
-        options={{ animation: "fade", gestureEnabled: false }} 
+      <Stack.Screen
+        name="(admin)"
+        options={{ animation: "fade", gestureEnabled: false }}
       />
 
       {/* 4. TELAS DE NAVEGAÇÃO DE PILHA (STACK) */}
-      <Stack.Screen 
-        name="messages" 
+      <Stack.Screen
+        name="messages"
         options={{ animation: "slide_from_right" }}
       />
-      <Stack.Screen 
-        name="user-profile" 
+      <Stack.Screen
+        name="user-profile"
         options={{ animation: "slide_from_right" }}
       />
-      <Stack.Screen 
-        name="scan" 
-        options={{ animation: "slide_from_bottom" }}
-      />
-      <Stack.Screen 
-        name="stock" 
-        options={{ animation: "slide_from_right" }}
-      />
+      <Stack.Screen name="scan" options={{ animation: "slide_from_bottom" }} />
+      <Stack.Screen name="stock" options={{ animation: "slide_from_right" }} />
 
       {/* OUTRAS TELAS */}
       <Stack.Screen name="certificates" />

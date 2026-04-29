@@ -4,18 +4,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -47,7 +47,10 @@ export default function LoginScreen() {
     const password = senha.trim();
 
     if (!user || !password) {
-      Alert.alert("Campos obrigatorios", "Informe usuario e senha para entrar.");
+      Alert.alert(
+        "Campos obrigatorios",
+        "Informe usuario e senha para entrar.",
+      );
       return;
     }
 
@@ -64,7 +67,10 @@ export default function LoginScreen() {
 
     if (authUser.role === "admin") {
       if (authUser.pendingLgpdReacceptance) {
-        router.replace({ pathname: "/privacy-lgpd", params: { forceConsent: "1" } });
+        router.replace({
+          pathname: "/privacy-lgpd",
+          params: { forceConsent: "1" },
+        });
         return;
       }
       router.replace("/(admin)/home");
@@ -77,7 +83,7 @@ export default function LoginScreen() {
     }
 
     // Produtor (role: "user" ou undefined)
-    router.replace("/(tabs)/home");
+    router.replace("/(producer)/home");
   };
 
   return (
@@ -88,108 +94,123 @@ export default function LoginScreen() {
           behavior={CURRENT_PLATFORM_UI.keyboardBehavior}
         >
           <View style={styles.content}>
-          {/* --- LOGO E BOAS-VINDAS --- */}
-          <View style={styles.header}>
-            <View style={styles.logoCircle}>
-              <Image
-                source={require("../assets/perfil.png")}
-                style={styles.avatar}
-              />
-            </View>
-            <Text style={styles.title}>Terra Nova</Text>
-            <Text style={styles.subtitle}>Conectando a agroecologia.</Text>
-          </View>
-
-          {/* --- FORMULÁRIO DE LOGIN --- */}
-          <View style={styles.form}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Login</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons
-                  name="person-outline"
-                  size={20}
-                  color={theme.colors.gray_500}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Usuário, e-mail ou CPF"
-                  placeholderTextColor={theme.colors.gray_800}
-                  value={login}
-                  onChangeText={setLogin}
-                  keyboardType="email-address"
-                  autoCorrect={false}
-                  autoCapitalize="none"
+            {/* --- LOGO E BOAS-VINDAS --- */}
+            <View style={styles.header}>
+              <View style={styles.logoCircle}>
+                <Image
+                  source={require("../assets/perfil.png")}
+                  style={styles.avatar}
                 />
               </View>
+              <Text style={styles.title}>Terra Nova</Text>
+              <Text style={styles.subtitle}>Conectando a agroecologia.</Text>
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Senha</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={20}
-                  color={theme.colors.gray_500}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Sua senha secreta"
-                  placeholderTextColor={theme.colors.gray_800}
-                  value={senha}
-                  onChangeText={(value) => setSenha(sanitizePasswordInput(value))}
-                  secureTextEntry={!mostrarSenha}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="default"
-                />
-                <TouchableOpacity
-                  onPress={() => setMostrarSenha(!mostrarSenha)}
-                  style={styles.eyeIcon}
-                >
+            {/* --- FORMULÁRIO DE LOGIN --- */}
+            <View style={styles.form}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Login</Text>
+                <View style={styles.inputContainer}>
                   <Ionicons
-                    name={mostrarSenha ? "eye-off-outline" : "eye-outline"}
+                    name="person-outline"
                     size={20}
                     color={theme.colors.gray_500}
+                    style={styles.inputIcon}
                   />
-                </TouchableOpacity>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Usuário, e-mail ou CPF"
+                    placeholderTextColor={theme.colors.gray_800}
+                    value={login}
+                    onChangeText={setLogin}
+                    keyboardType="email-address"
+                    autoCorrect={false}
+                    autoCapitalize="none"
+                  />
+                </View>
               </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Senha</Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={20}
+                    color={theme.colors.gray_500}
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Sua senha secreta"
+                    placeholderTextColor={theme.colors.gray_800}
+                    value={senha}
+                    onChangeText={(value) =>
+                      setSenha(sanitizePasswordInput(value))
+                    }
+                    secureTextEntry={!mostrarSenha}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="default"
+                  />
+                  <TouchableOpacity
+                    onPress={() => setMostrarSenha(!mostrarSenha)}
+                    style={styles.eyeIcon}
+                  >
+                    <Ionicons
+                      name={mostrarSenha ? "eye-off-outline" : "eye-outline"}
+                      size={20}
+                      color={theme.colors.gray_500}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <TouchableOpacity style={styles.forgotPassword}>
+                <Text style={styles.forgotPasswordText}>
+                  Esqueci minha senha
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.loginButton,
+                  isLoading && styles.loginButtonDisabled,
+                ]}
+                onPress={fazerLogin}
+                disabled={isLoading}
+              >
+                {isLoading && (
+                  <ActivityIndicator
+                    size="small"
+                    color={theme.colors.white}
+                    style={{ marginRight: 8 }}
+                  />
+                )}
+                <Text style={styles.loginButtonText}>
+                  {isLoading ? "Redirecionando..." : "Entrar"}
+                </Text>
+                {!isLoading && (
+                  <Ionicons
+                    name="arrow-forward"
+                    size={20}
+                    color={theme.colors.white}
+                    style={styles.submitIconSpacing}
+                  />
+                )}
+              </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.loginButton, isLoading && styles.loginButtonDisabled]} 
-              onPress={fazerLogin}
-              disabled={isLoading}
-            >
-              {isLoading && <ActivityIndicator size="small" color={theme.colors.white} style={{ marginRight: 8 }} />}
-              <Text style={styles.loginButtonText}>
-                {isLoading ? "Redirecionando..." : "Entrar"}
+            {/* --- RODAPÉ PARA CADASTRO --- */}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>
+                Ainda não faz parte da comunidade?
               </Text>
-              {!isLoading && (
-                <Ionicons
-                  name="arrow-forward"
-                  size={20}
-                  color={theme.colors.white}
-                  style={styles.submitIconSpacing}
-                />
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {/* --- RODAPÉ PARA CADASTRO --- */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              Ainda não faz parte da comunidade?
-            </Text>
-            <TouchableOpacity onPress={() => router.push("/register-type" as never)}>
-              <Text style={styles.registerLink}>Criar minha conta</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                onPress={() => router.push("/register-type" as never)}
+              >
+                <Text style={styles.registerLink}>Criar minha conta</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>

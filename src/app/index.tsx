@@ -4,12 +4,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import React from "react";
 import {
-    Image,
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -45,7 +45,7 @@ export default function WelcomeScreen() {
         } else if (user.role === "buyer") {
           router.replace("/(buyer)/home");
         } else {
-          router.replace("/(tabs)/home");
+          router.replace("/(producer)/home");
         }
       }
     }, [user, isLoading, router]),

@@ -1,10 +1,9 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { SurfaceCard } from "@/components/SurfaceCard";
+import { appTheme as theme } from "@/theme/appTheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { appTheme as theme } from "@/theme/appTheme";
+import { Text, TouchableOpacity, View } from "react-native";
 import { homeStyles as styles } from "../styles/home.styles";
-import { SurfaceCard } from "@/components/SurfaceCard";
 
 export function MarketOpportunities() {
   const router = useRouter();
@@ -13,10 +12,14 @@ export function MarketOpportunities() {
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>💡 Oportunidades</Text>
 
-      <TouchableOpacity onPress={() => router.push("/(tabs)/profile")}>
+      <TouchableOpacity onPress={() => router.push("/(producer)/profile")}>
         <SurfaceCard style={styles.alertCard} bordered={false}>
           <View style={[styles.alertIcon, { backgroundColor: "#DBEAFE" }]}>
-            <Ionicons name="trending-up" size={20} color={theme.colors.primary} />
+            <Ionicons
+              name="trending-up"
+              size={20}
+              color={theme.colors.primary}
+            />
           </View>
           <View style={styles.alertTextContainer}>
             <Text style={styles.alertTitle}>Demanda em Alta: Orgânicos</Text>
@@ -32,7 +35,7 @@ export function MarketOpportunities() {
         </SurfaceCard>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => router.push("/(tabs)/profile")}>
+      <TouchableOpacity onPress={() => router.push("/(producer)/profile")}>
         <SurfaceCard style={styles.alertCard} bordered={false}>
           <View style={[styles.alertIcon, { backgroundColor: "#FEF3C7" }]}>
             <Ionicons
