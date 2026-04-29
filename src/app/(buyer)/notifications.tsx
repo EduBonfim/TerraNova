@@ -1,9 +1,6 @@
-/**
- * Buyer Notifications Screen
- * Customized for buyer with purchase, order, and product notifications
- */
 import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
+import { useAuth } from "@/contexts/AuthContext";
 import {
     getNotificationsByRole,
     markNotificationAsRead,
@@ -25,16 +22,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function BuyerNotificationsScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   useFocusEffect(
     React.useCallback(() => {
-      setNotifications(getNotificationsByRole("buyer"));
-    }, [])
+      // Load notifications based on the current user's role and username
+      const role = user?.role === "buyer" ? "buyer" : "producer";
+      setNotifications(getNotificationsByRole(role, user?.username));
+    }, [user?.role, user?.username])
   );
-
-  // Filter to show only buyer-relevant notifications
-  const buyerNotifications = notifications;
 
   const openNotificationTarget = (item: AppNotification) => {
     setNotifications(markNotificationAsRead(item.id));
@@ -46,6 +43,14 @@ export default function BuyerNotificationsScreen() {
       });
       return;
     }
+    
+    if (item.route === "/warning-details" && item.targetItemId) {
+      router.push({
+        pathname: "/warning-details",
+        params: { id: item.targetItemId },
+      });
+      return;
+    }
 
     router.push(item.route);
   };
@@ -53,6 +58,7 @@ export default function BuyerNotificationsScreen() {
   const getNotificationIcon = (category?: string) => {
     switch (category) {
       case "pedidos":
+      case "vendas":
         return "cart-outline";
       case "ofertas":
         return "gift-outline";
@@ -60,6 +66,16 @@ export default function BuyerNotificationsScreen() {
         return "card-outline";
       case "produtos":
         return "storefront-outline";
+      case "laudo":
+        return "document-outline";
+      case "certificado":
+        return "checkmark-circle-outline";
+      case "chat":
+        return "chatbubble-outline";
+      case "alerta":
+        return "warning-outline";
+      case "sistema":
+        return "information-circle-outline";
       default:
         return "notifications-outline";
     }
@@ -68,6 +84,7 @@ export default function BuyerNotificationsScreen() {
   const getNotificationColor = (category?: string) => {
     switch (category) {
       case "pedidos":
+      case "vendas":
         return theme.colors.orange_500;
       case "ofertas":
         return theme.colors.primary;
@@ -75,6 +92,16 @@ export default function BuyerNotificationsScreen() {
         return "#4CAF50";
       case "produtos":
         return theme.colors.orange_500;
+      case "laudo":
+        return "#4CAF50";
+      case "certificado":
+        return theme.colors.primary;
+      case "chat":
+        return "#2196F3";
+      case "alerta":
+        return theme.colors.red_500;
+      case "sistema":
+        return theme.colors.gray_600;
       default:
         return theme.colors.gray_500;
     }
@@ -86,16 +113,16 @@ export default function BuyerNotificationsScreen() {
       <AppHeader
         title="Notificações"
         subtitle="Atualizações de pedidos e ofertas"
-        onBackPress={() => {}}
         showBackButton={false}
+        onBackPress={() => {}}
         backgroundColor={theme.colors.primary}
         textColor={theme.colors.white}
         borderColor={theme.colors.gray_300}
       />
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {buyerNotifications.length > 0 ? (
-          buyerNotifications.map((item) => (
+        {notifications.length > 0 ? (
+          notifications.map((item) => (
             <TouchableOpacity key={item.id} onPress={() => openNotificationTarget(item)} activeOpacity={0.7}>
               <SurfaceCard style={[styles.notificationCard, item.isNew && styles.notificationCardNew]}>
                 <View style={styles.cardHeader}>

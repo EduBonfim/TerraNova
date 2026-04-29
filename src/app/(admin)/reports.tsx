@@ -1,7 +1,8 @@
 import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
-import { deleteReport, getReports, type AppReport } from "@/services/reportsStore";
+import { archiveReport, getReports, type AppReport } from "@/services/reportsStore";
 import { appTheme as theme } from "@/theme/appTheme";
+import { ReportDetailScreen } from "@/features/admin/components/ReportDetailScreen";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -21,12 +22,16 @@ export default function AdminReportsScreen() {
   const router = useRouter();
   const [reports, setReports] = useState<AppReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedReport, setSelectedReport] = useState<AppReport | null>(null);
+  const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
 
   const loadData = async () => {
     try {
       setIsLoading(true);
       const reportsData = await getReports();
-      setReports(reportsData);
+      // Ordenar da mais recente para a mais antiga
+      const sorted = reportsData.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+      setReports(sorted);
     } catch (error) {
       console.error("Admin Reports Load Error:", error);
     } finally {
@@ -48,7 +53,7 @@ export default function AdminReportsScreen() {
           text: "Resolver Caso",
           style: "default",
           onPress: async () => {
-             await deleteReport(id);
+             await archiveReport(id);
              Alert.alert("Sucesso ✓", "Caso resolvido e arquivado com sucesso.");
              loadData();
           }
@@ -66,6 +71,22 @@ export default function AdminReportsScreen() {
     );
   }
 
+  if (selectedReport) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+        <ReportDetailScreen
+          report={selectedReport}
+          onBack={() => setSelectedReport(null)}
+          onReportUpdated={() => {
+            setSelectedReport(null);
+            loadData();
+          }}
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
@@ -78,57 +99,112 @@ export default function AdminReportsScreen() {
         textColor={theme.colors.white}
       />
 
+      {/* Tab Switcher */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === "pending" && styles.activeTab]}
+          onPress={() => setActiveTab("pending")}
+        >
+          <Text style={[styles.tabText, activeTab === "pending" && styles.activeTabText]}>Pendentes</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === "history" && styles.activeTab]}
+          onPress={() => setActiveTab("history")}
+        >
+          <Text style={[styles.tabText, activeTab === "history" && styles.activeTabText]}>Histórico</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.headerInfo}>
-          <Text style={styles.sectionTitle}>Incidentes Pendentes ({reports.length})</Text>
-          <Text style={styles.sectionSubtitle}>Verifique e resolva conflitos para manter a saúde da plataforma.</Text>
+          <Text style={styles.sectionTitle}>
+            {activeTab === "pending" ? "Fila de Moderação" : "Histórico Global"}
+          </Text>
+          <Text style={styles.sectionSubtitle}>
+            {activeTab === "pending" 
+              ? "Incidentes aguardando análise ou em andamento." 
+              : "Registro completo de todas as denúncias processadas."}
+          </Text>
         </View>
 
-        {reports.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconCircle}>
-              <Ionicons name="shield-checkmark" size={48} color={theme.colors.primary} />
-            </View>
-            <Text style={styles.emptyTitle}>Ambiente Seguro</Text>
-            <Text style={styles.emptyText}>Não há denúncias pendentes no momento. Bom trabalho!</Text>
-          </View>
-        ) : (
-          reports.map((report, index) => (
-            <SurfaceCard key={report.id} style={styles.reportCard}>
-              <View style={styles.statusRow}>
-                <View style={[styles.severityBadge, { backgroundColor: index % 2 === 0 ? "#FEE2E2" : "#FEF3C7" }]}>
-                  <View style={[styles.dot, { backgroundColor: index % 2 === 0 ? "#EF4444" : "#F59E0B" }]} />
-                  <Text style={[styles.severityText, { color: index % 2 === 0 ? "#EF4444" : "#D97706" }]}>
-                    {report.reason || "DENÚNCIA"}
-                  </Text>
-                </View>
-                <Text style={styles.reportId}>#Ocor-{(1000 + index)}</Text>
-              </View>
-              
-              <Text style={styles.reportTitle}>Denunciado: {report.reportedUser || "Inconsistente"}</Text>
-              <Text style={styles.reportDescription}>{report.description || "O usuário não forneceu detalhes adicionais sobre o incidente."}</Text>
-              
-              <View style={styles.reportMetadata}>
-                <View style={styles.metaRow}>
-                  <Ionicons name="person-outline" size={14} color="#64748B" />
-                  <Text style={styles.metaText}>Autor: {report.reporter || "Anônimo"}</Text>
-                </View>
-                <View style={styles.metaRow}>
-                  <Ionicons name="calendar-outline" size={14} color="#64748B" />
-                  <Text style={styles.metaText}>{report.data || "Hoje"}</Text>
-                </View>
-              </View>
+        {(() => {
+          const displayReports = activeTab === "pending" 
+            ? reports.filter(r => r.status === "pendente" || r.status === "em_analise")
+            : reports;
 
+          if (displayReports.length === 0) {
+            return (
+              <View style={styles.emptyContainer}>
+                <View style={styles.emptyIconCircle}>
+                  <Ionicons name="shield-checkmark" size={48} color={theme.colors.primary} />
+                </View>
+                <Text style={styles.emptyTitle}>Tudo Limpo</Text>
+                <Text style={styles.emptyText}>Não há denúncias nesta categoria.</Text>
+              </View>
+            );
+          }
+
+          return displayReports.map((report) => {
+            const statusInfo = (({
+              pendente: { color: "#EF4444", bg: "#FEE2E2", label: "Pendente" },
+              em_analise: { color: "#F59E0B", bg: "#FEF3C7", label: "Em Análise" },
+              resolvido: { color: "#10B981", bg: "#DCFCE7", label: "Resolvido" },
+              descartado: { color: "#64748B", bg: "#F1F5F9", label: "Descartado" },
+            } as Record<string, { color: string; bg: string; label: string }>)[report.status] || { color: "#64748B", bg: "#F1F5F9", label: report.status });
+
+            return (
               <TouchableOpacity 
-                style={styles.resolveButton} 
-                onPress={() => handleResolve(report.id, report.reporter || "Anônimo")}
+                key={report.id} 
+                activeOpacity={0.8}
+                onPress={() => setSelectedReport(report)}
               >
-                <Text style={styles.resolveButtonText}>Marcar como Resolvido</Text>
-                <Ionicons name="arrow-forward" size={16} color="white" />
+                <SurfaceCard style={styles.reportCard}>
+                  <View style={styles.statusRow}>
+                    <View style={[styles.severityBadge, { backgroundColor: statusInfo.bg }]}>
+                      <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
+                      <Text style={[styles.severityText, { color: statusInfo.color }]}>
+                        {statusInfo.label}
+                      </Text>
+                    </View>
+                    <Text style={styles.reportId}>#{report.id.substring(0, 8).toUpperCase()}</Text>
+                  </View>
+                  
+                  <Text style={styles.reportTitle}>{report.reason}</Text>
+                  <Text style={styles.reportDescription} numberOfLines={2}>
+                    {report.description || "Sem descrição adicional."}
+                  </Text>
+                  
+                  <View style={styles.reportMetadata}>
+                    <View style={styles.metaRow}>
+                      <Ionicons name="person-circle-outline" size={16} color={theme.colors.primary} />
+                      <Text style={styles.metaText}>
+                        Foco: <Text style={styles.boldText}>{report.reportedUser}</Text>
+                      </Text>
+                    </View>
+                    <View style={styles.metaRow}>
+                      <Ionicons name="person-outline" size={14} color="#64748B" />
+                      <Text style={styles.metaText}>Autor: {report.reporter}</Text>
+                    </View>
+                    <View style={styles.metaRow}>
+                      <Ionicons name="calendar-outline" size={14} color="#64748B" />
+                      <Text style={styles.metaText}>{new Date(report.data).toLocaleDateString()}</Text>
+                    </View>
+                  </View>
+
+                  {report.status !== "resolvido" && (
+                    <TouchableOpacity 
+                      style={styles.resolveButton} 
+                      onPress={() => handleResolve(report.id, report.reporter)}
+                    >
+                      <Text style={styles.resolveButtonText}>Marcar como Resolvido</Text>
+                      <Ionicons name="checkmark-done" size={16} color="white" />
+                    </TouchableOpacity>
+                  )}
+                </SurfaceCard>
               </TouchableOpacity>
-            </SurfaceCard>
-          ))
-        )}
+            );
+          });
+        })()}
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
@@ -161,12 +237,47 @@ const styles = StyleSheet.create({
   reportTitle: { fontSize: 16, fontWeight: "700", color: "#1E293B", marginBottom: 8 },
   reportDescription: { fontSize: 14, color: "#475569", lineHeight: 22, marginBottom: 20 },
   
-  reportMetadata: { backgroundColor: "#F1F5F9", padding: 12, borderRadius: 12, marginBottom: 20 },
-  metaRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
-  metaText: { fontSize: 12, color: "#64748B", marginLeft: 8 },
+  reportMetadata: { backgroundColor: "#F8FAFC", padding: 12, borderRadius: 12, marginBottom: 20, borderWidth: 1, borderColor: "#E2E8F0" },
+  metaRow: { flexDirection: "row", alignItems: "center", marginBottom: 6, gap: 4 },
+  metaText: { fontSize: 12, color: "#64748B", marginLeft: 4 },
+  boldText: { fontWeight: "bold", color: "#1E293B" },
 
-  resolveButton: { backgroundColor: theme.colors.primary, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 14, borderRadius: 12, gap: 10 },
+  resolveButton: { backgroundColor: theme.colors.primary, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 14, borderRadius: 12, gap: 10, elevation: 2 },
   resolveButtonText: { color: "white", fontSize: 14, fontWeight: "bold" },
 
   bottomSpacer: { height: 40 },
+
+  tabContainer: {
+    flexDirection: "row",
+    backgroundColor: theme.colors.white,
+    padding: 6,
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderRadius: 10,
+  },
+  activeTab: {
+    backgroundColor: theme.colors.primary,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#64748B",
+  },
+  activeTabText: {
+    color: theme.colors.white,
+  },
 });

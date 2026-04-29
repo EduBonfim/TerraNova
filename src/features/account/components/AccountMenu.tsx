@@ -103,15 +103,27 @@ export function AccountMenu({ hasNewMessages, onLogout }: AccountMenuProps) {
         </View>
       </View>
 
-      {/* Descubra */}
+      {/* Segurança e Moderação */}
       <View style={styles.menuSectionCard}>
-        <Text style={styles.menuSectionTitle}>Descubra</Text>
+        <Text style={styles.menuSectionTitle}>Segurança e Moderação</Text>
         <View style={styles.menuCardGrid}>
           <MenuCard
             icon="heart-outline"
             label="Saúde da Conta"
             onPress={() => router.push("/account-health")}
           />
+          <MenuCard
+            icon="megaphone-outline"
+            label="Denúncias"
+            onPress={() => router.push("/user-reports")}
+          />
+        </View>
+      </View>
+
+      {/* Descubra */}
+      <View style={styles.menuSectionCard}>
+        <Text style={styles.menuSectionTitle}>Descubra</Text>
+        <View style={styles.menuCardGrid}>
           <MenuCard
             icon="leaf-outline"
             label="Seja Orgânico!"
@@ -129,6 +141,11 @@ export function AccountMenu({ hasNewMessages, onLogout }: AccountMenuProps) {
       <View style={styles.menuSectionCard}>
         <Text style={styles.menuSectionTitle}>Configurações</Text>
         <View style={styles.menuCardGrid}>
+          <MenuCard
+            icon="lock-closed-outline"
+            label="Bloqueio de Mensagens"
+            onPress={() => router.push("/privacy-settings")}
+          />
           <MenuCard
             icon="shield-outline"
             label="Privacidade e LGPD"

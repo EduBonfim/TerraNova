@@ -28,6 +28,8 @@ export type AppUser = {
     complement?: string;
   };
   avatarUri?: string;
+  // Privacy settings
+  blockMessages?: boolean; // Bloqueia recebimento de mensagens de outros usuários
 };
 
 export type AdminUserSummary = {
@@ -90,12 +92,48 @@ const DEFAULT_USERS: AppUser[] = [
   },
   // ─── Contas de teste: Produtores ─────────────────────────────────────────────
   { username: "Duzinhow", password: "1234", role: "user" },
-  { username: "Sitio", password: "1234", role: "user", fullName: "Produtor Sitio", farmName: "Sitio Principal" },
-  { username: "Sitio1", password: "1234", role: "user", fullName: "Joao do Sitio 1", farmName: "Sitio 1 - Rio Verde" },
-  { username: "Sitio2", password: "1234", role: "user", fullName: "Maria do Sitio 2", farmName: "Sitio 2 - Maringa" },
-  { username: "Sitio3", password: "1234", role: "user", fullName: "Jose do Sitio 3", farmName: "Sitio 3 - Jatai" },
-  { username: "Sitio4", password: "1234", role: "user", fullName: "Ana do Sitio 4", farmName: "Sitio 4 - Uberlandia" },
-  { username: "Sitio5", password: "1234", role: "user", fullName: "Carlos do Sitio 5", farmName: "Sitio 5 - Sorriso" },
+  {
+    username: "Sitio",
+    password: "1234",
+    role: "user",
+    fullName: "Produtor Sitio",
+    farmName: "Sitio Principal",
+  },
+  {
+    username: "Sitio1",
+    password: "1234",
+    role: "user",
+    fullName: "Joao do Sitio 1",
+    farmName: "Sitio 1 - Rio Verde",
+  },
+  {
+    username: "Sitio2",
+    password: "1234",
+    role: "user",
+    fullName: "Maria do Sitio 2",
+    farmName: "Sitio 2 - Maringa",
+  },
+  {
+    username: "Sitio3",
+    password: "1234",
+    role: "user",
+    fullName: "Jose do Sitio 3",
+    farmName: "Sitio 3 - Jatai",
+  },
+  {
+    username: "Sitio4",
+    password: "1234",
+    role: "user",
+    fullName: "Ana do Sitio 4",
+    farmName: "Sitio 4 - Uberlandia",
+  },
+  {
+    username: "Sitio5",
+    password: "1234",
+    role: "user",
+    fullName: "Carlos do Sitio 5",
+    farmName: "Sitio 5 - Sorriso",
+  },
 ];
 
 let usersState: AppUser[] = [...DEFAULT_USERS];
@@ -128,7 +166,10 @@ export const maskPhone = (phone?: string) => {
 
 const persistUsers = async () => {
   try {
-    await AsyncStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(usersState));
+    await AsyncStorage.setItem(
+      AUTH_USERS_STORAGE_KEY,
+      JSON.stringify(usersState),
+    );
   } catch {
     // Keep app usable in environments where native storage is unavailable.
   }
@@ -149,9 +190,13 @@ export const initAuthStore = async () => {
     const parsed = JSON.parse(raw) as AppUser[];
     if (Array.isArray(parsed) && parsed.length > 0) {
       // Mesclar usuários salvos com os novos DEFAULT_USERS para garantir sincronia
-      const existingUsernames = new Set(parsed.map(u => u.username.toLowerCase()));
-      const missingDefaults = DEFAULT_USERS.filter(u => !existingUsernames.has(u.username.toLowerCase()));
-      
+      const existingUsernames = new Set(
+        parsed.map((u) => u.username.toLowerCase()),
+      );
+      const missingDefaults = DEFAULT_USERS.filter(
+        (u) => !existingUsernames.has(u.username.toLowerCase()),
+      );
+
       usersState = [...parsed, ...missingDefaults];
       if (missingDefaults.length > 0) await persistUsers();
     } else {
@@ -202,7 +247,8 @@ export const initAuthStore = async () => {
   }
 
   const needsConsentPatch = usersState.some(
-    (item) => !item.lgpdAcceptedAt || item.lgpdTermsVersion !== LGPD_TERMS_VERSION,
+    (item) =>
+      !item.lgpdAcceptedAt || item.lgpdTermsVersion !== LGPD_TERMS_VERSION,
   );
 
   if (needsConsentPatch) {
@@ -218,12 +264,17 @@ export const initAuthStore = async () => {
   isInitialized = true;
 };
 
-export const getUsers = (): AppUser[] => usersState.map((item) => ({ ...item }));
+export const getUsers = (): AppUser[] =>
+  usersState.map((item) => ({ ...item }));
 
-export const getUserByUsername = async (username: string): Promise<AppUser | null> => {
+export const getUserByUsername = async (
+  username: string,
+): Promise<AppUser | null> => {
   await initAuthStore();
   const normalized = username.trim().toLowerCase();
-  const user = usersState.find((item) => item.username.trim().toLowerCase() === normalized);
+  const user = usersState.find(
+    (item) => item.username.trim().toLowerCase() === normalized,
+  );
   return user ? { ...user } : null;
 };
 
@@ -241,7 +292,6 @@ export const getAdminUserSummaries = async (): Promise<AdminUserSummary[]> => {
   }));
 };
 
-
 /**
  * Autentica um usuário procurando por username, e-mail ou documento.
  */
@@ -258,14 +308,15 @@ export const authenticateUser = (
 
     // Tentativa 1: Compatibilidade total com username
     const usernameMatch = user.username.toLowerCase() === identifier;
-    
+
     // Tentativa 2: Compatibilidade com o campo e-mail (se existir)
     const emailMatch = user.email && user.email.toLowerCase() === identifier;
 
     // Tentativa 3: Compatibilidade com CPF/Documento (caso o usuário digite o documento)
     const digits = normalizeDocument(usernameOrEmail);
-    const docMatch = (user.cpf && normalizeDocument(user.cpf) === digits) ||
-                    (user.farmDocument && normalizeDocument(user.farmDocument) === digits);
+    const docMatch =
+      (user.cpf && normalizeDocument(user.cpf) === digits) ||
+      (user.farmDocument && normalizeDocument(user.farmDocument) === digits);
 
     return usernameMatch || emailMatch || docMatch;
   });
@@ -290,7 +341,10 @@ export const registerUser = async (payload: {
     complement?: string;
   };
   avatarUri?: string;
-}): Promise<{ ok: boolean; reason?: "exists" | "invalid" | "document_exists" }> => {
+}): Promise<{
+  ok: boolean;
+  reason?: "exists" | "invalid" | "document_exists";
+}> => {
   await initAuthStore();
 
   const username = payload.username.trim();
@@ -313,15 +367,16 @@ export const registerUser = async (payload: {
     normalizedFarmDocument.length === 11
       ? "cpf"
       : normalizedFarmDocument.length === 14
-        ? "cnpj"
-        : undefined;
+      ? "cnpj"
+      : undefined;
 
   if (!documentType) {
     return { ok: false, reason: "invalid" };
   }
 
   const documentExists = usersState.some(
-    (item) => normalizeDocument(item.farmDocument || "") === normalizedFarmDocument,
+    (item) =>
+      normalizeDocument(item.farmDocument || "") === normalizedFarmDocument,
   );
 
   if (documentExists) {
@@ -387,7 +442,12 @@ export const registerBuyer = async (payload: {
   const password = payload.password.trim();
   const normalizedCpf = normalizeDocument(payload.cpf);
 
-  if (!username || !password || !payload.acceptLgpd || normalizedCpf.length !== 11) {
+  if (
+    !username ||
+    !password ||
+    !payload.acceptLgpd ||
+    normalizedCpf.length !== 11
+  ) {
     return { ok: false, reason: "invalid" };
   }
 
@@ -399,8 +459,9 @@ export const registerBuyer = async (payload: {
   }
 
   const cpfExists = usersState.some(
-    (item) => normalizeDocument(item.cpf || "") === normalizedCpf ||
-              normalizeDocument(item.farmDocument || "") === normalizedCpf,
+    (item) =>
+      normalizeDocument(item.cpf || "") === normalizedCpf ||
+      normalizeDocument(item.farmDocument || "") === normalizedCpf,
   );
   if (cpfExists) {
     return { ok: false, reason: "cpf_exists" };
@@ -442,7 +503,9 @@ export const exportUserPersonalData = async (
 ): Promise<UserPersonalDataExport | null> => {
   await initAuthStore();
   const normalized = username.trim().toLowerCase();
-  const user = usersState.find((item) => item.username.trim().toLowerCase() === normalized);
+  const user = usersState.find(
+    (item) => item.username.trim().toLowerCase() === normalized,
+  );
   if (!user) return null;
 
   return {
@@ -464,17 +527,23 @@ export const deleteUserAccount = async (username: string): Promise<boolean> => {
   const normalized = username.trim().toLowerCase();
 
   const before = usersState.length;
-  usersState = usersState.filter((item) => item.username.trim().toLowerCase() !== normalized);
+  usersState = usersState.filter(
+    (item) => item.username.trim().toLowerCase() !== normalized,
+  );
   if (usersState.length === before) return false;
 
   await persistUsers();
   return true;
 };
 
-export const acceptLgpdForUser = async (username: string): Promise<AppUser | null> => {
+export const acceptLgpdForUser = async (
+  username: string,
+): Promise<AppUser | null> => {
   await initAuthStore();
   const normalized = username.trim().toLowerCase();
-  const index = usersState.findIndex((item) => item.username.trim().toLowerCase() === normalized);
+  const index = usersState.findIndex(
+    (item) => item.username.trim().toLowerCase() === normalized,
+  );
   if (index === -1) return null;
 
   usersState[index] = {
@@ -494,7 +563,9 @@ export const updateUserAvatarUri = async (
 ): Promise<AppUser | null> => {
   await initAuthStore();
   const normalized = username.trim().toLowerCase();
-  const index = usersState.findIndex((item) => item.username.trim().toLowerCase() === normalized);
+  const index = usersState.findIndex(
+    (item) => item.username.trim().toLowerCase() === normalized,
+  );
   if (index === -1) return null;
 
   usersState[index] = {
@@ -507,32 +578,34 @@ export const updateUserAvatarUri = async (
 };
 
 // ─── UPDATE USER BUYER PROFILE ────────────────────────────────────────────────
- 
- export const updateUserBuyerProfile = async (
-   username: string,
-   payload: {
-     fullName?: string;
-     phone?: string;
-     gender?: "male" | "female" | "other" | "prefer_not";
-   },
- ): Promise<AppUser | null> => {
-   await initAuthStore();
-   const normalized = username.trim().toLowerCase();
-   const index = usersState.findIndex((item) => item.username.trim().toLowerCase() === normalized);
-   if (index === -1) return null;
- 
-   usersState[index] = {
-     ...usersState[index],
-     fullName: payload.fullName ?? usersState[index].fullName,
-     phone: payload.phone ?? usersState[index].phone,
-     gender: (payload.gender as any) ?? usersState[index].gender,
-   };
- 
-   await persistUsers();
-   return { ...usersState[index] };
- };
- 
- // ─── UPDATE USER ADDRESS ───────────────────────────────────────────────────────
+
+export const updateUserBuyerProfile = async (
+  username: string,
+  payload: {
+    fullName?: string;
+    phone?: string;
+    gender?: "male" | "female" | "other" | "prefer_not";
+  },
+): Promise<AppUser | null> => {
+  await initAuthStore();
+  const normalized = username.trim().toLowerCase();
+  const index = usersState.findIndex(
+    (item) => item.username.trim().toLowerCase() === normalized,
+  );
+  if (index === -1) return null;
+
+  usersState[index] = {
+    ...usersState[index],
+    fullName: payload.fullName ?? usersState[index].fullName,
+    phone: payload.phone ?? usersState[index].phone,
+    gender: (payload.gender as any) ?? usersState[index].gender,
+  };
+
+  await persistUsers();
+  return { ...usersState[index] };
+};
+
+// ─── UPDATE USER ADDRESS ───────────────────────────────────────────────────────
 
 export const updateUserAddress = async (
   username: string,
@@ -548,7 +621,9 @@ export const updateUserAddress = async (
 ): Promise<AppUser | null> => {
   await initAuthStore();
   const normalized = username.trim().toLowerCase();
-  const index = usersState.findIndex((item) => item.username.trim().toLowerCase() === normalized);
+  const index = usersState.findIndex(
+    (item) => item.username.trim().toLowerCase() === normalized,
+  );
   if (index === -1) return null;
 
   usersState[index] = {
@@ -566,4 +641,56 @@ export const updateUserAddress = async (
 
   await persistUsers();
   return { ...usersState[index] };
+};
+
+// ─── PRIVACY SETTINGS (BLOCK MESSAGES) ─────────────────────────────────────────
+
+export const toggleBlockMessages = async (
+  username: string,
+): Promise<AppUser | null> => {
+  await initAuthStore();
+  const normalized = username.trim().toLowerCase();
+  const index = usersState.findIndex(
+    (item) => item.username.trim().toLowerCase() === normalized,
+  );
+  if (index === -1) return null;
+
+  usersState[index] = {
+    ...usersState[index],
+    blockMessages: !usersState[index].blockMessages,
+  };
+
+  await persistUsers();
+  return { ...usersState[index] };
+};
+
+export const setBlockMessages = async (
+  username: string,
+  blocked: boolean,
+): Promise<AppUser | null> => {
+  await initAuthStore();
+  const normalized = username.trim().toLowerCase();
+  const index = usersState.findIndex(
+    (item) => item.username.trim().toLowerCase() === normalized,
+  );
+  if (index === -1) return null;
+
+  usersState[index] = {
+    ...usersState[index],
+    blockMessages: blocked,
+  };
+
+  await persistUsers();
+  return { ...usersState[index] };
+};
+
+export const getUserBlockStatus = async (
+  username: string,
+): Promise<boolean> => {
+  await initAuthStore();
+  const normalized = username.trim().toLowerCase();
+  const user = usersState.find(
+    (item) => item.username.trim().toLowerCase() === normalized,
+  );
+  return user?.blockMessages ?? false;
 };

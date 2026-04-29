@@ -1,6 +1,9 @@
 import { appTheme as theme } from '@/theme/appTheme';
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useAuth } from '@/contexts/AuthContext';
+import { getUserWarnings, getUserBlock, type UserWarning, type UserBlock } from '@/services/reportsStore';
 
 interface AccountHealthModalProps {
   visible: boolean;
@@ -8,6 +11,40 @@ interface AccountHealthModalProps {
 }
 
 export function AccountHealthModal({ visible, onClose }: AccountHealthModalProps) {
+  const { user } = useAuth();
+  const [healthScore, setHealthScore] = useState(100);
+  const [warnings, setWarnings] = useState<UserWarning[]>([]);
+  const [block, setBlock] = useState<UserBlock | null>(null);
+
+  useEffect(() => {
+    const loadHealthData = async () => {
+      if (user?.username && visible) {
+        const userWarnings = await getUserWarnings(user.username);
+        const userBlock = await getUserBlock(user.username);
+        
+        setWarnings(userWarnings);
+        setBlock(userBlock);
+        
+        let score = 100;
+        score -= userWarnings.length * 15;
+        if (userBlock) {
+          score -= 50;
+        }
+        
+        setHealthScore(Math.max(0, score));
+      }
+    };
+    loadHealthData();
+  }, [user, visible]);
+
+  const getHealthStatus = () => {
+    if (healthScore >= 80) return { label: "Saudável!", color: "#10B981", badgeStyle: styles.healthBadgeGreen };
+    if (healthScore >= 50) return { label: "Atenção: Risco", color: "#F59E0B", badgeStyle: styles.healthBadgeOrange };
+    return { label: "Crítico: Conta Restrita", color: theme.colors.red_500, badgeStyle: styles.healthBadgeRed };
+  };
+
+  const status = getHealthStatus();
+
   return (
     <Modal
       visible={visible}
@@ -29,16 +66,47 @@ export function AccountHealthModal({ visible, onClose }: AccountHealthModalProps
             <View style={styles.healthStatusContainer}>
               <View style={styles.healthStatusHeader}>
                 <Text style={styles.healthStatusLabel}>Status da Sua Conta</Text>
-                <View style={[styles.healthBadge, styles.healthBadgeGreen]}>
-                  <Ionicons name="checkmark-circle" size={16} color={theme.colors.white} />
-                  <Text style={styles.healthBadgeText}>Saudável!</Text>
+                <View style={[styles.healthBadge, status.badgeStyle]}>
+                  <Ionicons name={healthScore >= 80 ? "checkmark-circle" : "warning"} size={16} color={theme.colors.white} />
+                  <Text style={styles.healthBadgeText}>{status.label}</Text>
                 </View>
               </View>
               <View style={styles.healthBar}>
-                <View style={[styles.healthBarFill, { width: "95%", backgroundColor: "#10B981" }]} />
+                <View style={[styles.healthBarFill, { width: `${healthScore}%`, backgroundColor: status.color }]} />
               </View>
-              <Text style={styles.healthPercentage}>95% - Você é um usuário 100% confiável!</Text>
+              <Text style={styles.healthPercentage}>{healthScore}% - {healthScore >= 80 ? "Você é um usuário confiável!" : "Mantenha as boas práticas da comunidade."}</Text>
             </View>
+
+            {/* Infractions Section */}
+            {(warnings.length > 0 || block) && (
+              <View style={[styles.healthSection, { borderColor: theme.colors.red_500, borderWidth: 1 }]}>
+                <Text style={styles.healthSectionTitle}>Histórico de Infrações</Text>
+                
+                {block && (
+                  <View style={styles.healthDetailItem}>
+                    <View style={styles.healthDetailIconRed}>
+                      <Ionicons name="ban" size={20} color={theme.colors.white} />
+                    </View>
+                    <View style={styles.healthDetailContent}>
+                      <Text style={styles.healthDetailLabel}>Bloqueio Ativo</Text>
+                      <Text style={styles.healthDetailValue}>{block.reason}</Text>
+                    </View>
+                  </View>
+                )}
+
+                {warnings.map((w, idx) => (
+                  <View key={w.id} style={styles.healthDetailItem}>
+                    <View style={styles.healthDetailIconOrange}>
+                      <Ionicons name="warning" size={20} color={theme.colors.white} />
+                    </View>
+                    <View style={styles.healthDetailContent}>
+                      <Text style={styles.healthDetailLabel}>Aviso Recebido ({new Date(w.issuedAt).toLocaleDateString()})</Text>
+                      <Text style={styles.healthDetailValue}>{w.reason}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
 
             {/* Account Details */}
             <View style={styles.healthSection}>
@@ -248,6 +316,15 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     backgroundColor: "#F59E0B",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  healthDetailIconRed: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.red_500,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,

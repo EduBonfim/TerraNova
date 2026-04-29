@@ -1,9 +1,20 @@
-import React from "react";
-import { View, Text, FlatList, TextInput, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { appTheme as theme } from "@/theme/appTheme";
-import { messagesStyles as styles, CURRENT_PLATFORM_UI } from "../styles/messages.styles";
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
+import {
+    Alert,
+    FlatList,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
 import { ChatMessage } from "../hooks/useChatLogic";
+import {
+    CURRENT_PLATFORM_UI,
+    messagesStyles as styles,
+} from "../styles/messages.styles";
+import { ReportModal } from "./ReportModal";
 
 interface ChatConversationProps {
   messages: ChatMessage[];
@@ -14,6 +25,7 @@ interface ChatConversationProps {
   onNewMessageChange: (val: string) => void;
   onSendMessage: () => void;
   onViewProfile: () => void;
+  isReceiverBlockingMessages: boolean;
 }
 
 export function ChatConversation({
@@ -24,17 +36,44 @@ export function ChatConversation({
   insetsBottom,
   onNewMessageChange,
   onSendMessage,
-  onViewProfile
+  onViewProfile,
+  isReceiverBlockingMessages,
 }: ChatConversationProps) {
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+
+  const handleBlockedButtonPress = () => {
+    Alert.alert(
+      "Mensagem Bloqueada",
+      `${sellerName} optou por não receber mensagens diretas.`,
+      [{ text: "OK" }],
+    );
+  };
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isMe = item.remetente === "me";
     return (
-      <View style={[styles.messageRow, isMe ? styles.messageRowMe : styles.messageRowOther]}>
-        <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleOther]}>
-          <Text style={[styles.messageText, isMe ? styles.messageTextMe : styles.messageTextOther]}>
+      <View
+        style={[
+          styles.messageRow,
+          isMe ? styles.messageRowMe : styles.messageRowOther,
+        ]}
+      >
+        <View
+          style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleOther]}
+        >
+          <Text
+            style={[
+              styles.messageText,
+              isMe ? styles.messageTextMe : styles.messageTextOther,
+            ]}
+          >
             {item.texto}
           </Text>
-          <Text style={[styles.timeText, isMe ? styles.timeTextMe : styles.timeTextOther]}>
+          <Text
+            style={[
+              styles.timeText,
+              isMe ? styles.timeTextMe : styles.timeTextOther,
+            ]}
+          >
             {item.hora}
           </Text>
         </View>
@@ -44,22 +83,55 @@ export function ChatConversation({
 
   return (
     <>
-      <TouchableOpacity style={styles.profileShortcut} onPress={onViewProfile}>
-        <Ionicons name="person-circle-outline" size={18} color={theme.colors.primary} />
-        <Text style={styles.profileShortcutText}>Ver perfil do contato</Text>
-      </TouchableOpacity>
+      <View style={styles.profileShortcutContainer}>
+        <TouchableOpacity
+          style={styles.profileShortcut}
+          onPress={onViewProfile}
+        >
+          <Ionicons
+            name="person-circle-outline"
+            size={18}
+            color={theme.colors.primary}
+          />
+          <Text style={styles.profileShortcutText}>Ver perfil do contato</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.reportButton}
+          onPress={() => setReportModalVisible(true)}
+        >
+          <Ionicons
+            name="flag-outline"
+            size={18}
+            color={theme.colors.red_500}
+          />
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         data={messages}
         keyExtractor={(item) => item.id}
         renderItem={renderMessage}
-        contentContainerStyle={[styles.chatContainer, { paddingBottom: CURRENT_PLATFORM_UI.chatListBottomPadding }]}
+        contentContainerStyle={[
+          styles.chatContainer,
+          { paddingBottom: CURRENT_PLATFORM_UI.chatListBottomPadding },
+        ]}
       />
 
-      <View style={[
-        styles.inputContainer,
-        { marginBottom: isKeyboardVisible ? 0 : Math.max(insetsBottom, 12) }
-      ]}>
+      {isReceiverBlockingMessages && (
+        <View style={styles.blockedMessageWarning}>
+          <Ionicons name="lock-closed" size={16} color={theme.colors.red_500} />
+          <Text style={styles.blockedMessageWarningText}>
+            {sellerName} não está recebendo mensagens
+          </Text>
+        </View>
+      )}
+
+      <View
+        style={[
+          styles.inputContainer,
+          { marginBottom: isKeyboardVisible ? 0 : Math.max(insetsBottom, 12) },
+        ]}
+      >
         <TextInput
           style={styles.input}
           placeholder="Digite sua mensagem"
@@ -69,13 +141,36 @@ export function ChatConversation({
           multiline
         />
         <TouchableOpacity
-          style={[styles.sendButton, newMessage.trim() === "" ? styles.sendButtonDisabled : null]}
-          onPress={onSendMessage}
-          disabled={newMessage.trim() === ""}
+          style={[
+            styles.sendButton,
+            (newMessage.trim() === "" || isReceiverBlockingMessages) &&
+              styles.sendButtonDisabled,
+            isReceiverBlockingMessages && styles.sendButtonBlocked,
+          ]}
+          onPress={
+            isReceiverBlockingMessages
+              ? handleBlockedButtonPress
+              : onSendMessage
+          }
+          disabled={newMessage.trim() === "" && !isReceiverBlockingMessages}
         >
-          <Ionicons name="send" size={20} color={theme.colors.white} />
+          <Ionicons
+            name={isReceiverBlockingMessages ? "lock-closed" : "send"}
+            size={20}
+            color={
+              isReceiverBlockingMessages
+                ? theme.colors.gray_500
+                : theme.colors.white
+            }
+          />
         </TouchableOpacity>
       </View>
+
+      <ReportModal
+        visible={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        reportedUserName={sellerName}
+      />
     </>
   );
 }

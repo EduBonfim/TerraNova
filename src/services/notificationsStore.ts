@@ -7,7 +7,8 @@ export type NotificationRoute =
   | "/organic"
   | "/home"
   | "/post"
-  | "/(buyer)/marketplace";
+  | "/(buyer)/marketplace"
+  | "/warning-details";
 
 export type NotificationCategory = 
   | "pedidos" 
@@ -17,7 +18,8 @@ export type NotificationCategory =
   | "vendas" 
   | "laudo" 
   | "certificado" 
-  | "chat";
+  | "chat"
+  | "alerta";
 
 export type AppNotification = {
   id: string;
@@ -29,6 +31,7 @@ export type AppNotification = {
   targetItemId?: string;
   category?: NotificationCategory;
   role?: "buyer" | "producer"; // "buyer", "producer", or both if omitted
+  targetUser?: string; // Optional username to target a specific user
 };
 
 const INITIAL_NOTIFICATIONS: AppNotification[] = [
@@ -164,10 +167,19 @@ export function getNotifications(): AppNotification[] {
   return notificationsState.map((item) => ({ ...item }));
 }
 
-export function getNotificationsByRole(role: "buyer" | "producer"): AppNotification[] {
-  return getNotifications().filter(
-    (item) => !item.role || item.role === role
-  );
+export function getNotificationsByRole(role: "buyer" | "producer", username?: string): AppNotification[] {
+  return getNotifications().filter((item) => {
+    // 1. Role match
+    const roleMatch = !item.role || item.role === role;
+    if (!roleMatch) return false;
+    
+    // 2. User match (if targetUser is specified on the notification, it MUST match the current username)
+    if (item.targetUser && username && item.targetUser !== username) {
+      return false;
+    }
+    
+    return true;
+  });
 }
 
 export function markAllNotificationsAsRead(): AppNotification[] {
@@ -185,7 +197,7 @@ export function markNotificationAsRead(id: string): AppNotification[] {
 export function addNotification(notification: Omit<AppNotification, "id" | "isNew">) {
   const newNotif: AppNotification = {
     ...notification,
-    id: `n-${Date.now()}`,
+    id: `n-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     isNew: true,
   };
   notificationsState = [newNotif, ...notificationsState];

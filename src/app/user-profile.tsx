@@ -1,26 +1,25 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/services/cartStore";
 import {
-  getAverageRating,
-  getProfile,
-  getReviews,
+    getAverageRating,
+    getProfile,
+    getReviews,
 } from "@/services/communityStore";
 import { MARKETPLACE_OPPORTUNITIES } from "@/services/marketplaceStore";
-import { addReport } from "@/services/reportsStore";
 import { appTheme as theme } from "@/theme/appTheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  Alert,
-  ScrollView,
-  StatusBar,
-  Text,
-  TouchableOpacity,
-  View,
+    ScrollView,
+    StatusBar,
+    Text,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { ReportModal } from "@/features/messages/components/ReportModal";
 import { FertilizersList } from "@/features/user-profile/components/FertilizersList";
 import { HeroBanner } from "@/features/user-profile/components/HeroBanner";
 import { ImagePreviewModal } from "@/features/user-profile/components/ImagePreviewModal";
@@ -53,6 +52,7 @@ export default function UserProfileScreen() {
 
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
 
   const profile = getProfile(name);
   const rating = getAverageRating(name);
@@ -63,30 +63,7 @@ export default function UserProfileScreen() {
   );
 
   const handleReport = () => {
-    Alert.alert(
-      "Denunciar Usuário",
-      `Deseja abrir uma denúncia formal contra ${profile.displayName} para análise administrativa?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Confirmar Denúncia",
-          style: "destructive",
-          onPress: async () => {
-            await addReport({
-              reportedUser: name,
-              reporter: currentUser?.username || "Anônimo",
-              reason: "Denúncia via perfil público",
-              description:
-                "Ação iniciada pelo usuário através do botão de denúncia no perfil.",
-            });
-            Alert.alert(
-              "Sucesso",
-              "Denúncia enviada com sucesso. Nossa equipe analisará o caso.",
-            );
-          },
-        },
-      ],
-    );
+    setReportModalVisible(true);
   };
 
   const navigateToMarket = (prod: any) => {
@@ -190,6 +167,12 @@ export default function UserProfileScreen() {
         currentUserRole={currentUser?.role}
         onClose={() => setSelectedProduct(null)}
         onNavigateToMarket={navigateToMarket}
+      />
+
+      <ReportModal
+        visible={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        reportedUserName={name}
       />
     </SafeAreaView>
   );

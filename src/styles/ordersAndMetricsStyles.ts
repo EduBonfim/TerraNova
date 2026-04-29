@@ -153,7 +153,7 @@ export const ordersStyles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: 8,
     overflow: "hidden",
-    backgroundColor: appTheme.colors.gray_50 || appTheme.colors.background,
+    backgroundColor: appTheme.colors.gray_500 || appTheme.colors.background,
   },
   groupedItemRow: {
     flexDirection: "row",

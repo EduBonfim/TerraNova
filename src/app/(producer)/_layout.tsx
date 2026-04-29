@@ -16,9 +16,15 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { filteredMarketplaceItems } = useMarketplaceLogic();
 
-  const showStockBadge = !isAdmin && hasOutOfStockItems(filteredMarketplaceItems, user?.username || user?.fullName || "");
+  const showStockBadge =
+    !isAdmin &&
+    hasOutOfStockItems(
+      filteredMarketplaceItems,
+      user?.username || user?.fullName || "",
+    );
 
-  const tabHeight = Platform.OS === "ios" ? IOS_TAB_BAR_HEIGHT : ANDROID_TAB_BAR_HEIGHT;
+  const tabHeight =
+    Platform.OS === "ios" ? IOS_TAB_BAR_HEIGHT : ANDROID_TAB_BAR_HEIGHT;
 
   return (
     <Tabs
@@ -30,8 +36,19 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: theme.colors.primary,
           borderTopWidth: 0,
-          height: tabHeight + (insets.bottom > 0 ? insets.bottom : (Platform.OS === "android" ? 20 : 0)),
-          paddingBottom: insets.bottom > 0 ? insets.bottom : (Platform.OS === "android" ? 20 : 8),
+          height:
+            tabHeight +
+            (insets.bottom > 0
+              ? insets.bottom
+              : Platform.OS === "android"
+              ? 20
+              : 0),
+          paddingBottom:
+            insets.bottom > 0
+              ? insets.bottom
+              : Platform.OS === "android"
+              ? 20
+              : 8,
           paddingTop: 8,
           elevation: 8,
           shadowColor: "#000",
@@ -81,13 +98,13 @@ export default function TabLayout() {
                 backgroundColor: "rgba(249, 168, 37, 0.15)",
                 justifyContent: "center",
                 alignItems: "center",
-                marginTop: -4,  // Negativo sobe, positivo desce
-                marginLeft: 0,   // Negativo esquerda, positivo direita
+                marginTop: -4, // Negativo sobe, positivo desce
+                marginLeft: 0, // Negativo esquerda, positivo direita
               }}
             >
               <Ionicons name="add-circle" size={60} color={color} />
               {showStockBadge && (
-                <View 
+                <View
                   style={{
                     position: "absolute",
                     top: 5,
@@ -107,8 +124,8 @@ export default function TabLayout() {
             <Text
               style={{
                 color,
-                fontSize: 11,    // Tamanho da fonte
-                marginTop: 8,    // Negativo sobe o texto, positivo desce
+                fontSize: 11, // Tamanho da fonte
+                marginTop: 8, // Negativo sobe o texto, positivo desce
                 textAlign: "center",
                 fontWeight: "bold",
               }}
@@ -139,7 +156,7 @@ export default function TabLayout() {
             <View>
               <Ionicons name="person" size={size} color={color} />
               {showStockBadge && (
-                <View 
+                <View
                   style={{
                     position: "absolute",
                     top: -2,
@@ -155,6 +172,15 @@ export default function TabLayout() {
               )}
             </View>
           ),
+        }}
+      />
+
+      {/* Rota oculta de Notificações (Não renderiza na Tab Bar) */}
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          href: null,
+          title: "Notificações",
         }}
       />
 

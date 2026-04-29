@@ -7,6 +7,7 @@ import {
   initMarketplaceStore,
 } from "@/services/marketplaceStore";
 import { initOrdersStore } from "@/services/ordersStore";
+import { initReportsStore } from "@/services/reportsStore";
 import { initSoilReportsStore } from "@/services/soilReportsStore";
 import { appTheme as theme } from "@/theme/appTheme";
 import { Stack } from "expo-router";
@@ -38,6 +39,7 @@ function AppLayoutContent() {
         await initCommunityStore();
         await initOrdersStore();
         await initSoilReportsStore();
+        await initReportsStore();
         await initMarketplaceStore();
         await initListingService();
         await checkAndCleanupExpiredAds();
@@ -130,6 +132,9 @@ function AppLayoutContent() {
       <Stack.Screen name="soil-reports" />
       <Stack.Screen name="transport" />
       <Stack.Screen name="privacy-lgpd" />
+      <Stack.Screen name="warning-details" options={{ presentation: "modal" }} />
+      <Stack.Screen name="user-reports" options={{ presentation: "card" }} />
+      <Stack.Screen name="report-details" options={{ presentation: "card" }} />
     </Stack>
   );
 }
