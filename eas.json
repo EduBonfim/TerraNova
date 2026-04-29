@@ -12,20 +12,6 @@
       "distribution": "internal",
       "channel": "preview"
     },
-    "preview-ios": {
-      "ios": {
-        "buildType": "simulator"
-      },
-      "distribution": "internal",
-      "channel": "preview-ios"
-    },
-    "preview-android": {
-      "android": {
-        "buildType": "apk"
-      },
-      "distribution": "internal",
-      "channel": "preview-android"
-    },
     "production": {
       "channel": "production",
       "autoIncrement": true
