@@ -2,10 +2,10 @@ import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-    getNotificationsByRole,
-    markNotificationAsRead,
+    getProducerNotifications,
+    markProducerNotificationAsRead,
     type AppNotification,
-} from "@/services/notificationsStore";
+} from "@/services/producerNotificationsStore";
 import { appTheme as theme } from "@/theme/appTheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -27,19 +27,18 @@ export default function ProducerNotificationsScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      // Load notifications based on the current user's role and username
-      const role = user?.role === "buyer" ? "buyer" : "producer";
-      setNotifications(getNotificationsByRole(role, user?.username));
-    }, [user?.role, user?.username])
+      setNotifications(getProducerNotifications());
+    }, [])
   );
 
   const openNotificationTarget = (item: AppNotification) => {
-    setNotifications(markNotificationAsRead(item.id));
+    setNotifications(markProducerNotificationAsRead(item.id));
     
-    if (item.route === "/(buyer)/marketplace" && item.targetItemId) {
+    // Guard: Prevent producers from being hijacked by buyer routes
+    if ((item.route as string) === "/(buyer)/marketplace") {
       router.push({
-        pathname: "/(buyer)/marketplace",
-        params: { highlight: item.targetItemId },
+        pathname: "/(producer)/profile",
+        params: item.targetItemId ? { highlight: item.targetItemId } : undefined,
       });
       return;
     }

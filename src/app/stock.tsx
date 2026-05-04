@@ -1,7 +1,8 @@
 import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
 import { useAuth } from "@/contexts/AuthContext";
-import { MARKETPLACE_OPPORTUNITIES } from "@/services/marketplaceStore";
+import { getMarketplaceItems, MarketplaceOpportunity } from "@/services/marketplaceStore";
+import { deleteListing } from "@/services/listingService";
 import { appTheme as theme } from "@/theme/appTheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -9,13 +10,10 @@ import React, { useState } from "react";
 import {
     Alert,
     Image,
-    Modal,
-    Pressable,
     ScrollView,
     StatusBar,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View
 } from "react-native";
@@ -24,43 +22,23 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function StockControlScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const [userProducts, setUserProducts] = useState<typeof MARKETPLACE_OPPORTUNITIES>([]);
-  const [editingProduct, setEditingProduct] = useState<string | null>(null);
-  const [newQuantity, setNewQuantity] = useState<string>("");
+  const [userProducts, setUserProducts] = useState<MarketplaceOpportunity[]>([]);
 
   // Filtrar produtos do usuário logado
   useFocusEffect(
     React.useCallback(() => {
-      if (user?.username) {
-        const filtered = MARKETPLACE_OPPORTUNITIES.filter(
-          (p) => p.vendedor === user.username || p.vendedor === user.farmName
-        );
-        setUserProducts(filtered);
-      }
+      const loadUserProducts = async () => {
+        if (user?.username) {
+          const allItems = await getMarketplaceItems();
+          const filtered = allItems.filter(
+            (p) => p.vendedor === user.username || p.vendedor === user.farmName
+          );
+          setUserProducts(filtered);
+        }
+      };
+      loadUserProducts();
     }, [user])
   );
-
-  const handleEditQuantity = (productId: string, currentQuantity: number) => {
-    setEditingProduct(productId);
-    setNewQuantity(currentQuantity.toString());
-  };
-
-  const handleSaveQuantity = (productId: string) => {
-    const quantity = parseInt(newQuantity, 10);
-    if (isNaN(quantity) || quantity < 0) {
-      Alert.alert("Erro", "Por favor, insira uma quantidade válida");
-      return;
-    }
-
-    // Aqui você poderia salvar no AsyncStorage ou em um backend
-    const updatedProduct = userProducts.find((p) => p.id === productId);
-    if (updatedProduct) {
-      updatedProduct.estoqueValor = quantity;
-      setUserProducts([...userProducts]);
-      Alert.alert("Sucesso", `Quantidade atualizada para ${quantity} unidades`);
-    }
-    setEditingProduct(null);
-  };
 
   const handleDeleteProduct = (productId: string) => {
     Alert.alert(
@@ -71,7 +49,12 @@ export default function StockControlScreen() {
         {
           text: "Remover",
           style: "destructive",
-          onPress: () => {
+          onPress: async () => {
+            // Se for um anúncio local (criado pelo usuário), deleta do storage
+            if (productId.startsWith("listing-")) {
+              await deleteListing(productId);
+            }
+            
             setUserProducts(userProducts.filter((p) => p.id !== productId));
             Alert.alert("Removido", "Produto removido do estoque");
           },
@@ -198,12 +181,7 @@ export default function StockControlScreen() {
                     <View style={styles.actions}>
                       <TouchableOpacity
                         style={styles.actionButton}
-                        onPress={() =>
-                          handleEditQuantity(
-                            product.id,
-                            product.estoqueValor
-                          )
-                        }
+                        onPress={() => router.push({ pathname: "/edit-product", params: { id: product.id } })}
                       >
                         <Ionicons
                           name="pencil-outline"
@@ -231,49 +209,6 @@ export default function StockControlScreen() {
         )}
       </ScrollView>
 
-      {/* Edit Quantity Modal */}
-      <Modal
-        visible={editingProduct !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setEditingProduct(null)}
-      >
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={() => setEditingProduct(null)}
-        >
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <Text style={styles.modalTitle}>Editar Quantidade</Text>
-            <Text style={styles.modalSubtitle}>
-              Digite a nova quantidade para este produto
-            </Text>
-
-            <TextInput
-              style={styles.input}
-              placeholder="Quantidade"
-              keyboardType="number-pad"
-              value={newQuantity}
-              onChangeText={setNewQuantity}
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setEditingProduct(null)}
-              >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.saveButton}
-                onPress={() => handleSaveQuantity(editingProduct!)}
-              >
-                <Text style={styles.saveButtonText}>Salvar</Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -443,66 +378,5 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     backgroundColor: "#FEE2E2",
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: theme.colors.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 30,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: theme.colors.gray_800,
-    marginBottom: 6,
-  },
-  modalSubtitle: {
-    fontSize: 13,
-    color: theme.colors.gray_600,
-    marginBottom: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: theme.colors.gray_300,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: theme.colors.gray_800,
-    marginBottom: 16,
-  },
-  modalButtons: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: theme.colors.gray_200,
-    alignItems: "center",
-  },
-  cancelButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: theme.colors.gray_800,
-  },
-  saveButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: theme.colors.primary,
-    alignItems: "center",
-  },
-  saveButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: theme.colors.white,
   },
 });

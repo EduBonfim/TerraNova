@@ -2,6 +2,7 @@ import {
     addReview,
     getAverageRating,
     getFarmPhotos,
+    getProfile,
     getProfileAvatar,
     getReviews,
 } from "@/services/communityStore";
@@ -13,88 +14,13 @@ import { normalizeText } from "@/utils/textUtils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Keyboard } from "react-native";
-
-export type ChatMessage = {
-  id: string;
-  texto: string;
-  remetente: "me" | "other";
-  hora: string;
-};
-
-export type ContactConversation = {
-  id: string;
-  nome: string;
-  status: string;
-  unread: number;
-  mensagens: ChatMessage[];
-};
-
-export const CONVERSAS_INICIAIS: ContactConversation[] = [
-  {
-    id: "c1",
-    nome: "Sitio 2 - Maringa",
-    status: "Produtora - Online",
-    unread: 2,
-    mensagens: [
-      {
-        id: "1",
-        texto:
-          "Bom dia, Joao! Vi que voce tem milho amarelo premium. Consegue entregar 20 sacas aqui em Maringa?",
-        remetente: "other",
-        hora: "09:15",
-      },
-      {
-        id: "2",
-        texto:
-          "Bom dia, Maria! Consigo sim. O frete fica por conta do comprador ou podemos rachar se fechar 50 sacas.",
-        remetente: "me",
-        hora: "09:20",
-      },
-      {
-        id: "3",
-        texto:
-          "Vou falar com meu socio e te aviso. O laudo de pureza esta em dia?",
-        remetente: "other",
-        hora: "09:22",
-      },
-    ],
-  },
-  {
-    id: "c2",
-    nome: "Sitio 3 - Jatai",
-    status: "Produtor - Online",
-    unread: 0,
-    mensagens: [
-      {
-        id: "1",
-        texto: "Jose, voce ainda tem aquele lote de bezerros Nelore?",
-        remetente: "me",
-        hora: "Ontem",
-      },
-      {
-        id: "2",
-        texto: "Tenho sim, Joao. Sao 15 cabeças, todas vacinadas e com GTA.",
-        remetente: "other",
-        hora: "Ontem",
-      },
-    ],
-  },
-  {
-    id: "c3",
-    nome: "Sitio 4 - Uberlandia",
-    status: "Produtora - Offline",
-    unread: 1,
-    mensagens: [
-      {
-        id: "1",
-        texto:
-          "Joao, preciso de adubo NPK. Vi que voce tem um estoque bom ai no Sitio 1.",
-        remetente: "other",
-        hora: "08:45",
-      },
-    ],
-  },
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { 
+  getConversations, 
+  saveConversations, 
+  type ChatMessage, 
+  type ContactConversation 
+} from "@/services/chatStore";
 
 export function useChatLogic() {
   const router = useRouter();
@@ -103,7 +29,9 @@ export function useChatLogic() {
     productName?: string | string[];
   }>();
 
-  const [conversas, setConversas] = useState(CONVERSAS_INICIAIS);
+  const { user } = useAuth();
+  const [conversas, setConversas] = useState<ContactConversation[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [conversaAtivaId, setConversaAtivaId] = useState<string | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -127,43 +55,76 @@ export function useChatLogic() {
     ? params.productName[0]
     : params.productName;
 
+  // Resolve o nome recebido da rota para um username único (ID)
+  const targetUsername = useMemo(() => {
+    if (!routeSellerName) return null;
+    const profile = getProfile(routeSellerName);
+    return profile.username || routeSellerName;
+  }, [routeSellerName]);
+
+  const normalizedSeller = normalizeText(targetUsername);
+
   const conversaAtual = useMemo(() => {
     if (!conversaAtivaId) return null;
     return conversas.find((item) => item.id === conversaAtivaId) ?? null;
   }, [conversas, conversaAtivaId]);
 
-  const sellerName = conversaAtual?.nome ?? "";
+  // Identificador único da OUTRA pessoa na conversa
+  const otherUsername = useMemo(() => {
+    if (conversaAtual) {
+      return conversaAtual.participants.find(p => 
+        p.toLowerCase() !== user?.username?.toLowerCase()
+      );
+    }
+    return targetUsername;
+  }, [conversaAtual, targetUsername, user?.username]);
+
+  // Nome exibido na conversa (sempre o da OUTRA pessoa)
+  const sellerName = useMemo(() => {
+    if (otherUsername) {
+      const profile = getProfile(otherUsername);
+      return profile.displayName || otherUsername;
+    }
+    return conversaAtual?.nome || "";
+  }, [otherUsername, conversaAtual]);
+
   const mensagens = conversaAtual?.mensagens ?? [];
 
   const conversasFiltradas = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return conversas;
     return conversas.filter((item) => {
+      const contactUid = item.participants.find(p => 
+        p.toLowerCase() !== user?.username?.toLowerCase()
+      );
+      const profile = contactUid ? getProfile(contactUid) : null;
+      const displayName = profile?.displayName || item.nome;
+      
       const lastMessage =
         item.mensagens[item.mensagens.length - 1]?.texto ?? "";
       return (
-        item.nome.toLowerCase().includes(query) ||
+        displayName.toLowerCase().includes(query) ||
         lastMessage.toLowerCase().includes(query)
       );
     });
-  }, [conversas, searchQuery]);
+  }, [conversas, searchQuery, user?.username]);
 
   const sellerPhotos = useMemo(
-    () => (sellerName ? getFarmPhotos(sellerName) : []),
-    [sellerName],
+    () => (otherUsername ? getFarmPhotos(otherUsername) : []),
+    [otherUsername],
   );
   const sellerAvatarUri = useMemo(
-    () => (sellerName ? getProfileAvatar(sellerName) : null),
-    [sellerName],
+    () => (otherUsername ? getProfileAvatar(otherUsername) : null),
+    [otherUsername],
   );
   const sellerHeaderPhotoUri = sellerAvatarUri || sellerPhotos[0] || null;
   const sellerReviews = useMemo(
-    () => (sellerName ? getReviews(sellerName) : []),
-    [sellerName, refresh],
+    () => (otherUsername ? getReviews(otherUsername) : []),
+    [otherUsername, refresh],
   );
   const sellerRating = useMemo(
-    () => (sellerName ? getAverageRating(sellerName) : 0),
-    [sellerName, refresh],
+    () => (otherUsername ? getAverageRating(otherUsername) : 0),
+    [otherUsername, refresh],
   );
 
   useEffect(() => {
@@ -180,6 +141,21 @@ export function useChatLogic() {
   }, []);
 
   useEffect(() => {
+    if (user?.username) {
+      getConversations(user.username).then((data) => {
+        setConversas(data);
+        setIsLoaded(true);
+      });
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (isLoaded && user?.username) {
+      saveConversations(conversas, user.username);
+    }
+  }, [conversas, isLoaded, user]);
+
+  useEffect(() => {
     setDealClosed(false);
     if (!conversaAtivaId) setNovaMensagem("");
     if (conversaAtivaId) {
@@ -191,30 +167,33 @@ export function useChatLogic() {
   // Verificar se o receptor tem bloqueio de mensagens ativado
   useEffect(() => {
     const checkReceiverBlockStatus = async () => {
-      if (!sellerName) {
+      if (!targetUsername) {
         setIsReceiverBlockingMessages(false);
         return;
       }
-      const { canSend } = await canSendMessage(sellerName);
+      const { canSend } = await canSendMessage(targetUsername);
       setIsReceiverBlockingMessages(!canSend);
     };
     checkReceiverBlockStatus();
-  }, [sellerName]);
+  }, [targetUsername]);
 
   useEffect(() => {
-    if (!routeSellerName || !routeProductName) return;
-    const normalizedSeller = normalizeText(routeSellerName);
-    if (!normalizedSeller) return;
-
-    const autoOpenKey = `${normalizedSeller}|${normalizeText(
-      routeProductName,
-    )}`;
+    if (!isLoaded || !targetUsername) return;
+    
+    const autoOpenKey = routeProductName 
+      ? `${normalizedSeller}|${normalizeText(routeProductName)}`
+      : normalizedSeller;
     if (lastAutoOpenKeyRef.current === autoOpenKey) return;
 
-    const existingConv = conversas.find(
-      (item) => normalizeText(item.nome) === normalizedSeller,
-    );
-    const prefilled = `*${routeProductName}* ainda esta disponivel?`;
+    const existingConv = conversas.find((item) => {
+      const normParticipants = item.participants.map(p => normalizeText(p));
+      const normMe = normalizeText(user?.username || "");
+      return normParticipants.includes(normalizedSeller) && normParticipants.includes(normMe);
+    });
+    
+    const prefilled = routeProductName 
+      ? `*${routeProductName}* ainda esta disponivel?`
+      : "";
 
     if (existingConv) {
       setConversaAtivaId(existingConv.id);
@@ -224,17 +203,21 @@ export function useChatLogic() {
         ),
       );
       setNovaMensagem(prefilled);
-      setNegotiatedItem(routeProductName);
+      setNegotiatedItem(routeProductName || null);
       lastAutoOpenKeyRef.current = autoOpenKey;
       return;
     }
 
     const newId = `c${Date.now()}`;
+    const myUsername = (user?.username || "me") as string;
+    const finalTarget = (targetUsername || routeSellerName || "Contato") as string;
+    
     setConversas((prev) => [
       {
         id: newId,
-        nome: routeSellerName,
-        status: "Vendedor - Online",
+        participants: [myUsername, finalTarget],
+        nome: finalTarget,
+        status: "Online",
         unread: 0,
         mensagens: [],
       },
@@ -242,9 +225,9 @@ export function useChatLogic() {
     ]);
     setConversaAtivaId(newId);
     setNovaMensagem(prefilled);
-    setNegotiatedItem(routeProductName);
+    setNegotiatedItem(routeProductName || null);
     lastAutoOpenKeyRef.current = autoOpenKey;
-  }, [routeProductName, routeSellerName]);
+  }, [routeProductName, targetUsername, routeSellerName, isLoaded, conversas, user, normalizedSeller]);
 
   const abrirConversa = (id: string) => {
     setConversaAtivaId(id);
@@ -278,10 +261,11 @@ export function useChatLogic() {
       return;
     }
 
+    const myUsername = user?.username || "me";
     const msg: ChatMessage = {
       id: Math.random().toString(),
       texto: novaMensagem.trim(),
-      remetente: "me",
+      remetente: myUsername,
       hora: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -298,20 +282,46 @@ export function useChatLogic() {
   };
 
   const submitReview = () => {
-    if (!sellerName || !comment.trim()) return;
-    addReview(sellerName, {
-      author: "Voce",
+    // Usamos o otherUsername (ID único) se disponível, senão o sellerName (nome de exibição)
+    const targetForReview = otherUsername || sellerName;
+    if (!targetForReview || !comment.trim()) return;
+
+    addReview(targetForReview, {
+      authorName: user?.fullName || "Você",
       role: "cliente",
       stars,
       comment: comment.trim(),
       ...(negotiatedItem && { negotiatedItem }),
     });
+
     setComment("");
     setStars(5);
     setNegotiatedItem(null);
     setRefresh((p) => p + 1);
     Alert.alert("Sucesso", "Avaliacao publicada!", [{ text: "OK" }]);
     setDealClosed(false);
+  };
+
+  const removerConversa = (id: string) => {
+    Alert.alert(
+      "Excluir Conversa",
+      "Tem certeza que deseja excluir esta conversa permanentemente?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            setConversas((prev) => prev.filter((c) => c.id !== id));
+            const { deleteConversation } = await import("@/services/chatStore");
+            await deleteConversation(id);
+            if (conversaAtivaId === id) {
+              setConversaAtivaId(null);
+            }
+          },
+        },
+      ],
+    );
   };
 
   return {
@@ -344,9 +354,11 @@ export function useChatLogic() {
     sellerReviews,
     sellerRating,
     abrirConversa,
+    removerConversa,
     voltarParaLista,
     enviarMensagem,
     submitReview,
     isReceiverBlockingMessages,
+    currentUser: user,
   };
 }

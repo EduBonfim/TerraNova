@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState } from "react";
 import { DeviceEventEmitter } from "react-native";
+import { useEffect, useState } from "react";
 import { MarketplaceOpportunity } from "./marketplaceStore";
 
 export type CartItem = MarketplaceOpportunity & {

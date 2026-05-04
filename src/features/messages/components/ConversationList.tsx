@@ -1,35 +1,51 @@
-import React from "react";
-import { View, Text, FlatList, TouchableOpacity, Image } from "react-native";
 import { appTheme as theme } from "@/theme/appTheme";
-import { messagesStyles as styles } from "../styles/messages.styles";
-import { ContactConversation } from "../hooks/useChatLogic";
-import { getFarmPhotos, getProfileAvatar } from "@/services/communityStore";
+import { getFarmPhotos, getProfileAvatar, getProfile } from "@/services/communityStore";
 import { getInitials } from "@/utils/textUtils";
+import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
+import { messagesStyles as styles } from "@/features/messages/styles/messages.styles";
+import type { ContactConversation } from "@/services/chatStore";
+
+import type { AppUser } from "@/services/authStore";
 
 interface ConversationListProps {
   conversations: ContactConversation[];
   onOpenConversation: (id: string) => void;
+  onLongPress: (id: string) => void;
+  currentUser: AppUser | null;
 }
 
-export function ConversationList({ conversations, onOpenConversation }: ConversationListProps) {
+export function ConversationList({ conversations, onOpenConversation, onLongPress, currentUser }: ConversationListProps) {
   const renderConversation = ({ item }: { item: ContactConversation }) => {
     const lastMessage = item.mensagens[item.mensagens.length - 1];
-    const contactAvatarUri = getProfileAvatar(item.nome);
-    const contactPhotos = getFarmPhotos(item.nome);
-    const contactPhoto = contactAvatarUri || contactPhotos[0] || null;
+    
+    // Calcula o nome do contato (outra pessoa)
+    const contactUsername = item.participants.find(p => 
+      p.toLowerCase() !== currentUser?.username?.toLowerCase()
+    ) || item.nome;
+
+    const profile = getProfile(contactUsername);
+    const contactName = profile.displayName || contactUsername;
+
+    const contactAvatarUri = getProfileAvatar(contactUsername);
+    const contactPhotos = getFarmPhotos(contactUsername);
+    const contactPhoto = contactAvatarUri || contactPhotos[0] || `https://i.pravatar.cc/150?u=${item.nome}`;
 
     return (
-      <TouchableOpacity style={styles.conversationRow} onPress={() => onOpenConversation(item.id)}>
+      <TouchableOpacity 
+        style={styles.conversationRow} 
+        onPress={() => onOpenConversation(item.id)}
+        onLongPress={() => onLongPress(item.id)}
+      >
         {contactPhoto ? (
           <Image source={{ uri: contactPhoto }} style={styles.avatarImage} />
         ) : (
           <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>{getInitials(item.nome)}</Text>
+            <Text style={styles.avatarText}>{getInitials(contactName)}</Text>
           </View>
         )}
         <View style={styles.conversationContent}>
           <View style={styles.conversationTopLine}>
-            <Text style={styles.conversationName}>{item.nome}</Text>
+            <Text style={styles.conversationName}>{contactName}</Text>
             <Text style={styles.conversationTime}>{lastMessage?.hora ?? ""}</Text>
           </View>
           <View style={styles.conversationBottomLine}>

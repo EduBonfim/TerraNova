@@ -1,7 +1,10 @@
+import { getAllLocalListings, initListingService, mapLocalToMarketplace, updateListing } from "./listingService";
+
 export type MarketplaceOpportunity = {
   id: string;
   produto: string;
   vendedor: string;
+  vendedorUsername: string; // ID único (username) para chat e perfil
   preco: string;
   estoque: string;
   estoqueValor: number; // Quantidade numérica para controle
@@ -15,6 +18,7 @@ export type MarketplaceOpportunity = {
   tipoCertificacao: "Organico" | "Transicao" | "Convencional";
   numeroRegistro?: string; // Numero do selo ou registro no MAPA/SDA
   unidade?: string; // Ex: kg, unidade, maço, caixa
+  descricao?: string;
 };
 
 export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
@@ -24,19 +28,22 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     id: "m1",
     produto: "Alface Crespa Orgânica - 500g",
     vendedor: "Sítio Esperança",
+    vendedorUsername: "Sitio",
     preco: "R$ 12,00",
-    estoque: "Colheita diária",
+    estoque: "20 unidades",
     estoqueValor: 20,
     categoria: "Mercado",
     subcategoria: "Hortaliças",
     foto: "https://cdn.pixabay.com/photo/2018/07/05/23/10/salad-3519389_1280.jpg",
     loteCodigo: "SIT-ESP-ALF-001",
     tipoCertificacao: "Organico",
+    descricao: "Alface crespa fresquinha, cultivada sem agrotóxicos e colhida no dia da entrega para garantir máxima crocância.",
   },
   {
     id: "m2",
     produto: "Couve Manteiga Orgânica - 800g",
     vendedor: "Fazenda São João",
+    vendedorUsername: "FazendaSaoJoao",
     preco: "R$ 15,00",
     estoque: "15 unidades",
     estoqueValor: 15,
@@ -50,8 +57,9 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     id: "m3",
     produto: "Rúcula Biodinâmica - 300g",
     vendedor: "Sítio Vale Azul",
+    vendedorUsername: "SitioValeAzul",
     preco: "R$ 18,00",
-    estoque: "Colheita diária",
+    estoque: "25 unidades",
     estoqueValor: 25,
     categoria: "Mercado",
     subcategoria: "Hortaliças",
@@ -63,8 +71,9 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     id: "m4",
     produto: "Espinafre Orgânico - 400g",
     vendedor: "Sítio Nova Raiz",
+    vendedorUsername: "SitioNovaRaiz",
     preco: "R$ 14,00",
-    estoque: "Colheita diária",
+    estoque: "22 unidades",
     estoqueValor: 22,
     categoria: "Mercado",
     subcategoria: "Hortaliças",
@@ -77,8 +86,9 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     id: "m5",
     produto: "Tomate Cereja Orgânico - 15kg",
     vendedor: "Sítio Esperança",
+    vendedorUsername: "Sitio",
     preco: "R$ 110,00",
-    estoque: "Selo Orgânico MAPA",
+    estoque: "30 unidades",
     estoqueValor: 30,
     categoria: "Mercado",
     subcategoria: "Frutas",
@@ -91,8 +101,9 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     id: "m6",
     produto: "Tomate Caqui Orgânico - 12kg",
     vendedor: "Fazenda São João",
+    vendedorUsername: "FazendaSaoJoao",
     preco: "R$ 95,00",
-    estoque: "Na estação",
+    estoque: "18 unidades",
     estoqueValor: 18,
     categoria: "Mercado",
     subcategoria: "Frutas",
@@ -105,6 +116,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     id: "m7",
     produto: "Pimentão Vermelho Orgânico - 6kg",
     vendedor: "Sítio Vale Azul",
+    vendedorUsername: "SitioValeAzul",
     preco: "R$ 78,00",
     estoque: "8 unidades",
     estoqueValor: 8,
@@ -118,6 +130,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     id: "m8",
     produto: "Abóbora Cabotiá Orgânica - 8kg",
     vendedor: "Sítio Nova Raiz",
+    vendedorUsername: "SitioNovaRaiz",
     preco: "R$ 65,00",
     estoque: "12 unidades",
     estoqueValor: 12,
@@ -132,8 +145,9 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     id: "m9",
     produto: "Cenoura Biodinâmica - 10kg",
     vendedor: "Fazenda São João",
+    vendedorUsername: "FazendaSaoJoao",
     preco: "R$ 42,00",
-    estoque: "Colheita semanal",
+    estoque: "20 unidades",
     estoqueValor: 20,
     categoria: "Mercado",
     subcategoria: "Legumes",
@@ -145,8 +159,9 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     id: "m10",
     produto: "Batata-Doce Orgânica - 8kg",
     vendedor: "Sítio Esperança",
+    vendedorUsername: "Sitio",
     preco: "R$ 55,00",
-    estoque: "Armazenada fresca",
+    estoque: "16 unidades",
     estoqueValor: 16,
     categoria: "Mercado",
     subcategoria: "Legumes",
@@ -158,8 +173,9 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     id: "m11",
     produto: "Mandioca Brava Orgânica - 12kg",
     vendedor: "Sítio Vale Azul",
+    vendedorUsername: "SitioValeAzul",
     preco: "R$ 48,00",
-    estoque: "Colheita mensal",
+    estoque: "14 unidades",
     estoqueValor: 14,
     categoria: "Mercado",
     subcategoria: "Legumes",
@@ -171,6 +187,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     id: "m12",
     produto: "Beterraba Orgânica - 6kg",
     vendedor: "Sítio Nova Raiz",
+    vendedorUsername: "SitioNovaRaiz",
     preco: "R$ 38,00",
     estoque: "Colheita semanal",
     estoqueValor: 18,
@@ -185,8 +202,9 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     id: "m13",
     produto: "Banana Prata Orgânica - 13kg",
     vendedor: "Fazenda São João",
+    vendedorUsername: "FazendaSaoJoao",
     preco: "R$ 52,00",
-    estoque: "12 pencas",
+    estoque: "12 unidades",
     estoqueValor: 12,
     categoria: "Mercado",
     subcategoria: "Frutas",
@@ -199,6 +217,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     id: "m14",
     produto: "Mamão Orgânico - 10kg",
     vendedor: "Sítio Esperança",
+    vendedorUsername: "Sitio",
     preco: "R$ 65,00",
     estoque: "Na estação",
     estoqueValor: 16,
@@ -212,8 +231,9 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     id: "m15",
     produto: "Laranja Pera Orgânica - 15kg",
     vendedor: "Sítio Vale Azul",
+    vendedorUsername: "SitioValeAzul",
     preco: "R$ 58,00",
-    estoque: "Colheita semanal",
+    estoque: "22 unidades",
     estoqueValor: 22,
     categoria: "Mercado",
     subcategoria: "Frutas",
@@ -227,7 +247,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Manjericão Fresco - 200g",
     vendedor: "Sítio Nova Raiz",
     preco: "R$ 16,00",
-    estoque: "Colheita diária",
+    estoque: "28 unidades",
     estoqueValor: 28,
     categoria: "Mercado",
     subcategoria: "Hortaliças",
@@ -240,7 +260,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Salsinha Orgânica - 150g",
     vendedor: "Fazenda São João",
     preco: "R$ 12,00",
-    estoque: "Colheita diária",
+    estoque: "32 unidades",
     estoqueValor: 32,
     categoria: "Mercado",
     subcategoria: "Hortaliças",
@@ -256,7 +276,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Composto Orgânico Premium - 50kg",
     vendedor: "Central Compostagem Comunitária",
     preco: "R$ 45,00",
-    estoque: "Retirada imediata",
+    estoque: "24 unidades",
     estoqueValor: 24,
     categoria: "Cultivo",
     subcategoria: "Insumos",
@@ -269,7 +289,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Composto Orgânico Peneirado - 50kg",
     vendedor: "Sítio Boa Terra",
     preco: "R$ 52,00",
-    estoque: "24 sacos disponíveis",
+    estoque: "24 unidades",
     estoqueValor: 24,
     categoria: "Cultivo",
     subcategoria: "Insumos",
@@ -282,7 +302,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Húmus de Minhoca - 25kg",
     vendedor: "Sítio Nova Raiz",
     preco: "R$ 40,00",
-    estoque: "18 sacos prontos para retirada",
+    estoque: "18 unidades",
     estoqueValor: 18,
     categoria: "Cultivo",
     subcategoria: "Insumos",
@@ -295,7 +315,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Esterco Bovino Curtido - Ton",
     vendedor: "Sítio Esperança",
     preco: "R$ 90,00",
-    estoque: "2 toneladas Curtido",
+    estoque: "2 unidades",
     estoqueValor: 2,
     categoria: "Cultivo",
     subcategoria: "Insumos",
@@ -308,7 +328,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Cama de Frango - Tonelada",
     vendedor: "Fazenda São João",
     preco: "R$ 150,00",
-    estoque: "12 toneladas disponíveis",
+    estoque: "12 unidades",
     estoqueValor: 12,
     categoria: "Cultivo",
     subcategoria: "Insumos",
@@ -321,7 +341,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Cama de Aviário Curtida - Ton",
     vendedor: "Sítio Vale Azul",
     preco: "R$ 135,00",
-    estoque: "9 toneladas disponíveis",
+    estoque: "9 unidades",
     estoqueValor: 9,
     categoria: "Cultivo",
     subcategoria: "Insumos",
@@ -348,7 +368,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Biofertilizante Líquido - 20L",
     vendedor: "Central Compostagem Comunitária",
     preco: "R$ 55,00",
-    estoque: "5 galões",
+    estoque: "5 unidades",
     estoqueValor: 5,
     categoria: "Cultivo",
     subcategoria: "Insumos",
@@ -361,7 +381,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Extrato de Algas - 5L",
     vendedor: "Fazenda São João",
     preco: "R$ 42,00",
-    estoque: "8 garrafas",
+    estoque: "8 unidades",
     estoqueValor: 8,
     categoria: "Cultivo",
     subcategoria: "Insumos",
@@ -374,7 +394,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Chorume Vegetal - 20L",
     vendedor: "Sítio Esperança",
     preco: "R$ 38,00",
-    estoque: "12 galões",
+    estoque: "12 unidades",
     estoqueValor: 12,
     categoria: "Cultivo",
     subcategoria: "Insumos",
@@ -388,7 +408,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Óleo de Neem Puro - 1L",
     vendedor: "Sítio Vale Azul",
     preco: "R$ 85,00",
-    estoque: "6 litros",
+    estoque: "6 unidades",
     estoqueValor: 6,
     categoria: "Cultivo",
     subcategoria: "Insumos",
@@ -401,7 +421,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Calda Bordalesa - 500ml",
     vendedor: "Sítio Nova Raiz",
     preco: "R$ 22,00",
-    estoque: "15 garrafas",
+    estoque: "15 unidades",
     estoqueValor: 15,
     categoria: "Cultivo",
     subcategoria: "Insumos",
@@ -414,7 +434,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Extrato de Alho/Pimenta - 1L",
     vendedor: "Fazenda São João",
     preco: "R$ 28,00",
-    estoque: "10 garrafas",
+    estoque: "10 unidades",
     estoqueValor: 10,
     categoria: "Cultivo",
     subcategoria: "Insumos",
@@ -428,7 +448,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Sementes Crioulas - Variedade Mix",
     vendedor: "Sítio Esperança",
     preco: "R$ 35,00",
-    estoque: "30 pacotes",
+    estoque: "30 unidades",
     estoqueValor: 30,
     categoria: "Cultivo",
     subcategoria: "Sementes",
@@ -441,7 +461,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Mudas Orgânicas de Hortaliças",
     vendedor: "Sítio Vale Azul",
     preco: "R$ 2,50",
-    estoque: "500 unidades disponíveis",
+    estoque: "500 unidades",
     estoqueValor: 500,
     categoria: "Cultivo",
     subcategoria: "Sementes",
@@ -454,7 +474,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Bandejas de Germinação - 50 células",
     vendedor: "Central Compostagem Comunitária",
     preco: "R$ 15,00",
-    estoque: "20 bandejas",
+    estoque: "20 unidades",
     estoqueValor: 20,
     categoria: "Cultivo",
     subcategoria: "Sementes",
@@ -468,7 +488,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Palhada Seca - 20kg",
     vendedor: "Sítio Nova Raiz",
     preco: "R$ 18,00",
-    estoque: "25 fardos",
+    estoque: "25 unidades",
     estoqueValor: 25,
     categoria: "Cultivo",
     subcategoria: "Insumos",
@@ -481,7 +501,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Casca de Arroz - 30kg",
     vendedor: "Fazenda São João",
     preco: "R$ 25,00",
-    estoque: "15 sacos",
+    estoque: "15 unidades",
     estoqueValor: 15,
     categoria: "Cultivo",
     subcategoria: "Insumos",
@@ -521,7 +541,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Cebola Roxa Orgânica - 5kg",
     vendedor: "Sítio Vale Azul",
     preco: "R$ 35,00",
-    estoque: "Armazenada fresca",
+    estoque: "14 unidades",
     estoqueValor: 14,
     categoria: "Mercado",
     subcategoria: "Legumes",
@@ -534,7 +554,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Inhame Orgânico - 4kg",
     vendedor: "Sítio Nova Raiz",
     preco: "R$ 48,00",
-    estoque: "Colheita mensal",
+    estoque: "12 unidades",
     estoqueValor: 12,
     categoria: "Mercado",
     subcategoria: "Legumes",
@@ -560,7 +580,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Melão Orgânico - 2-3kg",
     vendedor: "Sítio Esperança",
     preco: "R$ 38,00",
-    estoque: "Na estação",
+    estoque: "20 unidades",
     estoqueValor: 20,
     categoria: "Mercado",
     subcategoria: "Frutas",
@@ -573,7 +593,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Abacaxi Orgânico - 2kg",
     vendedor: "Sítio Vale Azul",
     preco: "R$ 28,00",
-    estoque: "Na estação",
+    estoque: "14 unidades",
     estoqueValor: 14,
     categoria: "Mercado",
     subcategoria: "Frutas",
@@ -586,7 +606,7 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
     produto: "Goiaba Vermelha Orgânica - 4kg",
     vendedor: "Sítio Nova Raiz",
     preco: "R$ 32,00",
-    estoque: "Na estação",
+    estoque: "10 unidades",
     estoqueValor: 10,
     categoria: "Mercado",
     subcategoria: "Frutas",
@@ -821,12 +841,13 @@ export const MARKETPLACE_OPPORTUNITIES: MarketplaceOpportunity[] = [
 // ────── Funções de acesso ──────────────────────────────────────────────────────
 
 export async function getMarketplaceItems(): Promise<MarketplaceOpportunity[]> {
-  return MARKETPLACE_OPPORTUNITIES;
+  const localAds = getAllLocalListings().map(mapLocalToMarketplace);
+  return [...localAds, ...MARKETPLACE_OPPORTUNITIES];
 }
 
 export async function initMarketplaceStore(): Promise<void> {
-  // Inicializa o store do marketplace
-  // Por agora, apenas garante que os dados estão carregados
+  // Inicializa o store do marketplace e o serviço de listings
+  await initListingService();
 }
 
 export function hasOutOfStockItems(
@@ -856,4 +877,42 @@ export async function checkAndCleanupExpiredAds(): Promise<void> {
   if (expiredIds.length > 0) {
     console.log(`Anúncios expirados removidos: ${expiredIds.join(", ")}`);
   }
+}
+
+export async function getMarketplaceItem(id: string): Promise<MarketplaceOpportunity | null> {
+  const allItems = await getMarketplaceItems();
+  return allItems.find((item) => item.id === id) || null;
+}
+
+export async function updateMarketplaceItem(
+  id: string,
+  data: Partial<MarketplaceOpportunity>
+): Promise<boolean> {
+  // Se for um anúncio local (listing-), usa o listingService
+  if (id.startsWith("listing-")) {
+    const updated = await updateListing(id, {
+      titulo: data.produto,
+      preco: data.preco,
+      quantidade: data.estoqueValor?.toString(),
+      fotoUri: data.foto,
+      descricao: data.descricao,
+    });
+    return !!updated;
+  }
+
+  // Se for um anúncio estático, atualiza em memória (não persiste após reload)
+  const product = MARKETPLACE_OPPORTUNITIES.find((p) => p.id === id);
+  if (product) {
+    if (data.produto) product.produto = data.produto;
+    if (data.preco) product.preco = data.preco;
+    if (data.estoqueValor !== undefined) {
+      product.estoqueValor = data.estoqueValor;
+      product.estoque = `${data.estoqueValor} unidades`; // Atualiza string de display
+    }
+    if (data.foto) product.foto = data.foto;
+    if (data.descricao) product.descricao = data.descricao;
+    return true;
+  }
+
+  return false;
 }

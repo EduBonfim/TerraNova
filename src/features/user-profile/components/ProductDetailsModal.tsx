@@ -1,8 +1,8 @@
 import React from "react";
-import { View, Text, Modal, TouchableOpacity, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Image, Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { appTheme as theme } from "@/theme/appTheme";
-import { profileStyles as styles } from "../styles/user-profile.styles";
+import { profileStyles as styles } from "@/features/user-profile/styles/user-profile.styles";
 
 interface ProductDetailsModalProps {
   selectedProduct: any | null;
@@ -68,6 +68,15 @@ export function ProductDetailsModal({
               <Text style={styles.detailsStock}>
                 Estoque disponível: {selectedProduct?.estoque}
               </Text>
+
+              {selectedProduct?.descricao && (
+                <View style={styles.descriptionBox}>
+                  <Text style={styles.descriptionTitle}>Descrição do Produto</Text>
+                  <Text style={styles.detailsDescriptionText}>
+                    {selectedProduct.descricao}
+                  </Text>
+                </View>
+              )}
             </View>
           </ScrollView>
 

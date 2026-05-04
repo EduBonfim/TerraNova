@@ -28,14 +28,15 @@ import { type MapPressEvent } from "react-native-maps";
 export type OrderTab = "aguardando" | "transporte" | "finalizado";
 export type SalesPeriod = "dias" | "semanas" | "meses" | "total";
 
-export function useAccountLogic() {
+export function useAccountLogic(options?: { mode?: "sales" | "purchases" }) {
+  const mode = options?.mode || "sales";
   const { user, logout } = useAuth();
   const profileName = user?.username || "Sitio1";
   
   const summary = getProfileSummary(profileName);
   
   // -- REAL STATE --
-  const [displayName, setDisplayName] = useState(summary.displayName);
+  const [displayName, setDisplayName] = useState(summary.displayName || user?.fullName || "");
   const [farmName, setFarmName] = useState(summary.farmName);
   const [producerRole, setProducerRole] = useState(summary.producerRole);
   const [farmAddress, setFarmAddress] = useState(summary.farmAddress);
@@ -52,10 +53,12 @@ export function useAccountLogic() {
   const [locationValidatedAt, setLocationValidatedAt] = useState<string | null>(
     summary.locationValidatedAt ?? null
   );
-  const [profileBio, setProfileBio] = useState(summary.bio);
-  const [farmPhotos, setFarmPhotos] = useState<string[]>(getFarmPhotos(profileName));
+  const [profileBio, setProfileBio] = useState(summary.bio || "");
+  const [farmPhotos, setFarmPhotos] = useState<string[]>(
+    user?.role === "producer" ? getFarmPhotos(profileName) : []
+  );
   const [profilePhotoUri, setProfilePhotoUri] = useState<string | null>(
-    summary.avatarUri ?? getProfileAvatar(profileName) ?? null
+    summary.avatarUri ?? user?.avatarUri ?? getProfileAvatar(profileName) ?? null
   );
 
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
@@ -93,14 +96,45 @@ export function useAccountLogic() {
   };
 
   const getSalesDataByPeriod = () => {
-    // Como os dados sao simulados, focamos no agrupamento por categoria das ordens finalizadas
     const finished = orders.filter(o => o.status === "finalizado");
-    
+
+    // Filtrar por período baseado na data do pedido (formato DD/MM/YYYY)
+    const parseOrderDate = (dateStr: string): Date => {
+      const parts = dateStr.split("/");
+      if (parts.length === 3) {
+        return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+      }
+      return new Date(0);
+    };
+
+    const now = new Date();
+    const filtered = finished.filter(o => {
+      const d = parseOrderDate(o.data);
+      if (salesPeriod === "dias") {
+        const limit = new Date(now); limit.setDate(now.getDate() - 7);
+        return d >= limit;
+      } else if (salesPeriod === "semanas") {
+        const limit = new Date(now); limit.setDate(now.getDate() - 28);
+        return d >= limit;
+      } else if (salesPeriod === "meses") {
+        const limit = new Date(now); limit.setMonth(now.getMonth() - 3);
+        return d >= limit;
+      }
+      return true; // "total" — sem filtro de data
+    });
+
+    const total = filtered.reduce((acc, o) => acc + o.valorNumerico, 0);
+    const count = filtered.length;
     return {
-      total: finished.reduce((acc, o) => acc + o.valorNumerico, 0),
-      alimentos: finished.filter(o => o.categoria === "alimentos").reduce((acc, o) => acc + o.valorNumerico, 0),
-      insumos: finished.filter(o => o.categoria === "insumos").reduce((acc, o) => acc + o.valorNumerico, 0),
-      sementes: finished.filter(o => o.categoria === "sementes").reduce((acc, o) => acc + o.valorNumerico, 0),
+      total,
+      count,
+      ticketMedio: count > 0 ? total / count : 0,
+      alimentos: filtered.filter(o => o.categoria === "alimentos").reduce((acc, o) => acc + o.valorNumerico, 0),
+      insumos: filtered.filter(o => o.categoria === "insumos").reduce((acc, o) => acc + o.valorNumerico, 0),
+      sementes: filtered.filter(o => o.categoria === "sementes").reduce((acc, o) => acc + o.valorNumerico, 0),
+      recentOrders: [...finished].sort((a, b) => {
+        return parseOrderDate(b.data).getTime() - parseOrderDate(a.data).getTime();
+      }).slice(0, 5),
     };
   };
 
@@ -131,10 +165,10 @@ export function useAccountLogic() {
     setLocationValidatedAt(nextSummary.locationValidatedAt ?? null);
     setProfileBio(nextSummary.bio || "");
     setFarmPhotos(getFarmPhotos(profileName));
-    setProfilePhotoUri(nextSummary.avatarUri ?? getProfileAvatar(profileName) ?? null);
+    setProfilePhotoUri(nextSummary.avatarUri ?? user?.avatarUri ?? getProfileAvatar(profileName) ?? null);
 
     // Drafts update
-    setDraftDisplayName(nextSummary.displayName);
+    setDraftDisplayName(nextSummary.displayName || user?.fullName || "");
     setDraftFarmName(nextSummary.farmName);
     setDraftProducerRole(nextSummary.producerRole);
     setDraftFarmAddress(nextSummary.farmAddress);
@@ -152,13 +186,13 @@ export function useAccountLogic() {
     let userOrders: Order[] = [];
     const userSearchName = user?.fullName || profileName;
     
-    if (user?.role === "buyer") {
+    if (user?.role === "buyer" || mode === "purchases") {
       userOrders = await getOrdersByBuyer(userSearchName);
     } else {
       userOrders = await getOrdersByUser(profileName);
     }
     setOrders(userOrders);
-  }, [profileName, user?.fullName, user?.role, user?.phone, user?.gender]);
+  }, [profileName, user?.fullName, user?.role, user?.phone, user?.gender, mode]);
 
   // -- EFFECTS --
   useEffect(() => {
@@ -459,6 +493,7 @@ export function useAccountLogic() {
         fullName: nextName,
         phone: draftPhone,
         gender: draftGender,
+        bio: nextBio,
       });
       
       // Update avatarUri in authStore
@@ -483,12 +518,20 @@ export function useAccountLogic() {
         bio: nextBio,
       });
 
-      // Sync with authStore for Central screen consistency
+      // Sync basic info to AuthStore for consistency
       await updateUserBuyerProfile(profileName, {
         fullName: nextName,
-      });
-
-      if (profilePhotoUri) {
+        phone: draftPhone,
+        bio: nextBio,
+        address: {
+          street: draftFarmAddress,
+          number: draftFarmAddressNumber,
+          cep: draftFarmCep,
+          neighborhood: "",
+          city: "",
+          state: "",
+        },
+      });if (profilePhotoUri) {
         await updateUserAvatarUri(profileName, profilePhotoUri);
       }
     }

@@ -9,12 +9,13 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { ChatMessage } from "../hooks/useChatLogic";
+import { ChatMessage } from "@/services/chatStore";
 import {
     CURRENT_PLATFORM_UI,
     messagesStyles as styles,
-} from "../styles/messages.styles";
-import { ReportModal } from "./ReportModal";
+} from "@/features/messages/styles/messages.styles";
+import { AppUser } from "@/services/authStore";
+import { ReportModal } from "@/features/messages/components/ReportModal";
 
 interface ChatConversationProps {
   messages: ChatMessage[];
@@ -26,6 +27,7 @@ interface ChatConversationProps {
   onSendMessage: () => void;
   onViewProfile: () => void;
   isReceiverBlockingMessages: boolean;
+  currentUser: AppUser | null;
 }
 
 export function ChatConversation({
@@ -38,6 +40,7 @@ export function ChatConversation({
   onSendMessage,
   onViewProfile,
   isReceiverBlockingMessages,
+  currentUser,
 }: ChatConversationProps) {
   const [reportModalVisible, setReportModalVisible] = useState(false);
 
@@ -49,7 +52,7 @@ export function ChatConversation({
     );
   };
   const renderMessage = ({ item }: { item: ChatMessage }) => {
-    const isMe = item.remetente === "me";
+    const isMe = item.remetente === currentUser?.username || item.remetente === "me";
     return (
       <View
         style={[

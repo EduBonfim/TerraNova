@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
     Alert,
     Image,
+    Modal,
     ScrollView,
     Text,
     TouchableOpacity,
@@ -27,6 +28,7 @@ export function ReportDetailScreen({
   onReportUpdated,
 }: ReportDetailScreenProps) {
   const [actionModalVisible, setActionModalVisible] = useState(false);
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
 
   const getCategoryLabel = (category: string) => {
     const labels: { [key: string]: string } = {
@@ -140,10 +142,20 @@ export function ReportDetailScreen({
         {report.evidenceImageUri && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Evidência</Text>
-            <Image
-              source={{ uri: report.evidenceImageUri }}
-              style={styles.evidenceImage}
-            />
+            <TouchableOpacity 
+              activeOpacity={0.9} 
+              onPress={() => setPreviewPhoto(report.evidenceImageUri!)}
+              style={styles.evidenceImageContainer}
+            >
+              <Image
+                source={{ uri: report.evidenceImageUri }}
+                style={styles.evidenceImage}
+              />
+              <View style={styles.zoomBadge}>
+                <Ionicons name="search" size={16} color="white" />
+                <Text style={styles.zoomBadgeText}>Ampliar</Text>
+              </View>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -208,6 +220,30 @@ export function ReportDetailScreen({
           onReportUpdated();
         }}
       />
+
+      {/* Modal de Zoom da Imagem */}
+      <Modal visible={!!previewPhoto} transparent={true} animationType="fade">
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.9)", justifyContent: "center", alignItems: "center" }}>
+          <TouchableOpacity 
+            style={{ position: "absolute", top: 40, right: 20, zIndex: 10, padding: 10 }} 
+            onPress={() => setPreviewPhoto(null)}
+          >
+            <Ionicons name="close-circle" size={40} color="white" />
+          </TouchableOpacity>
+          
+          {previewPhoto && (
+            <Image 
+              source={{ uri: previewPhoto }} 
+              style={{ width: "100%", height: "85%" }} 
+              resizeMode="contain" 
+            />
+          )}
+          
+          <Text style={{ color: "white", position: "absolute", bottom: 40, fontWeight: "bold" }}>
+            Visualizando Evidência Completa
+          </Text>
+        </View>
+      </Modal>
     </>
   );
 }

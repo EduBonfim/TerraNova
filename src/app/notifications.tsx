@@ -1,11 +1,9 @@
 import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-    getNotificationsByRole,
-    markNotificationAsRead,
-    type AppNotification,
-} from "@/services/notificationsStore";
+import { getBuyerNotifications } from "@/services/buyerNotificationsStore";
+import { getProducerNotifications } from "@/services/producerNotificationsStore";
+import type { BaseNotification } from "@/types/notifications";
 import { appTheme as theme } from "@/theme/appTheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -23,36 +21,40 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function NotificationsScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [notifications, setNotifications] = useState<BaseNotification[]>([]);
 
   useFocusEffect(
     React.useCallback(() => {
-      // Load notifications based on the current user's role and username
-      const role = user?.role === "buyer" ? "buyer" : "producer";
-      setNotifications(getNotificationsByRole(role, user?.username));
-    }, [user?.role, user?.username])
+      if (!user) return;
+      if (user.role === "buyer") {
+        setNotifications(getBuyerNotifications());
+      } else {
+        setNotifications(getProducerNotifications());
+      }
+    }, [user?.role])
   );
 
-  const openNotificationTarget = (item: AppNotification) => {
-    setNotifications(markNotificationAsRead(item.id));
+  const openNotificationTarget = (item: BaseNotification) => {
+    let finalRoute = item.route as string;
     
-    if (item.route === "/(buyer)/marketplace" && item.targetItemId) {
-      router.push({
-        pathname: "/(buyer)/marketplace",
-        params: { highlight: item.targetItemId },
-      });
-      return;
+    // 1. Correção de segurança: Garante que o role seja respeitado em rotas genéricas
+    if (finalRoute === "/home" || finalRoute === "/profile") {
+      finalRoute = user?.role === "producer" ? `/(producer)${finalRoute}` : (finalRoute === "/profile" ? "/user-profile" : `/(buyer)${finalRoute}`);
     }
-    
-    if (item.route === "/warning-details" && item.targetItemId) {
+
+    // 2. Tratamento de parâmetros (highlight/id)
+    if (item.targetItemId) {
       router.push({
-        pathname: "/warning-details",
-        params: { id: item.targetItemId },
+        pathname: finalRoute as any,
+        params: { 
+          highlight: item.targetItemId,
+          id: item.targetItemId // Para telas que usam 'id' em vez de 'highlight'
+        },
       });
       return;
     }
 
-    router.push(item.route);
+    router.push(finalRoute as any);
   };
 
   const getNotificationIcon = (category?: string) => {

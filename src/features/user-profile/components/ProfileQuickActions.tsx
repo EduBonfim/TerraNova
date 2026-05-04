@@ -1,14 +1,17 @@
-import React from "react";
-import { View, Text, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Alert, Text, TouchableOpacity, View } from "react-native";
 import { appTheme as theme } from "@/theme/appTheme";
-import { profileStyles as styles } from "../styles/user-profile.styles";
+import { profileStyles as styles } from "@/features/user-profile/styles/user-profile.styles";
 
 interface ProfileQuickActionsProps {
   onNegotiate: () => void;
   farmAddress: string;
   latitude?: number | string;
   longitude?: number | string;
+  isFollowing: boolean;
+  onToggleFollow: () => void;
+  currentUserRole?: string;
 }
 
 export function ProfileQuickActions({
@@ -16,25 +19,48 @@ export function ProfileQuickActions({
   farmAddress,
   latitude,
   longitude,
+  isFollowing,
+  onToggleFollow,
+  currentUserRole,
 }: ProfileQuickActionsProps) {
+  const followLabel = currentUserRole === "buyer" 
+    ? (isFollowing ? "Favoritada" : "Favoritar Fazenda")
+    : (isFollowing ? "Seguindo" : "Seguir");
+  const followIcon = currentUserRole === "buyer"
+    ? (isFollowing ? "heart" : "heart-outline")
+    : (isFollowing ? "person-remove" : "person-add");
+
   return (
     <View style={styles.actionsRow}>
+      <TouchableOpacity 
+        style={[styles.actionButton, isFollowing && { backgroundColor: theme.colors.gray_100, borderWidth: 1, borderColor: theme.colors.primary }]} 
+        onPress={onToggleFollow}
+      >
+        <Ionicons 
+          name={followIcon as any} 
+          size={18} 
+          color={isFollowing ? theme.colors.primary : theme.colors.white} 
+        />
+        <Text style={[styles.actionButtonText, isFollowing && { color: theme.colors.primary }]}>
+          {followLabel}
+        </Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.actionButton} onPress={onNegotiate}>
         <Ionicons name="chatbubbles" size={18} color={theme.colors.white} />
-        <Text style={styles.actionButtonText}>Negociar Diretamente</Text>
+        <Text style={styles.actionButtonText}>Mensagem</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.actionButton, styles.secondaryAction]}
+        style={[styles.actionButton, styles.secondaryAction, { flex: 1 }]}
         onPress={() =>
           Alert.alert(
             "Localização",
-            `Propriedade localizada em ${farmAddress}. Coordenadas: ${latitude}, ${longitude}`
+            `Propriedade localizada em ${farmAddress}.`
           )
         }
       >
         <Ionicons name="location" size={18} color={theme.colors.primary} />
-        <Text style={[styles.actionButtonText, { color: theme.colors.primary }]}>Mapa</Text>
       </TouchableOpacity>
     </View>
   );

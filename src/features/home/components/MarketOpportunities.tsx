@@ -3,7 +3,7 @@ import { appTheme as theme } from "@/theme/appTheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Text, TouchableOpacity, View } from "react-native";
-import { homeStyles as styles } from "../styles/home.styles";
+import { homeStyles as styles } from "@/features/home/styles/home.styles";
 
 export function MarketOpportunities() {
   const router = useRouter();

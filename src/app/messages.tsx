@@ -57,10 +57,12 @@ export default function MessagesScreen() {
     sellerReviews,
     sellerRating,
     abrirConversa,
+    removerConversa,
     voltarParaLista,
     enviarMensagem,
     submitReview,
     isReceiverBlockingMessages,
+    currentUser,
   } = useChatLogic();
 
   return (
@@ -75,6 +77,7 @@ export default function MessagesScreen() {
       >
         <ChatHeader
           conversaAtual={conversaAtual}
+          sellerName={sellerName}
           sellerHeaderPhotoUri={sellerHeaderPhotoUri}
           dealClosed={dealClosed}
           isSearchOpen={isSearchOpen}
@@ -96,6 +99,8 @@ export default function MessagesScreen() {
           <ConversationList
             conversations={conversasFiltradas}
             onOpenConversation={abrirConversa}
+            onLongPress={removerConversa}
+            currentUser={currentUser}
           />
         ) : !dealClosed ? (
           <ChatConversation
@@ -113,6 +118,7 @@ export default function MessagesScreen() {
               })
             }
             isReceiverBlockingMessages={isReceiverBlockingMessages}
+            currentUser={currentUser}
           />
         ) : (
           <ReviewSellerView

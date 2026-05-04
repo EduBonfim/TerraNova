@@ -97,6 +97,30 @@ export const homeStyles = StyleSheet.create({
   notificationItemTime: { fontSize: 11, color: theme.colors.gray_500 },
   viewAllNotificationsButton: { paddingVertical: 10, alignItems: "center" },
   viewAllNotificationsText: { fontSize: 13, color: theme.colors.primary, fontWeight: "bold" },
+  emptyNotifications: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 30,
+    paddingHorizontal: 20,
+  },
+  emptyNotificationsText: {
+    fontSize: 14,
+    color: theme.colors.gray_400,
+    marginTop: 10,
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  historyButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: theme.colors.gray_100,
+    borderRadius: 8,
+  },
+  historyButtonText: {
+    color: theme.colors.gray_700,
+    fontSize: 12,
+    fontWeight: "bold",
+  },
 
   // Seções base
   section: { padding: 18, paddingBottom: 0 },

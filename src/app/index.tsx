@@ -10,26 +10,21 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Dimensions,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { 
+  FadeInDown, 
+  FadeInUp, 
+} from "react-native-reanimated";
 
-// 🎨 PALETA OFICIAL TERRA NOVA já importada do theme
-
-const IOS_VISUAL = {
-  footerPaddingBottom: 20,
-};
-
-const ANDROID_VISUAL = {
-  footerPaddingBottom: 0,
-};
-
-const CURRENT_PLATFORM_UI = Platform.OS === "ios" ? IOS_VISUAL : ANDROID_VISUAL;
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
 
-  // Se o histórico zerar ou o app abrir, joga o usuário logado de volta para sua respectiva home
   useFocusEffect(
     React.useCallback(() => {
       if (!isLoading && user) {
@@ -53,66 +48,70 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* Decorative Background Elements */}
+      <View style={styles.bgCircle1} />
+      <View style={styles.bgCircle2} />
+
       <View style={styles.container}>
-        <View style={styles.content}>
+        <ScrollView 
+          style={styles.scroll} 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* --- LOGO E TÍTULO --- */}
-          <View style={styles.logoContainer}>
-            <View style={styles.logoCircle}>
-              <Image
-                source={require("../assets/mascote.png")}
-                style={styles.avatar}
-              />
+          <Animated.View entering={FadeInUp.duration(1000)} style={styles.logoContainer}>
+            <View style={styles.logoShadow}>
+              <View style={styles.logoCircle}>
+                <Image
+                  source={require("../assets/mascote.png")}
+                  style={styles.avatar}
+                />
+              </View>
             </View>
-            <Text style={styles.title}>Seja bem-vindo à Terra Nova</Text>
-          </View>
+            <Text style={styles.title}>Terra Nova</Text>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>AGROECOLOGIA 2.0</Text>
+            </View>
+          </Animated.View>
 
           {/* --- DESCRIÇÃO DO APLICATIVO --- */}
-          <Text style={styles.description}>
-            A primeira plataforma dedicada à transição agroecológica. Conectamos
-            agricultores para impulsionar a economia circular, facilitamos a
-            venda de bioinsumos e utilizamos Inteligência Artificial para
-            analisar a saúde do seu solo.
-          </Text>
+          <Animated.View entering={FadeInDown.delay(200).duration(1000)}>
+            <Text style={styles.description}>
+              Transformando a agricultura através da tecnologia e economia circular. 
+              Sua jornada sustentável começa aqui.
+            </Text>
 
-          <View style={styles.features}>
-            <View style={styles.featureItem}>
-              <Ionicons
-                name="scan-outline"
-                size={24}
-                color={theme.colors.primary}
-              />
-              <Text style={styles.featureText}>IA para Leitura de Laudos</Text>
+            <View style={styles.features}>
+              <View style={styles.featureItem}>
+                <View style={styles.iconCircle}>
+                  <Ionicons name="leaf" size={18} color={theme.colors.primary} />
+                </View>
+                <Text style={styles.featureText}>IA para Saúde do Solo</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <View style={styles.iconCircle}>
+                  <Ionicons name="location" size={18} color={theme.colors.primary} />
+                </View>
+                <Text style={styles.featureText}>Radar de Insumos Locais</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <View style={styles.iconCircle}>
+                  <Ionicons name="ribbon" size={18} color={theme.colors.primary} />
+                </View>
+                <Text style={styles.featureText}>Certificação Facilitada</Text>
+              </View>
             </View>
-            <View style={styles.featureItem}>
-              <Ionicons
-                name="map-outline"
-                size={24}
-                color={theme.colors.primary}
-              />
-              <Text style={styles.featureText}>
-                Radar de Insumos num raio de 15km
-              </Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons
-                name="shield-checkmark-outline"
-                size={24}
-                color={theme.colors.primary}
-              />
-              <Text style={styles.featureText}>
-                Apoio à Certificação Orgânica
-              </Text>
-            </View>
-          </View>
-        </View>
+          </Animated.View>
+        </ScrollView>
 
         {/* --- BOTÕES DE ACESSO --- */}
-        <View style={styles.footer}>
+        <Animated.View entering={FadeInDown.delay(400).duration(1000)} style={styles.footer}>
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={() => router.push("/login")}
           >
-            <Text style={styles.primaryButtonText}>Fazer Login</Text>
+            <Text style={styles.primaryButtonText}>Acessar Portal</Text>
+            <Ionicons name="arrow-forward" size={20} color="white" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -121,84 +120,167 @@ export default function WelcomeScreen() {
           >
             <Text style={styles.secondaryButtonText}>Criar nova conta</Text>
           </TouchableOpacity>
-        </View>
+          
+          <Text style={styles.versionText}>Versão 1.0.4 • © 2026 Terra Nova</Text>
+        </Animated.View>
       </View>
     </SafeAreaView>
   );
 }
 
-// 💅 ESTILOS
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.white },
-  container: { flex: 1, justifyContent: "space-between", padding: 24 },
+  safeArea: { flex: 1, backgroundColor: "#F8FAF8" },
+  
+  // Background Decorations
+  bgCircle1: {
+    position: "absolute",
+    top: -100,
+    right: -100,
+    width: 350,
+    height: 350,
+    borderRadius: 175,
+    backgroundColor: "rgba(107, 142, 35, 0.04)",
+  },
+  bgCircle2: {
+    position: "absolute",
+    bottom: -50,
+    left: -150,
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: "rgba(249, 168, 37, 0.04)",
+  },
 
-  content: { flex: 1, justifyContent: "center" },
-  logoContainer: { alignItems: "center", marginBottom: 32 },
+  container: { flex: 1, paddingHorizontal: 32, paddingBottom: Platform.OS === "ios" ? 10 : 20 },
+  scroll: { flex: 1 },
+  scrollContent: { paddingVertical: 10, paddingBottom: 80 },
+
+  logoContainer: { alignItems: "center", marginBottom: SCREEN_HEIGHT < 700 ? 10 : 20 },
+  logoShadow: {
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 15 },
+    shadowOpacity: 0.15,
+    shadowRadius: 25,
+    elevation: 20,
+    marginBottom: 16,
+  },
   logoCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: theme.colors.primary,
+    width: SCREEN_HEIGHT < 700 ? 120 : 150,
+    height: SCREEN_HEIGHT < 700 ? 120 : 150,
+    borderRadius: SCREEN_HEIGHT < 700 ? 35 : 45,
+    backgroundColor: theme.colors.white,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
-    elevation: 4,
   },
-  avatar: { width: 160, height: 160, borderRadius: 50 },
+  avatar: { 
+    width: SCREEN_HEIGHT < 700 ? 120 : 150, 
+    height: SCREEN_HEIGHT < 700 ? 120 : 150, 
+    borderRadius: SCREEN_HEIGHT < 700 ? 25 : 30 
+  },
   title: {
-    fontSize: 36,
-    fontWeight: "bold",
+    fontSize: SCREEN_HEIGHT < 700 ? 32 : 40,
+    fontWeight: "900",
     color: theme.colors.primary,
     textAlign: "center",
+    letterSpacing: -1.5,
+  },
+  badge: {
+    backgroundColor: "rgba(107, 142, 35, 0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: theme.colors.primary,
+    letterSpacing: 2,
   },
 
   description: {
-    fontSize: 16,
+    fontSize: SCREEN_HEIGHT < 700 ? 14 : 16,
     color: theme.colors.gray_500,
     textAlign: "center",
-    lineHeight: 24,
-    marginBottom: 32,
-  },
-
-  features: {
-    backgroundColor: theme.colors.background,
-    padding: 20,
-    borderRadius: 16,
-  },
-  featureItem: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
-  featureText: {
-    fontSize: 15,
-    color: theme.colors.gray_800,
-    marginLeft: 12,
+    lineHeight: 22,
+    marginBottom: SCREEN_HEIGHT < 700 ? 16 : 24,
     fontWeight: "500",
   },
 
-  footer: { paddingBottom: CURRENT_PLATFORM_UI.footerPaddingBottom },
+  features: {
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    padding: 28,
+    borderRadius: 32,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.6)",
+    marginBottom: 20,
+    // Add depth to card
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  featureItem: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
+  iconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: "rgba(107, 142, 35, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  featureText: {
+    fontSize: 15,
+    color: "#1E293B",
+    fontWeight: "700",
+  },
+
+  footer: { 
+    paddingTop: 32,
+    backgroundColor: "#F8FAF8", 
+  },
   primaryButton: {
     backgroundColor: theme.colors.primary,
-    height: 56,
-    borderRadius: 12,
+    height: 60,
+    borderRadius: 20,
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
-    elevation: 2,
+    elevation: 4,
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    gap: 10,
   },
   primaryButtonText: {
     color: theme.colors.white,
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "800",
   },
 
   secondaryButton: {
-    backgroundColor: theme.colors.lightGreen,
-    height: 56,
-    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    height: 60,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.gray_200,
   },
   secondaryButtonText: {
-    color: theme.colors.primary,
+    color: theme.colors.gray_700,
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "700",
+  },
+  versionText: {
+    textAlign: "center",
+    fontSize: 11,
+    color: theme.colors.gray_400,
+    marginTop: 16,
+    fontWeight: "500",
   },
 });

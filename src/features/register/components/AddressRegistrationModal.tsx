@@ -1,8 +1,8 @@
-import React from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { appTheme as theme } from "@/theme/appTheme";
-import { registerStyles as styles } from "../styles/register.styles";
+import { registerStyles as styles } from "@/features/register/styles/register.styles";
 
 export const normalizeCep = (value: string) => value.replace(/\D/g, "").slice(0, 8);
 

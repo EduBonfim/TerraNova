@@ -23,12 +23,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-    getNotificationsByRole,
-    markAllNotificationsAsRead,
-    markNotificationAsRead,
-    type AppNotification,
-} from "../../services/notificationsStore";
-import { appTheme as theme } from "../../theme/appTheme";
+    getBuyerNotifications,
+    markAllBuyerNotificationsAsRead,
+    markBuyerNotificationAsRead,
+    removeBuyerNotification,
+} from "@/services/buyerNotificationsStore";
+import { NotificationsModal } from "@/features/home/components/NotificationsModal";
+import type { BaseNotification } from "@/types/notifications";
+import { appTheme as theme } from "@/theme/appTheme";
 
 const IOS_VISUAL = {
   headerHeight: 76,
@@ -145,8 +147,8 @@ export default function BuyerHomeScreen() {
   const { user, refreshUser } = useAuth();
   const carouselScrollRef = React.useRef<ScrollView>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<AppNotification[]>(
-    getNotificationsByRole("buyer")
+  const [notifications, setNotifications] = useState<BaseNotification[]>(
+    getBuyerNotifications()
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
@@ -183,7 +185,7 @@ export default function BuyerHomeScreen() {
     React.useCallback(() => {
       const syncData = async () => {
         await refreshUser();
-        setNotifications(getNotificationsByRole("buyer"));
+        setNotifications(getBuyerNotifications());
       };
       syncData();
     }, [refreshUser])
@@ -211,32 +213,34 @@ export default function BuyerHomeScreen() {
   const unreadCount = notifications.filter((item) => item.isNew).length;
 
   const openNotifications = () => {
-    setNotifications(markAllNotificationsAsRead());
+    setNotifications(markAllBuyerNotificationsAsRead());
     setIsNotificationsOpen(true);
   };
 
   const closeNotifications = () => setIsNotificationsOpen(false);
 
-  const openNotificationTarget = (item: AppNotification) => {
-    setNotifications(markNotificationAsRead(item.id));
+  const openNotificationTarget = (item: BaseNotification) => {
+    // Remove a notificação após o clique para manter a lista limpa
+    setNotifications(removeBuyerNotification(item.id));
     closeNotifications();
+
     if (item.route === "/profile" && item.targetItemId) {
       router.push({ pathname: "/user-profile", params: { highlight: item.targetItemId } });
       return;
     }
-    router.push(item.route);
+    router.push(item.route as any);
   };
 
   const openAllNotifications = () => {
     closeNotifications();
-    router.push("/notifications");
+    router.push("/notifications-history");
   };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      setNotifications(getNotificationsByRole("buyer"));
+      setNotifications(getBuyerNotifications());
     } finally {
       setIsRefreshing(false);
     }
@@ -461,72 +465,14 @@ export default function BuyerHomeScreen() {
       </ScrollView>
 
       {/* --- NOTIFICAÇÕES MODAL --- */}
-      <Modal
-        visible={isNotificationsOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={closeNotifications}
-      >
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={closeNotifications}
-        >
-          <Pressable
-            style={styles.notificationsPanel}
-            onPress={() => {}}
-          >
-            <View style={styles.notificationsHeader}>
-              <Text style={styles.notificationsTitle}>Novidades</Text>
-              <TouchableOpacity onPress={closeNotifications}>
-                <Ionicons
-                  name="close"
-                  size={20}
-                  color={theme.colors.gray_800}
-                />
-              </TouchableOpacity>
-            </View>
-
-            {latestNotifications.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.notificationItem}
-                onPress={() => openNotificationTarget(item)}
-              >
-                <View style={styles.notificationDotWrap}>
-                  <View
-                    style={[
-                      styles.notificationDot,
-                      item.isNew
-                        ? styles.notificationDotNew
-                        : styles.notificationDotRead,
-                    ]}
-                  />
-                </View>
-                <View style={styles.notificationContent}>
-                  <Text style={styles.notificationItemTitle}>
-                    {item.title}
-                  </Text>
-                  <Text style={styles.notificationItemDescription}>
-                    {item.description}
-                  </Text>
-                </View>
-                <Text style={styles.notificationItemTime}>{item.time}</Text>
-              </TouchableOpacity>
-            ))}
-
-            {hasMoreNotifications ? (
-              <TouchableOpacity
-                style={styles.viewAllNotificationsButton}
-                onPress={openAllNotifications}
-              >
-                <Text style={styles.viewAllNotificationsText}>
-                  Ver todas as notificações
-                </Text>
-              </TouchableOpacity>
-            ) : null}
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <NotificationsModal
+        isNotificationsOpen={isNotificationsOpen}
+        closeNotifications={closeNotifications}
+        latestNotifications={latestNotifications}
+        hasMoreNotifications={hasMoreNotifications}
+        openNotificationTarget={openNotificationTarget}
+        openAllNotifications={openAllNotifications}
+      />
     </SafeAreaView>
   );
 }

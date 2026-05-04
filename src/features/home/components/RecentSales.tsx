@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { View, Text, ScrollView, Dimensions } from "react-native";
-import { homeStyles as styles } from "../styles/home.styles";
+import { homeStyles as styles } from "@/features/home/styles/home.styles";
 import type { RecentSale } from "@/utils/producerAnalytics";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;

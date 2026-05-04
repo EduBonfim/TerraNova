@@ -76,10 +76,12 @@ export default function SalesMetricsScreen() {
                 <Text style={styles.cardSubValue}>Balanço do Período</Text>
               </View>
             </View>
-            <Text style={styles.totalSalesNumber}>R$ 104.775,00</Text>
+            <Text style={styles.totalSalesNumber}>
+              {salesData.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            </Text>
             <View style={styles.badge}>
               <Ionicons name="caret-up" size={12} color="#10B981" />
-              <Text style={styles.badgeText}>+12.4% vs anterior</Text>
+              <Text style={styles.badgeText}>{salesData.count} pedido(s) no período</Text>
             </View>
           </View>
 
@@ -92,7 +94,7 @@ export default function SalesMetricsScreen() {
               ]}
             >
               <Text style={styles.statBoxLabel}>Total Pedidos</Text>
-              <Text style={styles.statBoxValue}>{salesData.total}</Text>
+              <Text style={styles.statBoxValue}>{salesData.count}</Text>
             </View>
             <View
               style={[
@@ -101,7 +103,9 @@ export default function SalesMetricsScreen() {
               ]}
             >
               <Text style={styles.statBoxLabel}>Ticket Médio</Text>
-              <Text style={styles.statBoxValue}>R$ 425</Text>
+              <Text style={styles.statBoxValue}>
+                {salesData.ticketMedio.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              </Text>
             </View>
           </View>
 
@@ -140,42 +144,28 @@ export default function SalesMetricsScreen() {
           </View>
 
           <View style={styles.activitiesContainer}>
-            {/* Exibindo os últimos 3 pedidos como exemplo de atividade */}
-            {[
-              {
-                id: "1",
-                client: "João Silva",
-                value: "R$ 1.250,00",
-                time: "Há 2 horas",
-              },
-              {
-                id: "2",
-                client: "Maria Souza",
-                value: "R$ 450,00",
-                time: "Há 5 horas",
-              },
-              {
-                id: "3",
-                client: "Fazenda Sol",
-                value: "R$ 2.100,00",
-                time: "Ontem",
-              },
-            ].map((activity) => (
-              <View key={activity.id} style={styles.activityItem}>
-                <View style={styles.activityIcon}>
-                  <Ionicons
-                    name="cart-outline"
-                    size={20}
-                    color={theme.colors.primary}
-                  />
+            {salesData.recentOrders.length === 0 ? (
+              <Text style={{ color: theme.colors.gray_500, textAlign: "center", paddingVertical: 24, fontSize: 13 }}>
+                Nenhuma atividade recente encontrada.
+              </Text>
+            ) : (
+              salesData.recentOrders.map((order) => (
+                <View key={order.id} style={styles.activityItem}>
+                  <View style={styles.activityIcon}>
+                    <Ionicons
+                      name="cart-outline"
+                      size={20}
+                      color={theme.colors.primary}
+                    />
+                  </View>
+                  <View style={styles.activityInfo}>
+                    <Text style={styles.activityClient}>{order.comprador}</Text>
+                    <Text style={styles.activityTime}>{order.produto} • {order.data}</Text>
+                  </View>
+                  <Text style={styles.activityValue}>{order.valor}</Text>
                 </View>
-                <View style={styles.activityInfo}>
-                  <Text style={styles.activityClient}>{activity.client}</Text>
-                  <Text style={styles.activityTime}>{activity.time}</Text>
-                </View>
-                <Text style={styles.activityValue}>{activity.value}</Text>
-              </View>
-            ))}
+              ))
+            )}
           </View>
 
           {/* Export Button */}

@@ -32,7 +32,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: theme.colors.orange_500,
-        tabBarInactiveTintColor: "rgba(223, 223, 223, 0.8)",
+        tabBarInactiveTintColor: theme.colors.white,
         tabBarStyle: {
           backgroundColor: theme.colors.primary,
           borderTopWidth: 0,
@@ -67,8 +67,12 @@ export default function TabLayout() {
         name="home"
         options={{
           title: "Início",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? "home" : "home-outline"}
+              size={size}
+              color={color}
+            />
           ),
           href: isAdmin ? null : "/home",
         }}
@@ -78,8 +82,12 @@ export default function TabLayout() {
         name="map"
         options={{
           title: "Mapa",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="map" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? "map" : "map-outline"}
+              size={size}
+              color={color}
+            />
           ),
           href: isAdmin ? null : "/map",
         }}
@@ -141,8 +149,12 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "Mercado",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="storefront" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? "storefront" : "storefront-outline"}
+              size={size}
+              color={color}
+            />
           ),
           href: isAdmin ? null : "/profile",
         }}
@@ -152,9 +164,13 @@ export default function TabLayout() {
         name="account"
         options={{
           title: "Central",
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color, size, focused }) => (
             <View>
-              <Ionicons name="person" size={size} color={color} />
+              <Ionicons
+                name={focused ? "person" : "person-outline"}
+                size={size}
+                color={color}
+              />
               {showStockBadge && (
                 <View
                   style={{
@@ -190,6 +206,15 @@ export default function TabLayout() {
         options={{
           href: null,
           title: "Carrinho",
+        }}
+      />
+
+      {/* Rota oculta de Seguidores */}
+      <Tabs.Screen
+        name="follows"
+        options={{
+          href: null,
+          title: "Comunidade",
         }}
       />
     </Tabs>

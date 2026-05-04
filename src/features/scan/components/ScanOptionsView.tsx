@@ -1,8 +1,8 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Text, TouchableOpacity, View } from "react-native";
 import { appTheme as theme } from "@/theme/appTheme";
-import { scanStyles as styles } from "../styles/scan.styles";
+import { scanStyles as styles } from "@/features/scan/styles/scan.styles";
 
 interface ScanOptionsViewProps {
   onCapture: () => void;

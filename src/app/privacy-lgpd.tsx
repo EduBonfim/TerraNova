@@ -55,7 +55,7 @@ export default function PrivacyLgpdScreen() {
 
   const handleDeleteAccount = async () => {
     if (!user?.username) return;
-    if ((user.role || "user") === "admin") {
+    if ((user.role || "producer") === "admin") {
       Alert.alert(
         "Operacao bloqueada",
         "A conta admin padrao nao pode ser excluida no app.",
@@ -114,7 +114,7 @@ export default function PrivacyLgpdScreen() {
       router.replace("/(buyer)/home");
       return;
     }
-    // role === "user" (produtor)
+    // role === "producer" (produtor)
     router.replace("/(producer)/home");
   };
 

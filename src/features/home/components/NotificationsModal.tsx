@@ -2,15 +2,15 @@ import React from "react";
 import { View, Text, TouchableOpacity, Modal, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { appTheme as theme } from "@/theme/appTheme";
-import { homeStyles as styles } from "../styles/home.styles";
-import type { AppNotification } from "@/services/notificationsStore";
+import { homeStyles as styles } from "@/features/home/styles/home.styles";
+import { BaseNotification } from "@/types/notifications";
 
 interface NotificationsModalProps {
   isNotificationsOpen: boolean;
   closeNotifications: () => void;
-  latestNotifications: AppNotification[];
+  latestNotifications: BaseNotification[];
   hasMoreNotifications: boolean;
-  openNotificationTarget: (item: AppNotification) => void;
+  openNotificationTarget: (item: any) => void;
   openAllNotifications: () => void;
 }
 
@@ -38,36 +38,42 @@ export function NotificationsModal({
             </TouchableOpacity>
           </View>
 
-          {latestNotifications.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.notificationItem}
-              onPress={() => openNotificationTarget(item)}
-            >
-              <View style={styles.notificationDotWrap}>
-                <View
-                  style={[
-                    styles.notificationDot,
-                    item.isNew ? styles.notificationDotNew : styles.notificationDotRead,
-                  ]}
-                />
-              </View>
-              <View style={styles.notificationContent}>
-                <Text style={styles.notificationItemTitle}>{item.title}</Text>
-                <Text style={styles.notificationItemDescription}>{item.description}</Text>
-              </View>
-              <Text style={styles.notificationItemTime}>{item.time}</Text>
-            </TouchableOpacity>
-          ))}
+          {latestNotifications.length > 0 ? (
+            latestNotifications.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.notificationItem}
+                onPress={() => openNotificationTarget(item)}
+              >
+                <View style={styles.notificationDotWrap}>
+                  <View
+                    style={[
+                      styles.notificationDot,
+                      item.isNew ? styles.notificationDotNew : styles.notificationDotRead,
+                    ]}
+                  />
+                </View>
+                <View style={styles.notificationContent}>
+                  <Text style={styles.notificationItemTitle}>{item.title}</Text>
+                  <Text style={styles.notificationItemDescription}>{item.description}</Text>
+                </View>
+                <Text style={styles.notificationItemTime}>{item.time}</Text>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.emptyNotifications}>
+              <Ionicons name="notifications-off-outline" size={32} color={theme.colors.gray_300} />
+              <Text style={styles.emptyNotificationsText}>Nenhuma novidade no momento</Text>
+              <TouchableOpacity 
+                style={styles.historyButton} 
+                onPress={openAllNotifications}
+              >
+                <Text style={styles.historyButtonText}>Ver notificações anteriores</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
-          {hasMoreNotifications ? (
-            <TouchableOpacity
-              style={styles.viewAllNotificationsButton}
-              onPress={openAllNotifications}
-            >
-              <Text style={styles.viewAllNotificationsText}>Ver todas as notificacoes</Text>
-            </TouchableOpacity>
-          ) : null}
+          {/* Removido o botão "Ver todas as notificações" quando a lista está cheia, conforme solicitado */}
         </Pressable>
       </Pressable>
     </Modal>

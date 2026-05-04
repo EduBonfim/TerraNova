@@ -141,10 +141,32 @@ export const adminReportsStyles = StyleSheet.create({
     color: theme.colors.gray_500,
     lineHeight: 18,
   },
+  evidenceImageContainer: {
+    position: "relative",
+    borderRadius: 8,
+    overflow: "hidden",
+    backgroundColor: "#F1F5F9",
+  },
   evidenceImage: {
     width: "100%",
     height: 200,
-    borderRadius: 8,
+  },
+  zoomBadge: {
+    position: "absolute",
+    bottom: 10,
+    right: 10,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  zoomBadgeText: {
+    color: "white",
+    fontSize: 10,
+    fontWeight: "bold",
   },
   actionBox: {
     backgroundColor: "rgba(107, 142, 35, 0.1)",

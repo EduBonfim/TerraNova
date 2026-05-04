@@ -29,6 +29,7 @@ export type CreateListingPayload = {
   tipoCertificacao: "Organico" | "Transicao" | "Convencional";
   numeroRegistro?: string;
   fotoUri?: string | null;
+  unidade: string;
 };
 
 /**
@@ -156,9 +157,6 @@ export async function createListing(
   return listing;
 }
 
-/**
- * Obtém todos os anúncios de um usuário
- */
 export function getUserListings(username: string): LocalListing[] {
   return Object.values(localListings).filter(
     (listing) => listing.vendedor === username
@@ -166,10 +164,66 @@ export function getUserListings(username: string): LocalListing[] {
 }
 
 /**
+ * Obtém todos os anúncios locais (de todos os usuários criados no dispositivo)
+ */
+export function getAllLocalListings(): LocalListing[] {
+  return Object.values(localListings);
+}
+
+/**
+ * Converte um anúncio local para o formato do Marketplace
+ */
+export function mapLocalToMarketplace(listing: LocalListing): any {
+  return {
+    id: listing.id,
+    produto: listing.titulo,
+    vendedor: listing.vendedor, // Aqui o vendedor já é o username no LocalListing
+    vendedorUsername: listing.vendedor, 
+    preco: listing.preco.startsWith("R$") ? listing.preco : `R$ ${listing.preco}`,
+    estoque: `${listing.quantidade} unidades`,
+    estoqueValor: parseInt(listing.quantidade) || 0,
+    categoria: listing.tipo === "colheita" ? "Mercado" : "Cultivo",
+    subcategoria: listing.subcategoria,
+    foto: listing.fotoUri || "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=1200&q=80",
+    loteCodigo: listing.loteCodigo,
+    tipoCertificacao: listing.tipoCertificacao,
+    numeroRegistro: listing.numeroRegistro,
+    unidade: listing.unidade,
+    descricao: listing.descricao || "Produto de qualidade selecionada.",
+  };
+}
+
+/**
  * Obtém um anúncio específico
  */
 export function getListing(listingId: string): LocalListing | null {
   return localListings[listingId] || null;
+}
+
+/**
+ * Atualiza um anúncio existente
+ */
+export async function updateListing(
+  listingId: string,
+  payload: Partial<CreateListingPayload>
+): Promise<LocalListing | null> {
+  const listing = localListings[listingId];
+  if (!listing) return null;
+
+  const updatedListing: LocalListing = {
+    ...listing,
+    ...payload,
+    statusSync: "pending", // Reseta sync ao editar
+  };
+
+  localListings[listingId] = updatedListing;
+  await persistListingsToStorage();
+
+  // Atualiza fila de sync
+  const backendPayload = convertToBackendPayload(updatedListing);
+  await addToSyncQueue(listingId, backendPayload);
+
+  return updatedListing;
 }
 
 /**

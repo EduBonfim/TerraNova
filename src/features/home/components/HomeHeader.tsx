@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { appTheme as theme } from "@/theme/appTheme";
-import { homeStyles as styles } from "../styles/home.styles";
+import { homeStyles as styles } from "@/features/home/styles/home.styles";
 
 interface HomeHeaderProps {
   profileSummary: {

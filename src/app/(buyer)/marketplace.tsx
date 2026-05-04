@@ -510,19 +510,59 @@ export default function BuyerMarketplaceScreen() {
                 <Text style={styles.detailsTitle}>
                   {selectedProduct?.produto}
                 </Text>
-                <Text style={styles.detailsPrice}>
-                  {selectedProduct?.preco}
-                </Text>
-
-                <View style={styles.detailsVendorRow}>
-                  <Ionicons
-                    name="storefront-outline"
-                    size={16}
-                    color={theme.colors.gray_600}
-                  />
-                  <Text style={styles.detailsVendorName}>
-                    {selectedProduct?.vendedor}
-                  </Text>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.detailsPrice}>
+                      {selectedProduct?.preco}
+                    </Text>
+                    <View style={styles.detailsVendorRow}>
+                      <Ionicons
+                        name="storefront-outline"
+                        size={16}
+                        color={theme.colors.gray_600}
+                      />
+                      <Text style={styles.detailsVendorName}>
+                        {selectedProduct?.vendedor}
+                      </Text>
+                    </View>
+                  </View>
+                  
+                  <TouchableOpacity
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: theme.colors.orange_500 + "15",
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                      borderRadius: 20,
+                      borderWidth: 1,
+                      borderColor: theme.colors.orange_500,
+                    }}
+                    onPress={() => {
+                      const prod = selectedProduct;
+                      setSelectedProduct(null);
+                      router.push({
+                        pathname: "/user-profile",
+                        params: {
+                          name: prod.vendedor,
+                        },
+                      });
+                    }}
+                  >
+                    <Ionicons
+                      name="storefront"
+                      size={14}
+                      color={theme.colors.orange_500}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text style={{ 
+                      color: theme.colors.orange_500, 
+                      fontSize: 12, 
+                      fontWeight: "bold" 
+                    }}>
+                      Visitar Fazenda
+                    </Text>
+                  </TouchableOpacity>
                 </View>
 
                 {selectedProduct?.loteCodigo && (
@@ -544,6 +584,15 @@ export default function BuyerMarketplaceScreen() {
                 <Text style={styles.detailsStock}>
                   Estoque disponível: {selectedProduct?.estoque}
                 </Text>
+
+                {selectedProduct?.descricao && (
+                  <View style={styles.descriptionBox}>
+                    <Text style={styles.descriptionTitle}>Descrição do Produto</Text>
+                    <Text style={styles.detailsDescriptionText}>
+                      {selectedProduct.descricao}
+                    </Text>
+                  </View>
+                )}
               </View>
             </ScrollView>
 
@@ -609,7 +658,7 @@ export default function BuyerMarketplaceScreen() {
                       router.push({
                         pathname: "/messages",
                         params: {
-                          sellerName: prod.vendedor,
+                          sellerName: prod.vendedorUsername || prod.vendedor,
                           productName: prod.produto,
                         },
                       });
@@ -621,7 +670,7 @@ export default function BuyerMarketplaceScreen() {
                       color={theme.colors.white}
                     />
                     <Text style={styles.detailsNegotiateBtnText}>
-                      Negociar Direto
+                      Chat Direto
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -945,7 +994,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: "900",
     color: theme.colors.primary,
-    marginBottom: 16,
+    marginBottom: 8,
   },
   detailsVendorRow: {
     flexDirection: "row",
@@ -977,8 +1026,29 @@ const styles = StyleSheet.create({
   certBoxItem: { fontSize: 13, color: theme.colors.gray_800, marginBottom: 2 },
   detailsStock: {
     fontSize: 14,
-    color: theme.colors.gray_500,
-    fontStyle: "italic",
+    color: theme.colors.gray_600,
+    fontWeight: "600",
+    marginBottom: 16,
+  },
+  descriptionBox: {
+    backgroundColor: theme.colors.gray_100,
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.gray_200,
+  },
+  descriptionTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+    marginBottom: 6,
+  },
+  detailsDescriptionText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: theme.colors.gray_700,
   },
   detailsFooter: {
     padding: 16,

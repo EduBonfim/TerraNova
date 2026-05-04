@@ -1,7 +1,7 @@
 import React from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { appTheme as theme } from "@/theme/appTheme";
-import { scanStyles as styles } from "../styles/scan.styles";
+import { scanStyles as styles } from "@/features/scan/styles/scan.styles";
 
 export function ScanningFeedbackView() {
   return (

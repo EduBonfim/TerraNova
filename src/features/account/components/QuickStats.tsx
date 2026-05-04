@@ -6,25 +6,30 @@ interface QuickStatsProps {
   rating: number;
   completeness: number;
   onPressRating: () => void;
+  onPressCompleteness: () => void;
 }
 
-export function QuickStats({ rating, completeness, onPressRating }: QuickStatsProps) {
+export function QuickStats({ rating, completeness, onPressRating, onPressCompleteness }: QuickStatsProps) {
   return (
     <View style={styles.statsQuickRow}>
       <TouchableOpacity
         style={styles.quickStatItem}
         onPress={onPressRating}
       >
-        <Text style={styles.quickStatNumber}>{rating.toFixed(1)}</Text>
-        <Text style={styles.quickStatLabel}>
-          <Ionicons name="star" size={11} color={theme.colors.orange_500} /> Avaliação
+        <Text style={styles.ratingNumber}>{rating.toFixed(1)}</Text>
+        <Text style={styles.ratingLabel}>
+          <Ionicons name="star" size={18} color={theme.colors.orange_500} /> Avaliação
         </Text>
       </TouchableOpacity>
       <View style={styles.quickStatDivider} />
-      <View style={styles.quickStatItem}>
+      <TouchableOpacity
+        style={styles.quickStatItem}
+        onPress={onPressCompleteness}
+      >
+        <Text style={styles.quickStatLabel}>Seu perfil está</Text>
         <Text style={styles.quickStatNumber}>{completeness}%</Text>
-        <Text style={styles.quickStatLabel}>Completo</Text>
-      </View>
+        <Text style={styles.quickStatLabel}>completo</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -43,14 +48,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   quickStatNumber: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
     color: theme.colors.gray_800,
   },
   quickStatLabel: {
-    fontSize: 11,
+    fontSize: 13,
     color: theme.colors.gray_500,
     marginTop: 2,
+    textAlign: 'center',
+  },
+  ratingNumber: {
+    fontSize: 28, // Tamanho do valor (ex: 4.8)
+    fontWeight: 'bold',
+    color: theme.colors.gray_800,
+  },
+  ratingLabel: {
+    fontSize: 13, // Tamanho do texto "Avaliação"
+    color: theme.colors.gray_500,
+    marginTop: 4,
+    textAlign: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   quickStatDivider: {
     width: 1,

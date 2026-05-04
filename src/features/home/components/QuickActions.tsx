@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { appTheme as theme } from "@/theme/appTheme";
-import { homeStyles as styles } from "../styles/home.styles";
+import { homeStyles as styles } from "@/features/home/styles/home.styles";
 
 export function QuickActions() {
   const router = useRouter();

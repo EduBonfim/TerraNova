@@ -16,8 +16,6 @@ interface AccountMenuProps {
   onLogout: () => Promise<void>;
 }
 
-// ─── MenuCard component ────────────────────────────────────────────────────────
-
 interface MenuCardProps {
   icon: string;
   label: string;
@@ -67,28 +65,28 @@ export function AccountMenu({ hasNewMessages, onLogout }: AccountMenuProps) {
           <MenuCard
             icon="cart-outline"
             label="Minhas Vendas"
-            onPress={() => router.push("/my-orders")}
+            onPress={() => router.push({ pathname: "/my-orders", params: { type: "sales" } })}
           />
           <MenuCard
             icon="bag-outline"
             label="Minhas Compras"
-            onPress={() => router.push("/my-orders")}
+            onPress={() => router.push({ pathname: "/my-orders", params: { type: "purchases" } })}
           />
           <MenuCard
             icon="pricetags-outline"
             label="Meus Anúncios"
-            onPress={() =>
-              Alert.alert(
-                "Meus Anúncios",
-                "Gerencie seus anúncios ativos e esgotados nesta área.",
-              )
-            }
+            onPress={() => router.push("/stock")}
           />
           <MenuCard
             icon="chatbubble-outline"
             label="Chat"
             badge={hasNewMessages}
             onPress={() => router.push("/messages")}
+          />
+          <MenuCard
+            icon="people-outline"
+            label="Comunidade"
+            onPress={() => router.push("/(producer)/follows")}
           />
           <MenuCard
             icon="shield-checkmark-outline"

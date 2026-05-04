@@ -1,10 +1,10 @@
 import React from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { appTheme as theme } from "@/theme/appTheme";
-import { scanStyles as styles } from "../styles/scan.styles";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { SurfaceCard } from "@/components/SurfaceCard";
+import { appTheme as theme } from "@/theme/appTheme";
 import type { SoilReport } from "@/services/soilReportsStore";
+import { scanStyles as styles } from "@/features/scan/styles/scan.styles";
 
 interface DiagnosisResultViewProps {
   carencias: string[];

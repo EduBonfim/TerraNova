@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { appTheme as theme } from "@/theme/appTheme";
-import { profileStyles as styles } from "../styles/user-profile.styles";
+import { profileStyles as styles } from "@/features/user-profile/styles/user-profile.styles";
 import { SurfaceCard } from "@/components/SurfaceCard";
 
 interface FertilizersListProps {

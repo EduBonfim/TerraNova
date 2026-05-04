@@ -2,12 +2,13 @@ import React from "react";
 import { View, Text, TouchableOpacity, Image, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { appTheme as theme } from "@/theme/appTheme";
-import { messagesStyles as styles } from "../styles/messages.styles";
-import { ContactConversation } from "../hooks/useChatLogic";
+import { messagesStyles as styles } from "@/features/messages/styles/messages.styles";
+import { ContactConversation } from "@/features/messages/hooks/useChatLogic";
 import { getInitials } from "@/utils/textUtils";
 
 interface ChatHeaderProps {
   conversaAtual?: ContactConversation | null;
+  sellerName?: string;
   sellerHeaderPhotoUri?: string | null;
   dealClosed: boolean;
   isSearchOpen: boolean;
@@ -20,6 +21,7 @@ interface ChatHeaderProps {
 
 export function ChatHeader({
   conversaAtual,
+  sellerName,
   sellerHeaderPhotoUri,
   dealClosed,
   isSearchOpen,
@@ -37,17 +39,14 @@ export function ChatHeader({
         </TouchableOpacity>
 
         {conversaAtual ? (
-          sellerHeaderPhotoUri ? (
-            <Image source={{ uri: sellerHeaderPhotoUri }} style={styles.headerAvatarImage} />
-          ) : (
-            <View style={styles.headerAvatarFallback}>
-              <Text style={styles.headerAvatarFallbackText}>{getInitials(conversaAtual.nome)}</Text>
-            </View>
-          )
+          <Image 
+            source={{ uri: sellerHeaderPhotoUri || `https://i.pravatar.cc/150?u=${conversaAtual.nome}` }} 
+            style={styles.headerAvatarImage} 
+          />
         ) : null}
 
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>{conversaAtual ? conversaAtual.nome : "Mensagens"}</Text>
+          <Text style={styles.headerTitle}>{conversaAtual ? (sellerName || conversaAtual.nome) : "Mensagens"}</Text>
           <Text style={styles.headerSubtitle}>
             {conversaAtual ? conversaAtual.status : "Organize suas conversas por contato"}
           </Text>

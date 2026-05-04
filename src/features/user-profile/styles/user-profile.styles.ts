@@ -77,6 +77,32 @@ export const profileStyles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 6,
   },
+  socialStatsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+    marginBottom: 8,
+    gap: 20,
+  },
+  socialStatItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  socialStatNumber: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: theme.colors.gray_900,
+  },
+  socialStatLabel: {
+    fontSize: 13,
+    color: theme.colors.gray_500,
+  },
+  socialStatDivider: {
+    width: 1,
+    height: 14,
+    backgroundColor: theme.colors.gray_200,
+  },
   roleBadgeText: {
     fontSize: 10,
     fontWeight: "bold",
@@ -320,5 +346,25 @@ export const profileStyles = StyleSheet.create({
   detailsNegotiateBtn: { backgroundColor: theme.colors.orange_500, paddingVertical: 18, borderRadius: 12, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 10 },
   detailsNegotiateBtnText: { color: theme.colors.white, fontSize: 17, fontWeight: "bold" },
   organicBadgeDetails: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", backgroundColor: theme.colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, marginBottom: 12 },
+  descriptionBox: {
+    backgroundColor: theme.colors.gray_100,
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 10,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.gray_200,
+  },
+  descriptionTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+    marginBottom: 6,
+  },
+  detailsDescriptionText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: theme.colors.gray_700,
+  },
   bottomSpacer: { height: 40 },
 });

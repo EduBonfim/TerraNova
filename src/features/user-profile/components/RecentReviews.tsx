@@ -1,7 +1,7 @@
-import React from "react";
-import { View, Text } from "react-native";
-import { profileStyles as styles } from "../styles/user-profile.styles";
 import { SurfaceCard } from "@/components/SurfaceCard";
+import React from "react";
+import { Text, View } from "react-native";
+import { profileStyles as styles } from "@/features/user-profile/styles/user-profile.styles";
 
 interface RecentReviewsProps {
   reviews: { id: string; author: string; date: string; stars: number; comment: string }[];

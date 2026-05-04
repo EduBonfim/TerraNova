@@ -2,15 +2,17 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { appTheme as theme } from "@/theme/appTheme";
-import { homeStyles as styles } from "../styles/home.styles";
+import { useRouter } from "expo-router";
+import { homeStyles as styles } from "@/features/home/styles/home.styles";
 import { SurfaceCard } from "@/components/SurfaceCard";
 
 export function AgroNews() {
+  const router = useRouter();
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Notícias e Destaques</Text>
 
-      <TouchableOpacity>
+      <TouchableOpacity activeOpacity={1}>
         <SurfaceCard style={styles.newsCard} bordered={false}>
           <View style={styles.newsImagePlaceholder}>
             <Ionicons
@@ -28,7 +30,7 @@ export function AgroNews() {
         </SurfaceCard>
       </TouchableOpacity>
 
-      <TouchableOpacity>
+      <TouchableOpacity activeOpacity={1}>
         <SurfaceCard style={styles.newsCard} bordered={false}>
           <View style={styles.newsImagePlaceholder}>
             <Ionicons name="earth" size={32} color={theme.colors.gray_500} />

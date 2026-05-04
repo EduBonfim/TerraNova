@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Image,
+    Modal,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -24,6 +25,7 @@ export default function ReportDetailsScreen() {
   const { user } = useAuth();
   const [report, setReport] = useState<AppReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     const loadReport = async () => {
@@ -115,7 +117,21 @@ export default function ReportDetailsScreen() {
         {report.evidenceImageUri && (
           <SurfaceCard style={styles.card}>
             <Text style={styles.sectionTitle}>Evidência Anexada</Text>
-            <Image source={{ uri: report.evidenceImageUri }} style={styles.evidenceImage} resizeMode="contain" />
+            <TouchableOpacity 
+              activeOpacity={0.9} 
+              onPress={() => setPreviewPhoto(report.evidenceImageUri!)}
+              style={styles.evidenceImageContainer}
+            >
+              <Image 
+                source={{ uri: report.evidenceImageUri }} 
+                style={styles.evidenceImage} 
+                resizeMode="cover" 
+              />
+              <View style={styles.zoomBadge}>
+                <Ionicons name="search" size={16} color="white" />
+                <Text style={styles.zoomBadgeText}>Clique para ampliar</Text>
+              </View>
+            </TouchableOpacity>
           </SurfaceCard>
         )}
 
@@ -145,6 +161,30 @@ export default function ReportDetailsScreen() {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* Modal de Zoom da Imagem */}
+      <Modal visible={!!previewPhoto} transparent={true} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={styles.closeZoomButton} 
+            onPress={() => setPreviewPhoto(null)}
+          >
+            <Ionicons name="close-circle" size={44} color="white" />
+          </TouchableOpacity>
+          
+          {previewPhoto && (
+            <Image 
+              source={{ uri: previewPhoto }} 
+              style={styles.fullZoomImage} 
+              resizeMode="contain" 
+            />
+          )}
+          
+          <View style={styles.zoomFooter}>
+            <Text style={styles.zoomFooterText}>Inspeção de Evidência</Text>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -170,7 +210,62 @@ const styles = StyleSheet.create({
   reasonText: { fontSize: 17, fontWeight: "700", color: "#334155", marginBottom: 8 },
   descriptionText: { fontSize: 15, color: "#475569", lineHeight: 22 },
 
-  evidenceImage: { width: "100%", height: 250, borderRadius: 12, marginTop: 10, backgroundColor: "#F1F5F9" },
+  evidenceImageContainer: {
+    width: "100%",
+    height: 250,
+    borderRadius: 12,
+    marginTop: 10,
+    backgroundColor: "#F1F5F9",
+    overflow: "hidden",
+    position: "relative",
+  },
+  evidenceImage: { width: "100%", height: "100%" },
+  zoomBadge: {
+    position: "absolute",
+    bottom: 12,
+    right: 12,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  zoomBadgeText: { color: "white", fontSize: 11, fontWeight: "bold" },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.95)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeZoomButton: {
+    position: "absolute",
+    top: 50,
+    right: 25,
+    zIndex: 10,
+    padding: 10,
+  },
+  fullZoomImage: {
+    width: "100%",
+    height: "80%",
+  },
+  zoomFooter: {
+    position: "absolute",
+    bottom: 40,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  zoomFooterText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
 
   resolutionCard: { backgroundColor: "#F0FDF4", borderColor: "#BBF7D0", borderWidth: 1 },
   resolutionHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },

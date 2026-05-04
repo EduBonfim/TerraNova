@@ -1,7 +1,7 @@
-import React from "react";
-import { ScrollView, Image, TouchableOpacity, Text } from "react-native";
-import { profileStyles as styles } from "../styles/user-profile.styles";
 import { SurfaceCard } from "@/components/SurfaceCard";
+import { profileStyles as styles } from "@/features/user-profile/styles/user-profile.styles";
+import React from "react";
+import { Image, ScrollView, Text, TouchableOpacity } from "react-native";
 
 interface PhotoGalleryProps {
   farmPhotos: string[];

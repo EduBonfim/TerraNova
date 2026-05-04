@@ -120,13 +120,13 @@ export default function BuyerLayout() {
         }}
       />
 
-      {/* Notificações */}
+      {/* Chat */}
       <Tabs.Screen
-        name="notifications"
+        name="messages"
         options={{
-          title: "Notificações",
+          title: "Chat",
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? "notifications" : "notifications-outline"} size={size} color={color} />
+            <Ionicons name={focused ? "chatbubble" : "chatbubble-outline"} size={size} color={color} />
           ),
         }}
       />
@@ -139,6 +139,20 @@ export default function BuyerLayout() {
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? "person" : "person-outline"} size={size} color={color} />
           ),
+        }}
+      />
+
+      {/* Escondidos */}
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="favorite-farms"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

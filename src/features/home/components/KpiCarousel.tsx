@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useRef } from "react";
-import { View, Text, ScrollView, Dimensions } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { appTheme as theme } from "@/theme/appTheme";
-import { homeStyles as styles } from "../styles/home.styles";
 import { SurfaceCard } from "@/components/SurfaceCard";
+import { appTheme as theme } from "@/theme/appTheme";
 import type { ProducerKPI } from "@/utils/producerAnalytics";
+import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useRef, useState } from "react";
+import { Dimensions, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { homeStyles as styles } from "@/features/home/styles/home.styles";
+import { useRouter } from "expo-router";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -13,8 +14,18 @@ interface KpiCarouselProps {
 }
 
 export function KpiCarousel({ kpis }: KpiCarouselProps) {
+  const router = useRouter();
   const [currentKpiIndex, setCurrentKpiIndex] = useState(0);
   const kpiCarouselRef = useRef<ScrollView>(null);
+
+  // Formata valor de vendas mensais
+  const formatMonthlySales = (value: number): string => {
+    if (value === 0) return "R$ 0";
+    if (value >= 1000) {
+      return `R$ ${(value / 1000).toFixed(1)}k`;
+    }
+    return `R$ ${value.toFixed(0)}`;
+  };
 
   const kpiItems = [
     {
@@ -23,6 +34,7 @@ export function KpiCarousel({ kpis }: KpiCarouselProps) {
       iconColor: theme.colors.primary,
       value: kpis.totalAds,
       label: "Anúncios",
+      onPress: () => router.push("/stock"),
     },
     {
       id: "rating",
@@ -30,13 +42,15 @@ export function KpiCarousel({ kpis }: KpiCarouselProps) {
       iconColor: "#FBBF24",
       value: kpis.averageRating.toFixed(1),
       label: "Avaliação",
+      onPress: () => router.push("/ratings"),
     },
     {
       id: "sales",
       icon: "cash",
       iconColor: theme.colors.accent,
-      value: `R$ ${(kpis.monthlySales / 1000).toFixed(1)}k`,
+      value: formatMonthlySales(kpis.monthlySales),
       label: "Vendas/Mês",
+      onPress: () => router.push({ pathname: "/my-orders", params: { type: "sales" } }),
     },
     {
       id: "followers",
@@ -44,6 +58,7 @@ export function KpiCarousel({ kpis }: KpiCarouselProps) {
       iconColor: theme.colors.orange_500,
       value: kpis.followers,
       label: "Seguidores",
+      onPress: () => router.push("/(producer)/follows"),
     },
   ];
 
@@ -65,7 +80,7 @@ export function KpiCarousel({ kpis }: KpiCarouselProps) {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Meu Desempenho</Text>
-      
+
       <ScrollView
         ref={kpiCarouselRef}
         horizontal
@@ -91,19 +106,24 @@ export function KpiCarousel({ kpis }: KpiCarouselProps) {
             key={item.id}
             style={[styles.kpiCarouselItem, { width: SCREEN_WIDTH - 32 }]}
           >
-            <SurfaceCard style={styles.kpiCard} bordered={false}>
-              <View style={styles.kpiCardContent}>
-                <View style={styles.kpiIconCircle}>
-                  <Ionicons
-                    name={item.icon as any}
-                    size={48}
-                    color={item.iconColor}
-                  />
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={item.onPress}
+            >
+              <SurfaceCard style={styles.kpiCard} bordered={false}>
+                <View style={styles.kpiCardContent}>
+                  <View style={styles.kpiIconCircle}>
+                    <Ionicons
+                      name={item.icon as any}
+                      size={48}
+                      color={item.iconColor}
+                    />
+                  </View>
+                  <Text style={styles.kpiCarouselValue}>{item.value}</Text>
+                  <Text style={styles.kpiCarouselLabel}>{item.label}</Text>
                 </View>
-                <Text style={styles.kpiCarouselValue}>{item.value}</Text>
-                <Text style={styles.kpiCarouselLabel}>{item.label}</Text>
-              </View>
-            </SurfaceCard>
+              </SurfaceCard>
+            </TouchableOpacity>
           </View>
         ))}
       </ScrollView>

@@ -1,5 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { addNotification } from "./notificationsStore";
+import { addBuyerNotification } from "@/services/buyerNotificationsStore";
+import { addProducerNotification } from "@/services/producerNotificationsStore";
+
+// Helper para despachar notificações para ambos os stores (o filtro de targetUser garante que só o usuário certo veja)
+function addNotification(notification: any) {
+  addBuyerNotification(notification);
+  addProducerNotification(notification);
+}
 
 export type ReportStatus =
   | "pendente"

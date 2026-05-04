@@ -264,9 +264,9 @@ export default function ProducerMarketplaceScreen() {
       />
       <AppHeader
         title={
-          filterByVendor ? "Ofertas da propriedade" : "Mercado B2B Produtor"
+          filterByVendor ? "Ofertas da propriedade" : "Mercado Terra Nova"
         }
-        subtitle={filterByVendor ? undefined : "Insumos e matéria-prima"}
+        subtitle={filterByVendor ? undefined : "Insumos, matéria-prima e colheitas"}
         titleStyle={
           filterByVendor ? { fontSize: 17, lineHeight: 20 } : undefined
         }
@@ -500,6 +500,15 @@ export default function ProducerMarketplaceScreen() {
                 <Text style={styles.detailsStock}>
                   Estoque disponível: {selectedProduct?.estoque}
                 </Text>
+
+                {selectedProduct?.descricao && (
+                  <View style={styles.descriptionBox}>
+                    <Text style={styles.descriptionTitle}>Descrição do Produto</Text>
+                    <Text style={styles.detailsDescriptionText}>
+                      {selectedProduct.descricao}
+                    </Text>
+                  </View>
+                )}
               </View>
             </ScrollView>
 
@@ -892,7 +901,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: "900",
     color: theme.colors.primary,
-    marginBottom: 16,
+    marginBottom: 8,
   },
   detailsVendorRow: {
     flexDirection: "row",
@@ -924,8 +933,29 @@ const styles = StyleSheet.create({
   certBoxItem: { fontSize: 13, color: theme.colors.gray_800, marginBottom: 2 },
   detailsStock: {
     fontSize: 14,
-    color: theme.colors.gray_500,
-    fontStyle: "italic",
+    color: theme.colors.gray_600,
+    fontWeight: "600",
+    marginBottom: 16,
+  },
+  descriptionBox: {
+    backgroundColor: theme.colors.gray_100,
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.gray_200,
+  },
+  descriptionTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: theme.colors.gray_800,
+    marginBottom: 6,
+  },
+  detailsDescriptionText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: theme.colors.gray_700,
   },
   detailsFooter: {
     padding: 16,

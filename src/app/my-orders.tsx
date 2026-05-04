@@ -5,7 +5,7 @@ import { useAccountLogic } from "@/features/account/hooks/useAccountLogic";
 import { ordersStyles as styles } from "@/styles/ordersAndMetricsStyles";
 import { appTheme as theme } from "@/theme/appTheme";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -19,8 +19,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function MyOrdersScreen() {
   const router = useRouter();
+  const { type } = useLocalSearchParams<{ type?: "sales" | "purchases" }>();
   const { user } = useAuth();
-  const { myOrders, selectedOrderTab, setSelectedOrderTab } = useAccountLogic();
+  
+  const isBuyerMode = user?.role === "buyer" || type === "purchases";
+  const { myOrders, selectedOrderTab, setSelectedOrderTab } = useAccountLogic({ mode: isBuyerMode ? "purchases" : "sales" });
 
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
@@ -38,7 +41,7 @@ export default function MyOrdersScreen() {
     );
   }
 
-  const isBuyer = user.role === "buyer";
+  const isBuyer = isBuyerMode;
   const ordersList = myOrders[selectedOrderTab] || [];
 
   const groupedOrders = useMemo(() => {

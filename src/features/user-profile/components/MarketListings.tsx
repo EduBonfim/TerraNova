@@ -1,7 +1,7 @@
-import React from "react";
-import { View, Text, Image, TouchableOpacity } from "react-native";
-import { profileStyles as styles } from "../styles/user-profile.styles";
 import { SurfaceCard } from "@/components/SurfaceCard";
+import { profileStyles as styles } from "@/features/user-profile/styles/user-profile.styles";
+import React from "react";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 
 interface MarketListingsProps {
   userListings: any[];

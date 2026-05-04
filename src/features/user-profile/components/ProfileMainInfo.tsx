@@ -1,14 +1,16 @@
-import React from "react";
-import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { appTheme as theme } from "@/theme/appTheme";
-import { profileStyles as styles } from "../styles/user-profile.styles";
+import { profileStyles as styles } from "@/features/user-profile/styles/user-profile.styles";
+import React from "react";
+import { Text, View } from "react-native";
 
 interface ProfileMainInfoProps {
   displayName: string;
   farmName: string;
   producerRole: string;
   isCepValidated: boolean;
+  followerCount: number;
+  followingCount: number;
 }
 
 export function ProfileMainInfo({
@@ -16,11 +18,26 @@ export function ProfileMainInfo({
   farmName,
   producerRole,
   isCepValidated,
+  followerCount,
+  followingCount,
 }: ProfileMainInfoProps) {
   return (
     <View style={styles.profileMainInfo}>
       <Text style={styles.profileDisplayName}>{displayName}</Text>
       <Text style={styles.profileFarmName}>{farmName}</Text>
+      
+      <View style={styles.socialStatsRow}>
+        <View style={styles.socialStatItem}>
+          <Text style={styles.socialStatNumber}>{followerCount}</Text>
+          <Text style={styles.socialStatLabel}>Seguidores</Text>
+        </View>
+        <View style={styles.socialStatDivider} />
+        <View style={styles.socialStatItem}>
+          <Text style={styles.socialStatNumber}>{followingCount}</Text>
+          <Text style={styles.socialStatLabel}>Seguindo</Text>
+        </View>
+      </View>
+
       <View style={styles.badgeRow}>
         <View style={styles.roleBadge}>
           <Text style={styles.roleBadgeText}>{producerRole}</Text>

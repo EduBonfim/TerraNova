@@ -1,9 +1,9 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Image, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Alert, Image, Text, TouchableOpacity, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { appTheme as theme } from "@/theme/appTheme";
-import { registerStyles as styles } from "../styles/register.styles";
+import { registerStyles as styles } from "@/features/register/styles/register.styles";
 
 interface AvatarImagePickerProps {
   avatarUri: string | null;

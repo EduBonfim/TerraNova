@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { appTheme as theme } from "@/theme/appTheme";
-import { registerStyles as styles } from "../styles/register.styles";
+import { registerStyles as styles } from "@/features/register/styles/register.styles";
 import { LGPD_TERMS_VERSION } from "@/services/authStore";
 
 const sanitizeName = (v: string) => v.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, "");

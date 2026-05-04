@@ -1,13 +1,21 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { getProfileSummary, initCommunityStore, refreshCommunityStore } from "@/services/communityStore";
 import {
-    getNotificationsByRole,
-    markAllNotificationsAsRead,
-    markNotificationAsRead,
+    getProfileSummary,
+    initCommunityStore,
+    refreshCommunityStore,
+} from "@/services/communityStore";
+import {
+    getProducerNotifications,
+    markAllProducerNotificationsAsRead,
+    markProducerNotificationAsRead,
+    removeProducerNotification,
     type AppNotification,
-} from "@/services/notificationsStore";
+} from "@/services/producerNotificationsStore";
 import { appTheme as theme } from "@/theme/appTheme";
-import { getProducerKPIs, getRecentSales, type ProducerKPI, type RecentSale } from "@/utils/producerAnalytics";
+import {
+    getProducerKPIsAsync,
+    type ProducerKPI,
+} from "@/utils/producerAnalytics";
 import { useIsFocused } from "@react-navigation/native";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -21,14 +29,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 // Import modular components
-import { homeStyles as styles } from "@/features/home/styles/home.styles";
+import { AgroNews } from "@/features/home/components/AgroNews";
 import { HomeHeader } from "@/features/home/components/HomeHeader";
 import { KpiCarousel } from "@/features/home/components/KpiCarousel";
 import { MarketOpportunities } from "@/features/home/components/MarketOpportunities";
-import { QuickActions } from "@/features/home/components/QuickActions";
-import { RecentSales } from "@/features/home/components/RecentSales";
-import { AgroNews } from "@/features/home/components/AgroNews";
 import { NotificationsModal } from "@/features/home/components/NotificationsModal";
+import { QuickActions } from "@/features/home/components/QuickActions";
+import { homeStyles as styles } from "@/features/home/styles/home.styles";
+import { NewFollowersModal } from "@/features/home/components/NewFollowersModal";
 
 const MAX_NOTIFICATION_PREVIEW = 5;
 
@@ -37,13 +45,22 @@ export default function HomeScreen() {
   const isFocused = useIsFocused();
   const { user } = useAuth();
   const profileName = user?.username || "Produtor";
-  
-  const [profileSummary, setProfileSummary] = useState(() => getProfileSummary(profileName));
-  const [kpis, setKpis] = useState<ProducerKPI>(() => getProducerKPIs(profileName));
-  const [recentSales, setRecentSales] = useState<RecentSale[]>(() => getRecentSales(profileName));
-  
+
+  const [profileSummary, setProfileSummary] = useState(() =>
+    getProfileSummary(profileName),
+  );
+  const [kpis, setKpis] = useState<ProducerKPI>({
+    totalAds: 0,
+    averageRating: 0,
+    monthlySales: 0,
+    followers: 0,
+  });
+
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<AppNotification[]>(getNotificationsByRole("producer"));
+  const [notifications, setNotifications] = useState<AppNotification[]>(
+    getProducerNotifications(),
+  );
+  const [isNewFollowersModalOpen, setIsNewFollowersModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
@@ -54,11 +71,11 @@ export default function HomeScreen() {
           "Deseja realmente fechar o Terra Nova? Sua sessão permanecerá ativa.",
           [
             { text: "Continuar Navegando", style: "cancel" },
-            { 
-              text: "Sair Agora", 
-              onPress: () => BackHandler.exitApp() 
-            }
-          ]
+            {
+              text: "Sair Agora",
+              onPress: () => BackHandler.exitApp(),
+            },
+          ],
         );
         return true;
       }
@@ -67,7 +84,7 @@ export default function HomeScreen() {
 
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
-      onBackPress
+      onBackPress,
     );
 
     return () => backHandler.remove();
@@ -81,14 +98,16 @@ export default function HomeScreen() {
         try {
           await initCommunityStore();
           await refreshCommunityStore();
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
+          await new Promise((resolve) => setTimeout(resolve, 300));
+
           if (!isMounted) return;
 
           const updated = getProfileSummary(profileName);
           setProfileSummary({ ...updated });
-          setKpis(getProducerKPIs(profileName));
-          setRecentSales(getRecentSales(profileName));
+
+          // Usar versão async para KPIs reais
+          const kpisData = await getProducerKPIsAsync(profileName);
+          setKpis(kpisData);
         } catch (error) {
           // Silent fail
         }
@@ -99,7 +118,7 @@ export default function HomeScreen() {
       return () => {
         isMounted = false;
       };
-    }, [profileName])
+    }, [profileName]),
   );
 
   const latestNotifications = notifications.slice(0, MAX_NOTIFICATION_PREVIEW);
@@ -107,25 +126,35 @@ export default function HomeScreen() {
   const unreadCount = notifications.filter((item) => item.isNew).length;
 
   const openNotifications = () => {
-    setNotifications(markAllNotificationsAsRead());
+    setNotifications(markAllProducerNotificationsAsRead());
     setIsNotificationsOpen(true);
   };
   const closeNotifications = () => setIsNotificationsOpen(false);
 
   const openNotificationTarget = (item: AppNotification) => {
-    setNotifications(markNotificationAsRead(item.id));
+    // Remove a notificação após o clique para manter a lista limpa
+    setNotifications(removeProducerNotification(item.id));
     closeNotifications();
-    if (item.route === "/profile" && item.targetItemId) {
-      router.push({ pathname: "/user-profile", params: { highlight: item.targetItemId } });
+
+    if (item.category === "comunidade") {
+      setIsNewFollowersModalOpen(true);
       return;
     }
 
-    router.push(item.route);
+    if (item.route.includes("/profile") && item.targetItemId) {
+      router.push({
+        pathname: "/(producer)/profile",
+        params: { highlight: item.targetItemId },
+      });
+      return;
+    }
+
+    router.push(item.route as any);
   };
 
   const openAllNotifications = () => {
     closeNotifications();
-    router.push("/notifications");
+    router.push("/notifications-history");
   };
 
   const handleRefresh = async () => {
@@ -135,9 +164,11 @@ export default function HomeScreen() {
 
       await initCommunityStore();
       setProfileSummary({ ...getProfileSummary(profileName) });
-      setKpis(getProducerKPIs(profileName));
-      setRecentSales(getRecentSales(profileName));
-      setNotifications(getNotificationsByRole("producer"));
+
+      // Usar versão async para KPIs reais
+      const kpisData = await getProducerKPIsAsync(profileName);
+      setKpis(kpisData);
+      setNotifications(getProducerNotifications());
     } finally {
       setIsRefreshing(false);
     }
@@ -174,10 +205,7 @@ export default function HomeScreen() {
 
         <QuickActions />
 
-        <RecentSales recentSales={recentSales} />
-
         <AgroNews />
-
       </ScrollView>
 
       <NotificationsModal
@@ -187,6 +215,11 @@ export default function HomeScreen() {
         hasMoreNotifications={hasMoreNotifications}
         openNotificationTarget={openNotificationTarget}
         openAllNotifications={openAllNotifications}
+      />
+
+      <NewFollowersModal 
+        isOpen={isNewFollowersModalOpen} 
+        onClose={() => setIsNewFollowersModalOpen(false)} 
       />
     </SafeAreaView>
   );

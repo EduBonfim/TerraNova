@@ -1,10 +1,10 @@
-import React from "react";
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { appTheme as theme } from "@/theme/appTheme";
-import { messagesStyles as styles, CURRENT_PLATFORM_UI } from "../styles/messages.styles";
+import React from "react";
+import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SurfaceCard } from "@/components/SurfaceCard";
+import { appTheme as theme } from "@/theme/appTheme";
 import { Review } from "@/services/communityStore";
+import { CURRENT_PLATFORM_UI, messagesStyles as styles } from "@/features/messages/styles/messages.styles";
 
 interface ReviewSellerViewProps {
   sellerRating: number;

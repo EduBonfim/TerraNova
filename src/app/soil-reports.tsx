@@ -21,7 +21,7 @@ import {
     deleteSoilReportById,
     getSoilReportsByUser,
     type SoilReport,
-} from "../services/soilReportsStore";
+} from "@/services/soilReportsStore";
 
 const theme = {
   colors: {

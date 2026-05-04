@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { appTheme as theme } from "@/theme/appTheme";
-import { registerStyles as styles } from "../styles/register.styles";
+import { registerStyles as styles } from "@/features/register/styles/register.styles";
 
 interface ToastNotificationProps {
   message: string | null;

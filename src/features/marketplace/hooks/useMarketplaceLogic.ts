@@ -69,7 +69,9 @@ export function useMarketplaceLogic(cartVendorName?: string | null) {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const data = await getMarketplaceItems();
+      setMarketplaceItems(data);
+      setStoreVersion(prev => prev + 1);
     } finally {
       setIsRefreshing(false);
     }

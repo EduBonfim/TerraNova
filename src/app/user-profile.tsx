@@ -7,9 +7,10 @@ import {
 } from "@/services/communityStore";
 import { MARKETPLACE_OPPORTUNITIES } from "@/services/marketplaceStore";
 import { appTheme as theme } from "@/theme/appTheme";
+import { initFollowStore, isFollowing as checkIsFollowing, toggleFollow, getFollowerCount, getFollowingCount } from "@/services/followStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     ScrollView,
     StatusBar,
@@ -53,6 +54,20 @@ export default function UserProfileScreen() {
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+
+  useEffect(() => {
+    if (currentUser?.username) {
+      initFollowStore(currentUser.username).then(async () => {
+        setIsFollowing(checkIsFollowing(name));
+        const count = await getFollowerCount(name);
+        setFollowerCount(count);
+        setFollowingCount(getFollowingCount(currentUser.username!));
+      });
+    }
+  }, [name, currentUser]);
 
   const profile = getProfile(name);
   const rating = getAverageRating(name);
@@ -64,6 +79,14 @@ export default function UserProfileScreen() {
 
   const handleReport = () => {
     setReportModalVisible(true);
+  };
+
+  const handleToggleFollow = async () => {
+    const newState = await toggleFollow(name);
+    setIsFollowing(newState);
+    // Atualiza o contador de seguidores em tempo real
+    const count = await getFollowerCount(name);
+    setFollowerCount(count);
   };
 
   const navigateToMarket = (prod: any) => {
@@ -102,6 +125,8 @@ export default function UserProfileScreen() {
           farmName={profile.farmName}
           producerRole={profile.producerRole}
           isCepValidated={profile.isCepValidated}
+          followerCount={followerCount}
+          followingCount={followingCount}
         />
 
         <ProfileQuickActions
@@ -109,7 +134,7 @@ export default function UserProfileScreen() {
             router.push({
               pathname: "/messages",
               params: {
-                sellerName: profile.displayName,
+                sellerName: profile.username,
                 productName: "Conversa Direta",
               },
             })
@@ -117,6 +142,9 @@ export default function UserProfileScreen() {
           farmAddress={profile.farmAddress}
           latitude={profile.gateLatitude}
           longitude={profile.gateLongitude}
+          isFollowing={isFollowing}
+          onToggleFollow={handleToggleFollow}
+          currentUserRole={currentUser?.role}
         />
 
         <ProfileTrustStats

@@ -1,7 +1,3 @@
-/**
- * Privacy Settings Screen
- * Permite ao usuário controlar configurações de privacidade, como bloqueio de mensagens
- */
 import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { setBlockMessages } from "@/services/authStore";

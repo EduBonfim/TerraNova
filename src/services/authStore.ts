@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export type AppUser = {
   username: string;
   password: string;
-  role?: "user" | "admin" | "buyer";
+  role?: "producer" | "admin" | "buyer";
   lgpdAcceptedAt?: string;
   lgpdTermsVersion?: string;
   pendingLgpdReacceptance?: boolean;
@@ -34,7 +34,7 @@ export type AppUser = {
 
 export type AdminUserSummary = {
   username: string;
-  role: "user" | "admin" | "buyer";
+  role: "producer" | "admin" | "buyer";
   fullName?: string;
   farmName?: string;
   farmDocumentMasked: string;
@@ -44,7 +44,7 @@ export type AdminUserSummary = {
 
 export type UserPersonalDataExport = {
   username: string;
-  role: "user" | "admin" | "buyer";
+  role: "producer" | "admin" | "buyer";
   fullName?: string;
   farmName?: string;
   farmDocument?: string;
@@ -70,70 +70,22 @@ const DEFAULT_USERS: AppUser[] = [
     lgpdTermsVersion: LGPD_TERMS_VERSION,
     pendingLgpdReacceptance: true,
   },
-  // ─── Conta de teste: Comprador ───────────────────────────────────────────────
   {
-    username: "Consumidor",
-    password: "1234",
+    username: "produtor",
+    password: "123",
+    role: "producer",
+    fullName: "Produtor de Teste",
+    farmName: "Fazenda Terra Nova",
+    farmDocument: "12345678901",
+    farmDocumentType: "cpf",
+  },
+  {
+    username: "comprador",
+    password: "123",
     role: "buyer",
-    fullName: "Consumidor Terra Nova",
-    email: "Consumidor@terranova.com",
-    cpf: "09239945806",
-    lgpdAcceptedAt: new Date().toISOString(),
-    lgpdTermsVersion: LGPD_TERMS_VERSION,
-    pendingLgpdReacceptance: false,
-    address: {
-      cep: "01310-100",
-      street: "Av. Paulista",
-      number: "1000",
-      neighborhood: "Bela Vista",
-      city: "São Paulo",
-      state: "SP",
-    },
-  },
-  // ─── Contas de teste: Produtores ─────────────────────────────────────────────
-  { username: "Duzinhow", password: "1234", role: "user" },
-  {
-    username: "Sitio",
-    password: "1234",
-    role: "user",
-    fullName: "Produtor Sitio",
-    farmName: "Sitio Principal",
-  },
-  {
-    username: "Sitio1",
-    password: "1234",
-    role: "user",
-    fullName: "Joao do Sitio 1",
-    farmName: "Sitio 1 - Rio Verde",
-  },
-  {
-    username: "Sitio2",
-    password: "1234",
-    role: "user",
-    fullName: "Maria do Sitio 2",
-    farmName: "Sitio 2 - Maringa",
-  },
-  {
-    username: "Sitio3",
-    password: "1234",
-    role: "user",
-    fullName: "Jose do Sitio 3",
-    farmName: "Sitio 3 - Jatai",
-  },
-  {
-    username: "Sitio4",
-    password: "1234",
-    role: "user",
-    fullName: "Ana do Sitio 4",
-    farmName: "Sitio 4 - Uberlandia",
-  },
-  {
-    username: "Sitio5",
-    password: "1234",
-    role: "user",
-    fullName: "Carlos do Sitio 5",
-    farmName: "Sitio 5 - Sorriso",
-  },
+    fullName: "Comprador de Teste",
+    cpf: "12345678901",
+  }
 ];
 
 let usersState: AppUser[] = [...DEFAULT_USERS];
@@ -283,7 +235,7 @@ export const getAdminUserSummaries = async (): Promise<AdminUserSummary[]> => {
 
   return usersState.map((item) => ({
     username: item.username,
-    role: item.role || "user",
+    role: item.role || "producer",
     fullName: item.fullName,
     farmName: item.farmName,
     farmDocumentMasked: maskDocument(item.farmDocument, 4),
@@ -388,7 +340,7 @@ export const registerUser = async (payload: {
     {
       username,
       password,
-      role: "user",
+      role: "producer",
       lgpdAcceptedAt: new Date().toISOString(),
       lgpdTermsVersion: LGPD_TERMS_VERSION,
       pendingLgpdReacceptance: false,
@@ -510,7 +462,7 @@ export const exportUserPersonalData = async (
 
   return {
     username: user.username,
-    role: user.role || "user",
+    role: user.role || "producer",
     fullName: user.fullName,
     farmName: user.farmName,
     farmDocument: user.farmDocument,
@@ -585,6 +537,16 @@ export const updateUserBuyerProfile = async (
     fullName?: string;
     phone?: string;
     gender?: "male" | "female" | "other" | "prefer_not";
+    bio?: string;
+    address?: {
+      cep: string;
+      street: string;
+      number: string;
+      neighborhood: string;
+      city: string;
+      state: string;
+      complement?: string;
+    };
   },
 ): Promise<AppUser | null> => {
   await initAuthStore();
@@ -599,6 +561,16 @@ export const updateUserBuyerProfile = async (
     fullName: payload.fullName ?? usersState[index].fullName,
     phone: payload.phone ?? usersState[index].phone,
     gender: (payload.gender as any) ?? usersState[index].gender,
+    bio: payload.bio ?? usersState[index].bio,
+    address: payload.address ? {
+      cep: payload.address.cep.trim(),
+      street: payload.address.street.trim(),
+      number: payload.address.number.trim(),
+      neighborhood: payload.address.neighborhood.trim(),
+      city: payload.address.city.trim(),
+      state: payload.address.state.trim().toUpperCase(),
+      complement: payload.address.complement?.trim(),
+    } : usersState[index].address,
   };
 
   await persistUsers();

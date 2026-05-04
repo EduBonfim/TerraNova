@@ -168,6 +168,42 @@ export default function AccountHealthScreen() {
           </View>
 
           <View style={styles.healthSection}>
+            <Text style={styles.healthSectionTitle}>Como a Pontuação Funciona?</Text>
+            
+            <View style={{ marginBottom: 12 }}>
+              <Text style={styles.healthExplanationText}>
+                Sua conta começa com <Text style={{fontWeight: "bold", color: "#10B981"}}>100% de saúde</Text>. Essa nota diminui quando ocorrem violações nas regras da comunidade:
+              </Text>
+            </View>
+
+            <View style={styles.healthDetailItem}>
+              <View style={[styles.healthDetailIconGreen, { backgroundColor: "#F59E0B" }]}>
+                <Ionicons name="warning-outline" size={20} color={theme.colors.white} />
+              </View>
+              <View style={styles.healthDetailContent}>
+                <Text style={styles.healthDetailLabel}>Advertências (Avisos)</Text>
+                <Text style={styles.healthDetailValue}>-15 pontos por cada aviso</Text>
+              </View>
+            </View>
+
+            <View style={styles.healthDetailItem}>
+              <View style={[styles.healthDetailIconGreen, { backgroundColor: theme.colors.red_500 }]}>
+                <Ionicons name="ban-outline" size={20} color={theme.colors.white} />
+              </View>
+              <View style={styles.healthDetailContent}>
+                <Text style={styles.healthDetailLabel}>Bloqueio de Conta</Text>
+                <Text style={styles.healthDetailValue}>-50 pontos por bloqueio ativo</Text>
+              </View>
+            </View>
+
+            <View style={{ marginTop: 8, padding: 12, backgroundColor: theme.colors.gray_100, borderRadius: 8 }}>
+              <Text style={{ fontSize: 12, color: theme.colors.gray_600, lineHeight: 18 }}>
+                Contas com saúde abaixo de <Text style={{fontWeight: "bold"}}>50%</Text> entram em estado crítico e podem sofrer restrições operacionais na plataforma.
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.healthSection}>
             <Text style={styles.healthSectionTitle}>Dicas para Manter a Saúde</Text>
             
             <View style={styles.healthTipItem}>
@@ -300,6 +336,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: theme.colors.gray_800,
     marginBottom: 12,
+  },
+  healthExplanationText: {
+    fontSize: 13,
+    color: theme.colors.gray_600,
+    lineHeight: 18,
   },
   healthDetailItem: {
     flexDirection: "row",

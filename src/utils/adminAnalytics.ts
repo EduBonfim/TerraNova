@@ -1,5 +1,7 @@
 import { getMarketplaceItems } from "@/services/marketplaceStore";
 import { getAllOrders } from "@/services/ordersStore";
+import { getReports } from "@/services/reportsStore";
+import { getUsers } from "@/services/authStore";
 
 /**
  * ===== KPI ANALYTICS =====
@@ -19,19 +21,17 @@ export interface AdminKPI {
   productsOutOfStock: number;
   topCategory: string;
   averageOrderValue: number;
-  conversionRate: number; // Placeholder/Simulation
-  growthRate: number; // Placeholder/Simulation
+  conversionRate: number;
+  growthRate: number;
   topPerformingProduct: { name: string; sales: number };
 }
-
-import { getUsers } from "@/services/authStore";
 
 export async function getAdminKPIs(): Promise<AdminKPI> {
   const users = await getUsers();
   const products = await getMarketplaceItems();
   const orders = await getAllOrders();
 
-  const producers = users.filter((u) => u.role === "user");
+  const producers = users.filter((u) => u.role === "producer");
   const buyers = users.filter((u) => u.role === "buyer");
 
   const totalSales = orders.reduce((acc, o) => acc + o.valorNumerico, 0);
@@ -45,7 +45,10 @@ export async function getAdminKPIs(): Promise<AdminKPI> {
   const avgOrderValue = orders.length > 0 ? totalSales / orders.length : 0;
 
   const validPrices = products
-    .map((p) => parseFloat(p.preco.replace("R$ ", "").replace(".", "").replace(",", ".")))
+    .map((p) => {
+      const priceStr = p.preco.replace("R$ ", "").replace(/\./g, "").replace(",", ".");
+      return parseFloat(priceStr);
+    })
     .filter((price) => !isNaN(price));
   const avgPrice = validPrices.length > 0 ? validPrices.reduce((a, b) => a + b) / validPrices.length : 0;
 
@@ -75,6 +78,37 @@ export async function getAdminKPIs(): Promise<AdminKPI> {
     ? Object.keys(productSalesMap).reduce((a, b) => productSalesMap[a] > productSalesMap[b] ? a : b)
     : "Nenhum";
 
+  // --- Cálculos Dinâmicos ---
+  
+  // 1. Taxa de Conversão (Proxy: Pedidos por Usuário Ativo)
+  const convRate = users.length > 0 ? (orders.length / users.length) * 10 : 0; // x10 para fins de escala visual realista
+  
+  // 2. Taxa de Crescimento (Vendas últimos 30 dias vs 30-60 dias atrás)
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+  const currentPeriodSales = orders
+    .filter(o => {
+      const d = new Date(o.data.split("/").reverse().join("-"));
+      return d >= thirtyDaysAgo;
+    })
+    .reduce((acc, o) => acc + o.valorNumerico, 0);
+
+  const previousPeriodSales = orders
+    .filter(o => {
+      const d = new Date(o.data.split("/").reverse().join("-"));
+      return d >= sixtyDaysAgo && d < thirtyDaysAgo;
+    })
+    .reduce((acc, o) => acc + o.valorNumerico, 0);
+
+  let gRate = 0;
+  if (previousPeriodSales > 0) {
+    gRate = ((currentPeriodSales - previousPeriodSales) / previousPeriodSales) * 100;
+  } else if (currentPeriodSales > 0) {
+    gRate = 100; // Crescimento inicial infinito vira 100% para visualização
+  }
+
   return {
     totalUsers: users.length,
     totalProducers: producers.length,
@@ -88,8 +122,8 @@ export async function getAdminKPIs(): Promise<AdminKPI> {
     productsOutOfStock: outOfStock,
     topCategory,
     averageOrderValue: Math.round(avgOrderValue * 100) / 100,
-    conversionRate: 12.5, // Simulado
-    growthRate: 15.2, // Simulado
+    conversionRate: Math.round(convRate * 10) / 10,
+    growthRate: Math.round(gRate * 10) / 10,
     topPerformingProduct: { name: topProduct, sales: productSalesMap[topProduct] || 0 }
   };
 }
@@ -101,7 +135,7 @@ export async function getAdminKPIs(): Promise<AdminKPI> {
 
 export async function getProducersCSVData() {
   const users = await getUsers();
-  const producers = users.filter((u) => u.role === "user");
+  const producers = users.filter((u) => u.role === "producer");
   const orders = await getAllOrders();
 
   return producers.map((p) => {
@@ -207,19 +241,18 @@ export async function getSalesCSVData() {
 }
 
 export async function getReportsCSVData() {
-  const users = await getUsers();
+  const reports = await getReports();
 
-  // Simulando dados de relatórios enriquecidos
-  return users.slice(0, 10).map((u, idx) => ({
-    "ID da Ocorrência": `REP-${2025}${idx.toString().padStart(3, "0")}`,
-    "Data de Aberura": new Date().toISOString().split("T")[0],
-    "Usuário Envolvido": u.username,
-    "Perfil": u.role === "user" ? "Produtor" : "Comprador",
-    "Motivo da Denúncia": idx % 2 === 0 ? "Qualidade do Lote" : "Atraso na Entrega",
-    "Severidade": idx % 3 === 0 ? "Alta" : "Média",
-    "Evidências Anexadas": idx % 2 === 0 ? "Sim" : "Não",
-    "Descrição": `Investigação automática de rotina para o usuário ${u.fullName || u.username}`,
-    "Status de Resolução": "Em Análise",
+  return reports.map((r) => ({
+    "ID da Ocorrência": r.id,
+    "Data de Abertura": new Date(r.data).toLocaleDateString("pt-BR"),
+    "Usuário Denunciado": r.reportedUser,
+    "Denunciante": r.reporter,
+    "Categoria": r.category.toUpperCase(),
+    "Motivo": r.reason,
+    "Status": r.status.toUpperCase(),
+    "Ação Tomada": r.action?.type || "Nenhuma",
+    "Resolvido Em": r.analyzedAt ? new Date(r.analyzedAt).toLocaleDateString("pt-BR") : "Pendente",
+    "Detalhes": r.description,
   }));
 }
-

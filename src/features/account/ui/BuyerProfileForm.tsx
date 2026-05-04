@@ -123,7 +123,9 @@ export function BuyerProfileForm() {
     >
       <ScrollView style={styles.containerScroll} showsVerticalScrollIndicator={false}>
         <View style={styles.formContent}>
-          {/* Avatar com Editar */}
+          
+          {/* 1. ─── Foto de Perfil (Premium) ─── */}
+          <Text style={styles.sectionTitle}>Identidade</Text>
           <View style={styles.avatarEditSection}>
             <Image
               source={
@@ -145,7 +147,9 @@ export function BuyerProfileForm() {
             </View>
           </View>
 
-          {/* Nome Completo */}
+          {/* 2. ─── Dados Gerais ─── */}
+          <Text style={styles.sectionTitle}>Dados Gerais</Text>
+          
           <View style={styles.fieldSection}>
             <Text style={styles.fieldLabel}>Nome Completo</Text>
             <TextInput
@@ -160,7 +164,6 @@ export function BuyerProfileForm() {
             </Text>
           </View>
 
-          {/* Bio */}
           <View style={styles.fieldSection}>
             <Text style={styles.fieldLabel}>Bio</Text>
             <TextInput
@@ -177,7 +180,6 @@ export function BuyerProfileForm() {
             <Text style={styles.charCounter}>{draftProfileBio.length}/160</Text>
           </View>
 
-          {/* Gênero */}
           <View style={styles.fieldSection}>
             <Text style={styles.fieldLabel}>Gênero</Text>
             <TouchableOpacity
@@ -196,31 +198,11 @@ export function BuyerProfileForm() {
             </TouchableOpacity>
           </View>
 
-          {/* Informações de Identidade - Somente Leitura */}
-          <View style={styles.fieldSection}>
-             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <Text style={styles.fieldLabel}>Identidade e Verificação</Text>
-                <View style={styles.verifiedBadge}>
-                  <Ionicons name="checkmark-circle" size={14} color={theme.colors.primary} />
-                  <Text style={styles.verifiedText}>Conta Verificada</Text>
-                </View>
-             </View>
-             <TextInput
-                style={[styles.input, styles.inputReadOnly]}
-                value="Dados verificados (CPF, Nome, Nascimento)"
-                editable={false}
-              />
-              <Text style={styles.readOnlyHint}>
-                🔒 Dados de identidade não podem ser alterados por segurança.
-              </Text>
-          </View>
-
-          {/* Celular */}
           <View style={styles.fieldSection}>
             <Text style={styles.fieldLabel}>Celular</Text>
             <TextInput
               style={styles.input}
-              placeholder="Número de celular"
+              placeholder="(00) 00000-0000"
               placeholderTextColor={theme.colors.gray_500}
               value={draftPhone}
               onChangeText={(text) => setDraftPhone(formatPhone(text))}
@@ -228,7 +210,6 @@ export function BuyerProfileForm() {
             />
           </View>
 
-          {/* Email */}
           <View style={styles.fieldSection}>
             <Text style={styles.fieldLabel}>Email</Text>
             <TextInput
@@ -239,6 +220,18 @@ export function BuyerProfileForm() {
             <Text style={styles.readOnlyHint}>
               📧 O e-mail é usado para sua segurança e login.
             </Text>
+          </View>
+
+          {/* 3. ─── Verificação ─── */}
+          <Text style={styles.sectionTitle}>Verificação</Text>
+          <View style={styles.fieldSection}>
+             <View style={styles.verifiedInfoRow}>
+                <View style={styles.verifiedBadge}>
+                  <Ionicons name="checkmark-circle" size={14} color={theme.colors.primary} />
+                  <Text style={styles.verifiedText}>Conta Verificada</Text>
+                </View>
+                <Text style={styles.readOnlyHint}>Dados verificados (CPF, Nascimento)</Text>
+             </View>
           </View>
 
           {/* Salvar Alterações */}
@@ -260,12 +253,24 @@ const styles = StyleSheet.create({
   containerScroll: { flex: 1, backgroundColor: theme.colors.background },
   formContent: { padding: 16 },
 
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: theme.colors.primary,
+    marginTop: 20,
+    marginBottom: 16,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+
   avatarEditSection: {
     alignItems: "center",
     marginBottom: 24,
     backgroundColor: theme.colors.white,
     paddingVertical: 20,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.gray_100,
   },
   largeAvatar: {
     width: 100,
@@ -304,53 +309,8 @@ const styles = StyleSheet.create({
   },
   editActionSecondaryText: { color: theme.colors.primary, fontWeight: "bold", fontSize: 13 },
 
-  infoRow: {
-    backgroundColor: theme.colors.white,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    borderRadius: 8,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.gray_200,
-  },
-  infoLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: theme.colors.gray_600,
-    marginBottom: 6,
-  },
-  infoLabelSmall: {
-    fontSize: 12,
-    color: theme.colors.gray_500,
-    marginTop: 2,
-  },
-  infoValueRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  infoValue: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: theme.colors.gray_800,
-  },
-  verifiedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    backgroundColor: "rgba(107, 142, 35, 0.1)",
-  },
-  verifiedText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: theme.colors.primary,
-  },
-
   fieldSection: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   fieldLabel: {
     fontSize: 13,
@@ -377,7 +337,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: theme.colors.gray_500,
     marginTop: 4,
-    marginBottom: 10,
   },
   bioInput: {
     backgroundColor: theme.colors.white,
@@ -418,25 +377,28 @@ const styles = StyleSheet.create({
     color: theme.colors.gray_500,
   },
 
-  emailContainer: {
-    backgroundColor: theme.colors.white,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.colors.gray_300,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+  verifiedInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  verifiedBadge: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    backgroundColor: "rgba(107, 142, 35, 0.1)",
   },
-  emailText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: theme.colors.gray_600,
+  verifiedText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: theme.colors.primary,
   },
 
   saveBuyerButton: {
-    backgroundColor: theme.colors.orange_500,
+    backgroundColor: theme.colors.primary,
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: "center",

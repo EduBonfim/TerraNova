@@ -2,10 +2,10 @@ import { AppHeader } from "@/components/AppHeader";
 import { SurfaceCard } from "@/components/SurfaceCard";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-    getNotificationsByRole,
-    markNotificationAsRead,
+    getBuyerNotifications,
+    markBuyerNotificationAsRead,
     type AppNotification,
-} from "@/services/notificationsStore";
+} from "@/services/buyerNotificationsStore";
 import { appTheme as theme } from "@/theme/appTheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -27,32 +27,28 @@ export default function BuyerNotificationsScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      // Load notifications based on the current user's role and username
-      const role = user?.role === "buyer" ? "buyer" : "producer";
-      setNotifications(getNotificationsByRole(role, user?.username));
-    }, [user?.role, user?.username])
+      setNotifications(getBuyerNotifications());
+    }, [])
   );
 
   const openNotificationTarget = (item: AppNotification) => {
-    setNotifications(markNotificationAsRead(item.id));
-    
+    // 1. Navigate first to avoid re-rendering the list while the screen is transitioning
     if (item.route === "/(buyer)/marketplace" && item.targetItemId) {
       router.push({
         pathname: "/(buyer)/marketplace",
         params: { highlight: item.targetItemId },
       });
-      return;
-    }
-    
-    if (item.route === "/warning-details" && item.targetItemId) {
+    } else if (item.route === "/warning-details" && item.targetItemId) {
       router.push({
         pathname: "/warning-details",
         params: { id: item.targetItemId },
       });
-      return;
+    } else {
+      router.push(item.route);
     }
 
-    router.push(item.route);
+    // 2. Mark as read
+    setNotifications(markBuyerNotificationAsRead(item.id));
   };
 
   const getNotificationIcon = (category?: string) => {

@@ -34,9 +34,9 @@ const theme = {
   },
 };
 
-// Coleta todos os produtores (role "user") com seus certificados aprovados
+// Coleta todos os produtores (role "producer") com seus certificados aprovados
 function getAllProducersWithCerts() {
-  const users = getUsers().filter((u) => u.role === "user" || !u.role);
+  const users = getUsers().filter((u) => u.role === "producer" || !u.role);
   return users
     .map((u) => {
       const profileName = u.fullName || u.username;

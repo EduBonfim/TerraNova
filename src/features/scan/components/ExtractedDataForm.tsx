@@ -1,8 +1,8 @@
 import React from "react";
-import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { appTheme as theme } from "@/theme/appTheme";
-import { scanStyles as styles } from "../styles/scan.styles";
+import { scanStyles as styles } from "@/features/scan/styles/scan.styles";
 import { SurfaceCard } from "@/components/SurfaceCard";
 
 interface ExtractedDataFormProps {
