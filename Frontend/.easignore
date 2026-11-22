@@ -1,0 +1,15 @@
+# Ignore backend files since they are not needed for the mobile app build
+backend/
+
+# Ignore heavy backup archives
+*.rar
+*.zip
+*.tar.gz
+
+# Standard gitignore equivalents for Expo
+node_modules/
+.expo/
+dist/
+web-build/
+/ios
+/android

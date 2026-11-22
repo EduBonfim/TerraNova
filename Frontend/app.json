@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "Terra Nova",
+    "slug": "terra-nova-app-educacao-ambiental",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/mascote.png",
+    "scheme": "terranova",
+    "userInterfaceStyle": "automatic",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "splash": {
+      "image": "./src/assets/mascote.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F9F8F3"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.eduubonfiim.terranova",
+      "config": {
+        "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#527e38",
+        "foregroundImage": "./src/assets/mascote.png"
+      },
+      "package": "com.eduubonfiim.terranova.app",
+      "navigationBar": {
+        "backgroundColor": "#F9F8F3",
+        "barStyle": "dark-content"
+      },
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+        }
+      }
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/4b5c8eeb-dbce-4c2e-886e-776c110972fa"
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "4b5c8eeb-dbce-4c2e-886e-776c110972fa"
+      }
+    },
+    "owner": "eduubonfiim",
+    "updates": {
+      "url": "https://u.expo.dev/4b5c8eeb-dbce-4c2e-886e-776c110972fa"
+    }
+  }
+}
