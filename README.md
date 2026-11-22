@@ -1,6 +1,6 @@
-# 🌍 Projeto Terra Nova
+#  Projeto Terra Nova
 
-> 🚧 **Status:** Em desenvolvimento ativo (Work in Progress) - MVP Funcional (Offline-First) 🚧
+>  **Status:** Em desenvolvimento ativo (Work in Progress) - MVP Funcional (Offline-First) 
 
 O Terra Nova é um ecossistema digital e aplicativo mobile focado na economia circular e no nicho de certificação orgânica e transição agroecológica. O sistema funciona como um marketplace inteligente de duas vias: primeiro, conecta produtores que possuem passivos ambientais aprovados para o manejo orgânico (como esterco maturado e compostagem) com agricultores que precisam corrigir seus solos e manter o compliance de seus selos. Segundo, conecta esses mesmos agricultores ao consumidor final, permitindo a venda direta e rastreável de produtos limpos.
 
@@ -8,7 +8,7 @@ Mais do que uma plataforma de troca, o Terra Nova atua como uma **Plataforma ESG
 
 ---
 
-## 🚀 O Problema e a Solução
+##  O Problema e a Solução
 
 * **Dificuldade Financeira:** Fertilizantes químicos possuem alto custo, são atrelados ao dólar e reduzem drasticamente a margem de lucro do pequeno agricultor.
 * **Burocracia e Rastreabilidade (O Gargalo Orgânico):** Produtores que desejam atuar no nicho de orgânicos têm extrema dificuldade em encontrar bioinsumos locais devidamente rastreados. O uso de um insumo não rastreado resulta na perda imediata do selo orgânico pelo MAPA.
@@ -20,7 +20,7 @@ Mais do que uma plataforma de troca, o Terra Nova atua como uma **Plataforma ESG
 
 ---
 
-## ✨ Funcionalidades Principais (MVP Atual)
+##  Funcionalidades Principais (MVP Atual)
 
 * **Leitura Inteligente (OCR Servidor):** O produtor fotografa o laudo de solo. O app envia a imagem para o servidor backend que extrai os dados técnicos (N, P, K, pH) via OCR, independente de conexão posterior.
 * **Match Geoespacial e Logístico:** Apoiado por consultas radiais, o app exibe fornecedores num raio de até 20km que possuem exatamente o insumo orgânico necessário.
@@ -29,7 +29,7 @@ Mais do que uma plataforma de troca, o Terra Nova atua como uma **Plataforma ESG
 
 ---
 
-## 🛠️ Arquitetura de Fluxo de Dados
+##  Arquitetura de Fluxo de Dados
 
 Substituindo diagramas visuais por uma matriz de responsabilidade clara, o ecossistema distribui suas obrigações da seguinte forma:
 
@@ -44,7 +44,7 @@ Substituindo diagramas visuais por uma matriz de responsabilidade clara, o ecoss
 
 ---
 
-## 📱 Detalhamento das Bibliotecas (Raio-X Técnico)
+##  Detalhamento das Bibliotecas (Raio-X Técnico)
 
 ### 1. O Coração do Aplicativo (Core)
 * **react-native & expo:** Permite acesso a recursos nativos do dispositivo sem a complexidade de manter bases de código separadas para Android e iOS.
@@ -67,7 +67,7 @@ Substituindo diagramas visuais por uma matriz de responsabilidade clara, o ecoss
 
 ---
 
-## 🔄 Caminhos Críticos de Execução (Runtime View)
+##  Caminhos Críticos de Execução (Runtime View)
 
 Substituindo os diagramas sequenciais por rastreamentos lógicos passo a passo em formato de texto estruturado:
 
@@ -89,7 +89,7 @@ Substituindo os diagramas sequenciais por rastreamentos lógicos passo a passo e
 
 ---
 
-## ⚖️ Regras de Negócio e Compliance
+##  Regras de Negócio e Compliance
 
 * **Privacidade e LGPD:** Tratamento cuidadoso de laudos rurais privados. A base opera com deleção lógica (Soft Delete via `deleted_at`) para manter a integridade dos dados históricos de auditoria, além de mascaramento de dados sensíveis e controle de consentimento com `lgpd_terms_version`.
 * **Regulamentação Logística:** Aceites documentados no app sobre a obrigatoriedade legal de lonar/vedar caminhões que transportam material biológico, conforme a Resolução do Contran.
@@ -97,7 +97,7 @@ Substituindo os diagramas sequenciais por rastreamentos lógicos passo a passo e
 
 ---
 
-## 🧪 Estratégia de Qualidade (QA) e Observabilidade
+##  Estratégia de Qualidade (QA) e Observabilidade
 
 * **Performance Mobile (Flashlight.dev):** Usamos o Flashlight para testar quedas de FPS (Frame Drops) e consumo de bateria do processo de OCR local em smartphones Android de entrada, garantindo que o app seja leve no dia a dia do campo.
 * **Testes de Estresse (Apache JMeter):** Simulamos picos de requisições concorrentes de milhares de fazendas descarregando seus carrinhos do AsyncStorage síncronos assim que recuperam conexão, testando os limites do Spring Boot.
@@ -105,21 +105,21 @@ Substituindo os diagramas sequenciais por rastreamentos lógicos passo a passo e
 
 ---
 
-## 🌱 RoadMap e Escalabilidade (Agro 4.0 e Hardware)
+##  RoadMap e Escalabilidade (Agro 4.0 e Hardware)
 
 * **Integração de Equipamentos (IoT):** A próxima fase arquitetural envolve a leitura direta do solo sem papel. Sensores de NPK instalados na terra enviarão dados via protocolos de baixo consumo e longo alcance (BLE ou módulos LoRaWAN) direto para o painel do app, eliminando o papel.
 * **Auditoria Contínua:** Integração de rotinas automatizadas no backend que cruzam os insumos utilizados pelo produtor com o Portal de Dados Abertos do Ministério da Agricultura, emitindo alertas imediatos se um produto comprometer o selo orgânico.
 
 ---
 
-## 💼 Modelo de Monetização
+##  Modelo de Monetização
 
 * **Taxa de Intermediação B2B/B2C (Marketplace):** Micropercentual incidente sobre as transações financeiras fechadas dentro do aplicativo.
 * **SaaS Agronômico:** Assinatura Premium oferecendo acesso a Dossiês de Rastreabilidade Automatizados (geração instantânea via docx/pdf), facilitando as auditorias para a emissão e manutenção do selo orgânico.
 
 ---
 
-### 🎓 Sobre o Projeto
+###  Sobre o Projeto
 Projeto MVP desenvolvido para a competição Empreenda Senac, desenhado para solucionar dores logísticas e ambientais reais, provando que a tecnologia de ponta pode e deve chegar às mãos do trabalhador do campo.
 
 **Engenharia e Desenvolvimento:** 
